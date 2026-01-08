@@ -4,6 +4,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // Optimización de imágenes
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
