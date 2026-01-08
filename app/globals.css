@@ -63,4 +63,18 @@ body {
   animation: floatSmooth 4s ease-in-out infinite;
 }
 
+img {
+  background-color: white !important;
+}
+
+/* Next.js Image wrapper */
+span[style*="box-sizing"] {
+  background-color: white !important;
+}
+
+/* Contenedores aspect ratio */
+[class*="aspect-"] {
+  background-color: white !important;
+}
+
 
