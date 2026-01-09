@@ -78,9 +78,9 @@ export default function CarruselCategorias() {
 
   // Slider automático (promociones)
 const promoImages = [
-  "/promo1.png",
-  "/promo2.png",
-  "/promo3.png",
+    "https://img.jan-ku.com/general/banner-header-02.webp",
+    "https://img.jan-ku.com/general/banner-header-01.webp",
+    "https://img.jan-ku.com/general/banner-header-03.webp",
 ];
 
 const [currentSlide, setCurrentSlide] = React.useState(0);
@@ -90,7 +90,7 @@ React.useEffect(() => {
     setCurrentSlide((prev) =>
       prev === promoImages.length - 1 ? 0 : prev + 1
     );
-  }, 3500); // cambia cada 3.5 segundos
+  }, 5000); // cambia cada 5 segundos
 
   return () => clearInterval(interval);
 }, []);
@@ -99,7 +99,7 @@ React.useEffect(() => {
     <section className="w-full bg-gradient-to-b from-[#2C2C6C] via-[#241B57]/90 to-white py-10 select-none">
       {/* CARRUSEL PROMO */}
       <div className="relative w-full flex justify-center">
-        <div className="relative w-[90%] max-w-[1000px] aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] overflow-hidden rounded-xl">
+        <div className="relative w-[90%] max-w-[1000px] aspect-[16/4] sm:aspect-[16/5] md:aspect-[16/4] overflow-hidden">
           <div
             className="absolute inset-0 flex transition-transform duration-700 ease-in-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}

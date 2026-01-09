@@ -57,37 +57,36 @@ export default function Navbar() {
   return (
     <header className="w-full text-white font-sans">
       {/* Top Bar */}
- <div className="w-full bg-[#241B57] flex justify-around items-center py-2 text-sm text-white">
-  <div className="flex items-center gap-2">
-    <Truck className="w-6 h-6" />
-    <div className="leading-tight hidden sm:block">
-      <p className="font-semibold">Delivery Gratis</p>
-      <p className="text-xs">Para todo Huancayo</p>
-    </div>
-  </div>
+      <div className="w-full bg-[#241B57] flex justify-around items-center py-2 text-sm text-white">
+        <div className="flex items-center gap-2">
+          <Truck className="w-6 h-6" />
+          <div className="leading-tight hidden sm:block">
+            <p className="font-semibold">Delivery Gratis</p>
+            <p className="text-xs">Entrega a domicilio</p>
+          </div>
+        </div>
 
-  <div className="flex items-center gap-2">
-    <Plane className="w-6 h-6" />
-    <div className="leading-tight hidden sm:block">
-      <p className="font-semibold">Envios a todo el país</p>
-      <p className="text-xs">Libre de fletes</p>
-    </div>
-  </div>
+        <div className="flex items-center gap-2">
+          <Plane className="w-6 h-6" />
+          <div className="leading-tight hidden sm:block">
+            <p className="font-semibold">Envios a todo el país</p>
+            <p className="text-xs">Todos los dias</p>
+          </div>
+        </div>
 
-  <div className="flex items-center gap-2">
-    <BadgePercent className="w-6 h-6" />
-    <div className="leading-tight hidden sm:block">
-      <p className="font-semibold">Ofertas únicas</p>
-      <p className="text-xs">Solo aquí</p>
-    </div>
-  </div>
-
-</div>
+        <div className="flex items-center gap-2">
+          <BadgePercent className="w-6 h-6" />
+          <div className="leading-tight hidden sm:block">
+            <p className="font-semibold">Ofertas únicas</p>
+            <p className="text-xs">Solo aquí</p>
+          </div>
+        </div>
+      </div>
 
       <div className="flex justify-center w-full bg-[#2C2C6C]">
         <div className="w-full py-3 px-6 flex items-center justify-between max-w-[70%] max-w-[1000px]">
           <Link href="/" className="flex items-center gap-2">
-            <img src="https://i.postimg.cc/Jnd57KWK/logo-janku-oficial.png" alt="JAN-KU Logo" className="w-10"/>
+            <img src="https://img.jan-ku.com/general/janku-logo-oficial.png" alt="JAN-KU Logo" className="w-10"/>
             <div className="hidden md:flex flex-col items-center h-8"> 
               <span className="text-2xl font-bold leading-none">JANKU</span>
               <span className="text-xs font-medium uppercase leading-none">PRODUCTOS</span>

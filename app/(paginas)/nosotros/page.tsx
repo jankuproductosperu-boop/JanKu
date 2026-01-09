@@ -5,6 +5,8 @@ export const metadata = {
 };
 
 export default function NosotrosPage() {
+  const imagenUrl = "https://img.jan-ku.com/general/nosotros-img.webp"; // ✅ Coloca aquí la URL de tu imagen
+
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
       <section className="w-full py-28">
@@ -50,13 +52,23 @@ export default function NosotrosPage() {
               </p>
             </div>
 
-            {/* Bloque visual */}
-            <div className="relative h-80 md:h-[420px] rounded-2xl overflow-hidden shadow-lg bg-gradient-to-tr from-[#2d2f63] to-[#4b4fa3] flex items-end">
-              <div className="m-6 bg-white/90 backdrop-blur px-5 py-3 rounded-xl shadow">
-                <p className="text-sm font-semibold text-gray-900">
-                  Todo en un solo lugar
-                </p>
-              </div>
+            {/* Bloque visual - ✅ Ahora acepta imagen */}
+            <div className="relative h-full overflow-hidden">
+              {imagenUrl ? (
+                <img
+                  src={imagenUrl}
+                  alt="Janku - Sobre nosotros"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-tr from-[#2d2f63] to-[#4b4fa3] flex items-end">
+                  <div className="m-6 bg-white/90 backdrop-blur px-5 py-3 rounded-xl shadow">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Todo en un solo lugar
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

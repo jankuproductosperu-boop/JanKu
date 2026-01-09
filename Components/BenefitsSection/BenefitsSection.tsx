@@ -2,8 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import Image from 'next/image';
 
-export default function IntroJanKuSection({ marca = 'JanKu' }) {
+export default function IntroJanKuSection({ 
+  marca = 'JanKu',
+  imagenUrl = 'https://img.jan-ku.com/general/benefitsection-img.webp' // ✅ Nueva prop para la imagen
+}) {
   return (
     <section className="bg-white py-24 px-6 overflow-hidden">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-14 items-center">
@@ -66,7 +70,7 @@ export default function IntroJanKuSection({ marca = 'JanKu' }) {
           </ul>
         </div>
 
-        {/* Visual */}
+        {/* Visual - ✅ Se adapta a la imagen */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -75,8 +79,19 @@ export default function IntroJanKuSection({ marca = 'JanKu' }) {
           className="relative"
         >
           <div className="absolute -top-10 -left-10 w-48 h-48 bg-yellow-400/20 rounded-full blur-3xl" />
-          <div className="relative h-80 rounded-3xl bg-gray-100 shadow-xl flex items-center justify-center text-gray-400">
-            Imagen / Mockup
+          {/* ✅ Contenedor que se adapta a la imagen */}
+          <div className="relative rounded-3xl overflow-hidden">
+            {imagenUrl ? (
+              <img
+                src={imagenUrl}
+                alt={`${marca} - Imagen promocional`}
+                className="w-full h-auto rounded-3xl"
+              />
+            ) : (
+              <div className="w-full h-80 bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center text-gray-400 ">
+                Sin imagen
+              </div>
+            )}
           </div>
         </motion.div>
 
