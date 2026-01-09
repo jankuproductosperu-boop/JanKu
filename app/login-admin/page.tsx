@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, AlertTriangle } from "lucide-react";
+import { Lock, User, AlertCircle } from "lucide-react";
 
-export default function LoginAdmin() {
+export default function LoginAdminPage() {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
-  const [blockedTime, setBlockedTime] = useState<number | null>(null);
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
@@ -21,7 +21,7 @@ export default function LoginAdmin() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
@@ -29,98 +29,97 @@ export default function LoginAdmin() {
       if (response.ok) {
         router.push("/admin");
       } else {
-        // ✅ Manejar bloqueo
-        if (data.blocked) {
-          setError(`🔒 Cuenta bloqueada por ${data.remainingTime} minutos por seguridad.`);
-          setBlockedTime(data.remainingTime);
-          setRemainingAttempts(0);
-        } else {
-          setError("❌ Contraseña incorrecta");
+        setError(data.error || "Error al iniciar sesión");
+        if (data.remainingAttempts !== undefined) {
           setRemainingAttempts(data.remainingAttempts);
+        }
+        if (data.blocked) {
+          setError(`Bloqueado por ${data.remainingTime} minutos`);
         }
       }
     } catch (err) {
-      setError("❌ Error de conexión");
+      setError("Error de conexión");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#2C2C6C] via-[#241B57] to-[#1a1442] flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-orange-50 px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#2C2C6C] to-[#241B57] rounded-full mb-4 shadow-lg">
-            <Lock className="w-10 h-10 text-white" />
+          <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-white" />
           </div>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">JAN-KU Admin</h1>
-          <p className="text-gray-600">Panel de Administración</p>
-          <p className="text-sm text-gray-500 mt-1">Ingresa tu contraseña para continuar</p>
+          <h1 className="text-3xl font-bold text-gray-800">Panel Administrativo</h1>
+          <p className="text-gray-600 mt-2">Ingresa tus credenciales</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña de Administrador
+              Usuario
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C2C6C] focus:border-[#2C2C6C] outline-none transition"
-              required
-              autoFocus
-              disabled={blockedTime !== null}
-            />
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                placeholder="admin"
+                required
+                autoComplete="username"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contraseña
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
+            </div>
           </div>
 
           {error && (
-            <div className={`border-2 px-4 py-3 rounded-lg text-sm font-medium ${
-              blockedTime 
-                ? "bg-red-50 border-red-300 text-red-800" 
-                : "bg-red-50 border-red-200 text-red-700"
-            }`}>
-              {blockedTime && (
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-5 h-5" />
-                  <span className="font-bold">Cuenta bloqueada</span>
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <div>
+                  <p className="text-red-800 font-medium">{error}</p>
+                  {remainingAttempts !== null && remainingAttempts > 0 && (
+                    <p className="text-red-600 text-sm mt-1">
+                      Intentos restantes: {remainingAttempts}
+                    </p>
+                  )}
                 </div>
-              )}
-              {error}
-            </div>
-          )}
-
-          {remainingAttempts !== null && remainingAttempts > 0 && remainingAttempts < 5 && (
-            <div className="bg-yellow-50 border-2 border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
-              ⚠️ Intentos restantes: <strong>{remainingAttempts}</strong>
+              </div>
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading || blockedTime !== null}
-            className="w-full bg-gradient-to-r from-[#2C2C6C] to-[#241B57] text-white py-3 rounded-lg font-bold text-lg hover:from-[#241B57] hover:to-[#1a1442] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-lg font-bold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Verificando..." : blockedTime ? "Bloqueado" : "Iniciar Sesión"}
+            {loading ? "Verificando..." : "Iniciar Sesión"}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-4">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <span>Acceso protegido con límite de intentos</span>
-          </div>
-          
-          <div className="text-center">
-            <a href="/" className="text-[#2C2C6C] hover:text-[#241B57] text-sm font-medium">
-              ← Volver a la tienda
-            </a>
-          </div>
-        </div>
+        <p className="text-center text-gray-500 text-sm mt-6">
+          🔒 Sistema protegido con autenticación segura
+        </p>
       </div>
     </div>
   );
