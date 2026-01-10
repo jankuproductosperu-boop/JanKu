@@ -35,7 +35,7 @@ export default function CarruselCategorias() {
       descripcion: "Diversión y creatividad para niños de todas las edades.",
       iconoGray: <Gamepad2 className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-gray-500" />,
       iconoColor: <Gamepad2 className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-yellow-500" />,
-      url: "/jugueteria",
+      url: "/juguetes",
     },
     {
       nombre: "Belleza",
