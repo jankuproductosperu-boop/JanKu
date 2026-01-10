@@ -1,11 +1,13 @@
+require('dotenv').config({ path: '.env.local' });
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 
-console.log("🔄 Iniciando script...");
+const MONGODB_URI = process.env.MONGODB_URI; // ✅ Leer de .env.local
 
-const MONGODB_URI = "mongodb+srv://jankuproductosperu_db_user:cYS0WNzupgOSYaXQ@janku-cluster.fbqpb0e.mongodb.net/jankuDB?retryWrites=true&w=majority";
-
-console.log("🔄 Conectando a MongoDB...");
+if (!MONGODB_URI) {
+  console.error("❌ MONGODB_URI no encontrada en .env.local");
+  process.exit(1);
+}
 
 const AdminUserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -20,12 +22,11 @@ const AdminUser = mongoose.models.AdminUser || mongoose.model("AdminUser", Admin
 
 async function createAdmin() {
   try {
-    console.log("🔄 Intentando conectar...");
+    console.log("🔄 Conectando a MongoDB...");
     await mongoose.connect(MONGODB_URI);
     console.log("✅ Conectado a MongoDB");
 
     const hashedPassword = await bcrypt.hash("admin123", 10);
-    console.log("✅ Contraseña hasheada");
 
     const admin = await AdminUser.create({
       username: "admin",
