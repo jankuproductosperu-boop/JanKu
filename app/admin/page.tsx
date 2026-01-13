@@ -1191,7 +1191,7 @@ const stockStats = {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Link de WhatsApp</label>
                     <input name="whatsappLink" value={form.whatsappLink} onChange={handleChange} placeholder="https://wa.me/51..." className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-                    <p className="text-xs text-gray-500 mt-1">Formato: https://wa.me/51970189208?text=Hola...</p>
+                    <p className="text-xs text-gray-500 mt-1">Formato: https://wa.me/51978339737?text=Hola...</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Descripción (para tarjeta)</label>

@@ -22,21 +22,21 @@ export default function ContactSection() {
           <div className="space-y-6">
             {/* WhatsApp */}
             <a
-              href="https://wa.link/xxxxxxxx"
+              href="https://wa.me/51978339737"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 hover:opacity-80 transition"
             >
               <Phone className="w-10 h-10 text-green-500" />
               <div>
-                <p className="font-semibold">+51 970189208</p>
+                <p className="font-semibold">+51 978339737</p>
                 <p className="text-sm text-gray-500">+51 960668851</p>
               </div>
             </a>
 
             {/* Facebook */}
             <a
-              href="https://www.facebook.com/janku"
+              href="https://www.facebook.com/jankuproductos"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 hover:opacity-80 transition"

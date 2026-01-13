@@ -23,7 +23,7 @@ export default function CarritoPage() {
     message += `*TOTAL: S/ ${totalPrice.toFixed(2)}*\n\n`;
     message += "Deseo comprar estos productos. ¡Gracias! 😊";
 
-    const phoneNumber = "51970189208"; // 👈 CAMBIA ESTE NÚMERO
+    const phoneNumber = "51978339737"; // 👈 CAMBIA ESTE NÚMERO
     return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
