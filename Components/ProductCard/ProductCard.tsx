@@ -140,14 +140,14 @@ export default function ProductCard({
           <Heart 
             className={compact ? 'w-3 h-3' : 'w-4 h-4'} 
             fill={isProductFavorite ? "currentColor" : "none"}
-          />
+          />   
         </button>
 
         {/* Botón de carrito */}
         {showAddToCart && product.stock !== "Agotado" && (
           <button
             onClick={handleAddToCart}
-            className={`absolute ${compact ? 'bottom-1 right-1 p-1.5' : 'bottom-2 right-2 p-2'} bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 z-10`}
+            className={`absolute ${compact ? 'bottom-1 right-1 p-1.5' : 'bottom-2 right-2 p-2'} bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:scale-110 z-10`}
             title="Agregar al carrito"
           >
             <ShoppingCart className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
