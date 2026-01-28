@@ -8,8 +8,8 @@ interface IProduct extends Document {
   precio: number;
   descripcion?: string;
   descripcionCompleta?: string;
-  categoria?: string;
-  categoriaSlug?: string;
+  categorias?: string[];
+  categoriaSlugs?: string[];
   stock: "Disponible" | "Limitado" | "Agotado";
   imagenUrl?: string;
   imagenesAdicionales?: string[];
@@ -34,8 +34,8 @@ const ProductSchema = new Schema<IProduct>(
     precio: { type: Number, required: true },
     descripcion: { type: String, default: "" },
     descripcionCompleta: { type: String, default: "" },
-    categoria: { type: String, default: "" },
-    categoriaSlug: { type: String, default: "" },
+    categorias: [{ type: String }],
+    categoriaSlugs: [{ type: String }],
     stock: { 
       type: String, 
       enum: ["Disponible", "Limitado", "Agotado"],
@@ -62,7 +62,7 @@ const ProductSchema = new Schema<IProduct>(
 );
 
 // Índices para búsquedas rápidas
-ProductSchema.index({ categoriaSlug: 1 });
+ProductSchema.index({ categoriaSlugs: 1 });
 ProductSchema.index({ mostrarEnHome: 1 });
 ProductSchema.index({ nombre: 'text', descripcion: 'text' });
 ProductSchema.index({ precio: 1 });

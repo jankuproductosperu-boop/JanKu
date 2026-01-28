@@ -176,13 +176,7 @@ export default function HomeProducts() {
 
       {/* ✅ Responsivo: 2 columnas móviles pequeños, 3 para tablets/móviles grandes, 4 desktop */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
-        {products.slice(0, 4).map((p) => (
-          <ProductCard key={p._id} product={p} />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
-        {products.slice(4, 8).map((p) => (
+        {products.slice(0, 12).map((p) => (
           <ProductCard key={p._id} product={p} />
         ))}
       </div>
@@ -190,7 +184,7 @@ export default function HomeProducts() {
       <BannerFullWidth banner={middleFull} />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
-        {products.slice(8, 12).map((p) => (
+        {products.slice(12, 24).map((p) => (
           <ProductCard key={p._id} product={p} />
         ))}
       </div>
@@ -201,7 +195,7 @@ export default function HomeProducts() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
-        {products.slice(12).map((p) => (
+        {products.slice(24).map((p) => (
           <ProductCard key={p._id} product={p} />
         ))}
       </div>
