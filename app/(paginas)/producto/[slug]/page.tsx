@@ -5,9 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ShoppingCart, Minus, Plus, Play } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Play, CheckCircle } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { fetchWithCache } from "@/lib/cache";
+import Accordion from "@/Components/Accordion/Accordion";
 import ProductCard from "@/Components/ProductCard/ProductCard";
 
 type Product = {
@@ -436,29 +437,27 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {/* Descripción completa */}
+      {/* Descripción completa - ACCORDION */}
       {product.descripcionCompleta && (
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Descripción Completa</h2>
+        <Accordion title="Descripción Completa" defaultOpen={true}>
           <p className="text-gray-700 leading-relaxed whitespace-pre-line">
             {product.descripcionCompleta}
           </p>
-        </div>
+        </Accordion>
       )}
 
-      {/* Características */}
+      {/* Características - ACCORDION */}
       {product.caracteristicas && product.caracteristicas.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Características</h2>
+        <Accordion title="Características" defaultOpen={true}>
           <ul className="space-y-3">
             {product.caracteristicas.map((carac, index) => (
               <li key={index} className="flex items-start gap-3">
-                <span className="text-indigo-600 text-xl mt-1">•</span>
+                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                 <span className="text-gray-700">{carac}</span>
               </li>
             ))}
           </ul>
-        </div>
+        </Accordion>
       )}
 
       {/* Información adicional */}

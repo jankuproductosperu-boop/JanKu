@@ -13,8 +13,8 @@ type Product = {
   nombre: string;
   precio: number;
   descripcion?: string;
-  categoria?: string;
-  categoriaSlug?: string;
+  categorias?: string[];           
+  categoriaSlugs?: string[]; 
   stock?: "Disponible" | "Limitado" | "Agotado";
   imagenUrl?: string;
   slug?: string;
@@ -78,7 +78,7 @@ export default function CategoryPage() {
         }
 
         const filtered = productsData.filter(
-          (p: Product) => p.categoriaSlug === categorySlug
+          (p: Product) => p.categoriaSlugs?.includes(categorySlug)
         );
         setProducts(filtered);
         setFilteredProducts(filtered);

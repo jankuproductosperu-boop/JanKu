@@ -12,8 +12,8 @@ type Product = {
   nombre: string;
   precio: number;
   descripcion?: string;
-  categoria?: string;
-  categoriaSlug?: string;
+  categorias?: string[];        
+  categoriaSlugs?: string[];
   stock?: "Disponible" | "Limitado" | "Agotado";
   imagenUrl?: string;
   slug?: string;
@@ -83,7 +83,7 @@ export default function AdminPage() {
   
   // PRODUCTS
   const [form, setForm] = useState({
-  nombre: "", precio: "", descripcion: "", categoria: "", categoriaSlug: "", stock: "Disponible", 
+  nombre: "", precio: "", descripcion: "", categorias: "",  stock: "Disponible", 
   imagenUrl: "", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
   metaTitulo: "", metaDescripcion: "", metaImagen: "", mostrarEnHome: false,
   imagenesAdicionales: "", whatsappLink: "", videoUrl: "" // ✅ AGREGAR
@@ -289,15 +289,21 @@ const stockStats = {
   }
   
     // Encontrar la categoría seleccionada para obtener su slug
-    const selectedCat = categories.find(c => c.nombre === form.categoria);
+    const selectedCategories = form.categorias
+      ? form.categorias.split(',').filter(c => c.trim())
+      : [];
+
+    const selectedSlugs = selectedCategories
+      .map(catName => categories.find(c => c.nombre === catName)?.slug)
+      .filter(Boolean);
 
     const productData = {
       nombre: form.nombre.trim(),
       precio: Number(form.precio),
       descripcion: form.descripcion?.trim() || "",
       descripcionCompleta: form.descripcionCompleta?.trim() || "",
-      categoria: form.categoria?.trim() || "",
-      categoriaSlug: selectedCat?.slug || "",
+      categorias: selectedCategories,
+      categoriaSlugs: selectedSlugs,
       stock: form.stock,
       imagenUrl: form.imagenUrl?.trim() || "",
       imagenesAdicionales: form.imagenesAdicionales ? form.imagenesAdicionales.split('\n').filter(url => url.trim()) : [],
@@ -334,7 +340,7 @@ const stockStats = {
 
       alert(isEditing ? "Producto actualizado" : "Producto agregado");
       setForm({ 
-        nombre: "", precio: "", descripcion: "", categoria: "", categoriaSlug: "", stock: "Disponible", 
+        nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible", 
         imagenUrl: "", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
         metaTitulo: "", metaDescripcion: "", metaImagen: "", mostrarEnHome: false,
         imagenesAdicionales: "", whatsappLink: "", videoUrl: "" 
@@ -355,8 +361,7 @@ const stockStats = {
       precio: product.precio.toString(),
       descripcion: product.descripcion || "",
       descripcionCompleta: product.descripcionCompleta || "",
-      categoria: product.categoria || "",
-      categoriaSlug: product.categoriaSlug || "",
+      categorias: Array.isArray(product.categorias) ? product.categorias.join(',') : "",
       stock: product.stock || "Disponible",
       imagenUrl: product.imagenUrl || "",
       imagenesAdicionales: product.imagenesAdicionales?.join('\n') || "",
@@ -392,7 +397,7 @@ const stockStats = {
         setSelectedProduct(null);
         setIsEditing(false);
         setForm({ 
-          nombre: "", precio: "", descripcion: "", categoria: "", categoriaSlug: "", stock: "Disponible", 
+          nombre: "", precio: "", descripcion: "", categorias: "",  stock: "Disponible", 
           imagenUrl: "", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
           metaTitulo: "", metaDescripcion: "", metaImagen: "", mostrarEnHome: false,
           imagenesAdicionales: "", whatsappLink: "", videoUrl: ""
@@ -410,7 +415,7 @@ const stockStats = {
     setIsEditing(false);
     setSelectedProduct(null);
     setForm({ 
-      nombre: "", precio: "", descripcion: "", categoria: "", categoriaSlug: "", stock: "Disponible", 
+      nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible", 
       imagenUrl: "", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
       metaTitulo: "", metaDescripcion: "", metaImagen: "", mostrarEnHome: false,
       imagenesAdicionales: "", whatsappLink: "", videoUrl: ""
@@ -816,7 +821,7 @@ const stockStats = {
   const validProducts = Array.isArray(products) ? products : [];
   // Filtrar por categoría si hay una seleccionada
   let productsToShow = selectedCategory 
-    ? validProducts.filter(p => p.categoriaSlug === selectedCategory)
+    ? validProducts.filter(p => p.categoriaSlugs?.includes(selectedCategory))
     : validProducts;
   // Calcular paginación
   const indexOfLastProduct = currentPage * ITEMS_PER_PAGE;
@@ -1123,7 +1128,7 @@ const stockStats = {
                     setIsEditing(false);
                     setSelectedProduct(null);
                     setForm({ 
-                      nombre: "", precio: "", descripcion: "", categoria: "", categoriaSlug: "", stock: "Disponible", 
+                      nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible", 
                       imagenUrl: "", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
                       metaTitulo: "", metaDescripcion: "", metaImagen: "", mostrarEnHome: false,
                       imagenesAdicionales: "", whatsappLink: "", videoUrl: ""
@@ -1157,13 +1162,87 @@ const stockStats = {
                       <input name="precio" type="number" step="0.01" value={form.precio} onChange={handleChange} placeholder="0.00" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Categoría</label>
-                      <select name="categoria" value={form.categoria} onChange={handleChange} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                        <option value="">Sin categoría</option>
-                        {categories.filter(c => c.activo).map(c => (
-                          <option key={c._id} value={c.nombre}>{c.nombre}</option>
-                        ))}
-                      </select>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Categorías {form.categorias && form.categorias.split(',').filter(c => c).length > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full font-bold">
+                            {form.categorias.split(',').filter(c => c).length} seleccionadas
+                          </span>
+                        )}
+                      </label>
+                      
+                      <details className="border border-gray-300 rounded-lg overflow-hidden bg-white">
+                        <summary className="px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition font-medium text-gray-700 flex items-center justify-between">
+                          <span>
+                            {form.categorias && form.categorias.split(',').filter(c => c).length > 0
+                              ? form.categorias.split(',').filter(c => c).join(', ')
+                              : 'Seleccionar categorías...'}
+                          </span>
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </summary>
+                        
+                        <div className="p-4 max-h-64 overflow-y-auto">
+                          {categories.filter(c => c.activo).length === 0 ? (
+                            <p className="text-gray-500 text-sm text-center py-4">No hay categorías disponibles</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {categories.filter(c => c.activo).map(cat => {
+                                const isSelected = form.categorias?.split(',').filter(c => c).includes(cat.nombre) || false;
+                                return (
+                                  <label 
+                                    key={cat._id} 
+                                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
+                                      isSelected 
+                                        ? 'bg-indigo-50 border-2 border-indigo-500' 
+                                        : 'hover:bg-gray-50 border-2 border-transparent'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        const current = form.categorias?.split(',').filter(c => c) || [];
+                                        const updated = e.target.checked
+                                          ? [...current, cat.nombre]
+                                          : current.filter(c => c !== cat.nombre);
+                                        setForm({ ...form, categorias: updated.join(',') });
+                                      }}
+                                      className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                    <div className="flex-1">
+                                      <span className={`font-medium text-sm ${isSelected ? 'text-indigo-900' : 'text-gray-700'}`}>
+                                        {cat.nombre}
+                                      </span>
+                                      {cat.descripcion && (
+                                        <p className="text-xs text-gray-500 mt-0.5">{cat.descripcion}</p>
+                                      )}
+                                    </div>
+                                    {isSelected && (
+                                      <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                      
+                      {form.categorias && form.categorias.split(',').filter(c => c).length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, categorias: '' })}
+                          className="mt-2 text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Limpiar selección
+                        </button>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
@@ -1293,7 +1372,13 @@ const stockStats = {
                         {p.slug && <p className="text-xs text-gray-500 mb-2">🔗 /producto/{p.slug}</p>}
                         {p.descripcion && <p className="text-xs md:text-sm text-gray-600 mb-2 line-clamp-2">{p.descripcion}</p>}
                         <div className="flex flex-wrap gap-2 mb-3">
-                          {p.categoria && <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">{p.categoria}</span>}
+                          {Array.isArray(p.categorias) && p.categorias.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {(p.categorias as string[]).map((cat: string, idx: number) => (
+                                <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">{cat}</span>
+                              ))}
+                            </div>
+                          )}
                           {p.stock && (
                             <span className={`px-2 py-1 text-xs rounded-full font-medium ${p.stock === "Disponible" ? "bg-green-100 text-green-700" : p.stock === "Limitado" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
                               {p.stock}
