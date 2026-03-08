@@ -9,7 +9,7 @@ export default function NosotrosSection({
   marca = 'JanKu',
   badge = 'Envíos desde Perú',
   ctaText = 'Ver productos',
-  ctaHref = '/productos',
+  ctaHref = '/',
 }) {
   return (
     <section className="bg-gradient-to-b from-[#0b0f2e] to-[#12163a] py-24 px-6 min-h-screen flex items-center">

@@ -439,7 +439,7 @@ export default function ProductPage() {
 
       {/* Descripción completa - ACCORDION */}
       {product.descripcionCompleta && (
-        <Accordion title="Descripción Completa" defaultOpen={true}>
+        <Accordion title="Descripción Completa" defaultOpen={false}>
           <p className="text-gray-700 leading-relaxed whitespace-pre-line">
             {product.descripcionCompleta}
           </p>
@@ -448,7 +448,7 @@ export default function ProductPage() {
 
       {/* Características - ACCORDION */}
       {product.caracteristicas && product.caracteristicas.length > 0 && (
-        <Accordion title="Características" defaultOpen={true}>
+        <Accordion title="Características" defaultOpen={false}>
           <ul className="space-y-3">
             {product.caracteristicas.map((carac, index) => (
               <li key={index} className="flex items-start gap-3">

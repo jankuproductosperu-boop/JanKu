@@ -9,7 +9,7 @@ import {
   Home,
   Gamepad2,
   Brush,
-  Glasses, Tag, Box
+  Glasses, Tag, Box, Pencil
 } from "lucide-react";
 
 export default function CarruselCategorias() {
@@ -52,17 +52,17 @@ export default function CarruselCategorias() {
       url: "/accesorios",
     },
     {
-      nombre: "Ofertas",
-      descripcion: "Productos en promoción y descuentos especiales.",
-      iconoGray: <Tag className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-gray-500" />,
-      iconoColor: <Tag className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-purple-500" />,
-      url: "/ofertas",
+      nombre: "Articulos Escolares",
+      descripcion: "Variedad de articulos escolares y utiles.",
+      iconoGray: <Pencil className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-gray-500" />,
+      iconoColor: <Pencil className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-yellow-500" />,
+      url: "/articulo-de-colegio",
     },
     {
       nombre: "Otros",
       descripcion: "Complementos útiles y modernos para tu día a día.",
       iconoGray: <Box className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-gray-500" />,
-      iconoColor: <Box className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-purple-500" />,
+      iconoColor: <Box className="w-12 h-12 sm:w-15 sm:h-15 md:w-18 md:h-18 text-black-500" />,
       url: "/otros",
     },
   ];

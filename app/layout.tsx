@@ -9,6 +9,7 @@ import FloatingCartButton from "@/Components/Cart/FloatingCartButton";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import ErrorBoundary from "@/Components/ErrorBoundary/ErrorBoundary";
 import GoogleAnalytics from "@/Components/GoogleAnalytics/GoogleAnalytics";
+import FloatingWhatsApp from "@/Components/FloatingWhatsApp/FloatingWhatsApp";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,8 +92,11 @@ export default function RootLayout({
         <CartProvider>
           <FavoritesProvider> 
             <Navbar /> 
+            <div className="pt-[130px]">
             {children}
+            </div>
           </FavoritesProvider>
+          <FloatingWhatsApp />  
           <FloatingCartButton />
           <CardSidebar />
         </CartProvider>

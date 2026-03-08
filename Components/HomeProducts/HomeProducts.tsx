@@ -199,12 +199,6 @@ export default function HomeProducts() {
           <ProductCard key={p._id} product={p} />
         ))}
       </div>
-
-      <div className="flex justify-center">
-        <button className="bg-blue-900 text-white px-6 md:px-8 py-2 rounded-md text-xs md:text-sm hover:bg-blue-800 transition-all">
-          Ver más
-        </button>
-      </div>
     </section>
   );
 }

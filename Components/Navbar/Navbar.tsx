@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, ShoppingCart, Heart, ChevronDown, Facebook, Instagram, Twitter, Youtube, Music2, Truck, Plane, BadgePercent, User, Menu, X } from "lucide-react";
 import { fetchWithCache } from "@/lib/cache";
 import { useFavorites } from "@/context/FavoritesContext";
+import { useScrollDirection } from "@/lib/useScrollDirection";
 
 type Category = {
   _id: string;
@@ -15,6 +16,7 @@ type Category = {
 };
 
 export default function Navbar() {
+  const { scrollDirection, isAtTop } = useScrollDirection();
   const router = useRouter();
   const [openMobile, setOpenMobile] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -55,9 +57,10 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="w-full text-white font-sans">
+    <header className={`w-full text-white font-sans fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${scrollDirection === "down" ? "-translate-y-full" : "translate-y-0"}`}>
       {/* Top Bar */}
-      <div className="w-full bg-[#241B57] flex justify-around items-center py-2 text-sm text-white">
+      {/* Top Bar - SOLO SE MUESTRA EN EL TOP DE LA PÁGINA */}
+      <div className={`w-full bg-[#241B57] flex justify-around items-center text-sm text-white transition-all duration-300 overflow-hidden ${isAtTop ? "h-auto py-2 opacity-100" : "h-0 py-0 opacity-0"}`}>
         <div className="flex items-center gap-2">
           <Truck className="w-6 h-6" />
           <div className="leading-tight hidden sm:block">
@@ -108,19 +111,19 @@ export default function Navbar() {
           
           <div className="flex items-center gap-4 text-white text-lg">
             <div className="max-[480px]:hidden flex items-center gap-4">
-              <a href="URL_DE_TU_FACEBOOK" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.facebook.com/jankuproductos/" target="_blank" rel="noopener noreferrer">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="URL_DE_TU_INSTAGRAM" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.instagram.com/janku_productos?igsh=M2pmNXFxMTN1cGQ1" target="_blank" rel="noopener noreferrer">
                 <Instagram className="w-5 h-5" />
               </a>
               <a href="URL_DE_TU_TWITTER" target="_blank" rel="noopener noreferrer">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="URL_DE_TU_YOUTUBE" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.youtube.com/@JanKuProductos" target="_blank" rel="noopener noreferrer">
                 <Youtube className="w-5 h-5" />
               </a>
-              <a href="URL_DE_TU_MUSICA" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.tiktok.com/@jankuproductos?_r=1&_t=ZS-94VFUQs3mDc" target="_blank" rel="noopener noreferrer">
                 <Music2 className="w-5 h-5" />
               </a>
             </div>
