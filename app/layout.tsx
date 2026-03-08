@@ -92,7 +92,7 @@ export default function RootLayout({
         <CartProvider>
           <FavoritesProvider> 
             <Navbar /> 
-            <div className="pt-[130px]">
+            <div className="pt-[150px]">
             {children}
             </div>
           </FavoritesProvider>
