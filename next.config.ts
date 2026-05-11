@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
+      // Mantenido para el logo del negocio
       {
         protocol: 'https',
         hostname: 'i.postimg.cc',
@@ -14,38 +15,23 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'postimg.cc',
       },
-      {
-        protocol: 'https',
-        hostname: 'imgur.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'i.imgur.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.jan-ku.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.youtube.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cloudinary.com',
-      },
+      // Cloudinary — dos entradas consolidadas en una
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
+      // Tu CDN propio
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: 'img.jan-ku.com',
       },
+      // YouTube thumbnails para videos de productos
       {
         protocol: 'https',
-        hostname: 'cdn.shopify.com',
+        hostname: 'img.youtube.com',
       },
+      // ELIMINADOS: imgur, unsplash, cdn.shopify — ya no se usan
+      // con el sistema Cloudinary
     ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -56,11 +42,67 @@ const nextConfig: NextConfig = {
   // React Strict Mode
   reactStrictMode: true,
 
-  // PoweredBy header (remover para producción)
+  // Ocultar que el sitio usa Next.js
   poweredByHeader: false,
 
-  // Generar source maps en producción (desactivar para reducir tamaño)
+  // Source maps desactivados en producción
   productionBrowserSourceMaps: false,
+
+  // ── Headers de seguridad HTTP ──────────────────────────────────────────
+  async headers() {
+    return [
+      {
+        // Aplica a todas las rutas
+        source: '/(.*)',
+        headers: [
+          // Evita que el navegador adivine el tipo de contenido
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          // Evita que tu sitio sea embebido en iframes (clickjacking)
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          // Fuerza HTTPS por 1 año en producción
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          // Controla qué información de referrer se envía
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          // Desactiva funciones del navegador que no necesitas
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+          // Protección XSS básica para browsers antiguos
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+      {
+        // Sin caché para todas las APIs
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
