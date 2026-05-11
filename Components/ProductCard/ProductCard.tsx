@@ -9,13 +9,16 @@
 
   // Función inline para no depender de la lib en el cliente directamente
   function getCloudinaryUrl(
-    publicIdOrUrl: string,
-    options: { width?: number; height?: number } = {}
-  ): string {
-    // Si ya es una URL completa (legacy), devolverla tal cual
-    if (publicIdOrUrl.startsWith("http")) {
-      return publicIdOrUrl;
-    }
+  publicIdOrUrl: string,
+  options: { width?: number; height?: number } = {}
+): string {
+  // Evitar error si viene vacío o undefined
+  if (!publicIdOrUrl || publicIdOrUrl.trim() === "") return "";
+  
+  // Si ya es una URL completa (legacy), devolverla tal cual
+  if (publicIdOrUrl.startsWith("http")) {
+    return publicIdOrUrl;
+  }
 
     // Si es un public_id de Cloudinary, generar URL con transformaciones
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
