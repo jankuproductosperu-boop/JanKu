@@ -2,7 +2,7 @@
 
   import Image from "next/image";
   import Link from "next/link";
-  import { useState } from "react";
+  import { useState, useEffect } from "react";
   import { ShoppingCart, Heart } from "lucide-react";
   import { useCart } from "@/context/CartContext";
   import { useFavorites } from "@/context/FavoritesContext";
@@ -82,6 +82,9 @@
     })();
 
     const [currentImage, setCurrentImage] = useState(mainImage);
+    useEffect(() => {
+      setCurrentImage(mainImage);
+    }, [mainImage]);
     const [showAddedMessage, setShowAddedMessage] = useState(false);
     const [showStockAlert, setShowStockAlert] = useState(false);
     const [showFavoriteMessage, setShowFavoriteMessage] = useState(false);

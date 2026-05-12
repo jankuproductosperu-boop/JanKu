@@ -677,11 +677,28 @@ export default function AdminPage() {
     });
     // Cargar imágenes existentes en el uploader
     if (product.imagenes && product.imagenes.length > 0) {
-      setProductImages(product.imagenes.map(pid => ({
-        public_id: pid, secure_url: getCloudinaryUrl(pid, 300),
-        isMain: pid === product.imagenPrincipal, status: "done" as const,
+      // Producto con Cloudinary — usar SOLO imagenes[], ignorar imagenUrl legacy
+      setProductImages(product.imagenes.map((pid, index) => ({
+        public_id: pid,
+        secure_url: getCloudinaryUrl(pid, 300),
+        // Si no hay imagenPrincipal definida, la primera es la principal
+        isMain: product.imagenPrincipal
+          ? pid === product.imagenPrincipal
+          : index === 0,
+        status: "done" as const,
       })));
-    } else { setProductImages([]); }
+    } else if (product.imagenUrl) {
+      // Producto legacy sin Cloudinary — mostrar imagenUrl
+      setProductImages([{
+        public_id: "",
+        secure_url: product.imagenUrl,
+        previewUrl: product.imagenUrl,
+        isMain: true,
+        status: "done" as const,
+      }]);
+    } else {
+      setProductImages([]);
+    }
     setIsEditing(true); setShowProductForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -1163,6 +1180,7 @@ export default function AdminPage() {
                       <span className="text-xs text-gray-500">drag & drop · hasta 10 · máx 5MB · la portada = meta image automática</span>
                     </div>
                     <ImageUploader
+                      key={selectedProduct?._id || "new"}
                       existingImages={productImages.filter(i => i.status === "done" && i.public_id).map(i => i.public_id)}
                       imagenPrincipalActual={productImages.find(i => i.isMain)?.public_id || ""}
                       onImagesChange={setProductImages}
