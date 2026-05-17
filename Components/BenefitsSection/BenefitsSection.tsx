@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 export default function IntroJanKuSection({ 
   marca = 'JanKu',
-  imagenUrl = 'https://img.jan-ku.com/general/benefitsection-img.webp' // ✅ Nueva prop para la imagen
+  imagenUrl = 'https://i.postimg.cc/bJ08pV2g/benefitsection-img.webp' // ✅ Nueva prop para la imagen
 }) {
   return (
     <section className="bg-white py-24 px-6 overflow-hidden">

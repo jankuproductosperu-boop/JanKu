@@ -78,9 +78,9 @@ export default function CarruselCategorias() {
 
   // Slider automático (promociones)
 const promoImages = [
-    "https://img.jan-ku.com/general/banner-header-02.webp",
-    "https://img.jan-ku.com/general/banner-header-01.webp",
-    "https://img.jan-ku.com/general/banner-header-03.webp",
+    "https://i.postimg.cc/Y2fqH01Z/banner-header-01.webp",
+    "https://i.postimg.cc/ryCFksSv/banner-header-02.webp",
+    "https://i.postimg.cc/v8LHsTWC/banner-header-03.webp",
 ];
 
 const [currentSlide, setCurrentSlide] = React.useState(0);

@@ -5,7 +5,7 @@ export const metadata = {
 };
 
 export default function NosotrosPage() {
-  const imagenUrl = "https://img.jan-ku.com/general/nosotros-img.webp"; // ✅ Coloca aquí la URL de tu imagen
+  const imagenUrl = "https://i.postimg.cc/2yzY6dQB/nosotros-img.webp";
 
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
