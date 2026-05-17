@@ -15,7 +15,6 @@ export async function GET() {
 
     return NextResponse.json({ 
       authenticated: true,
-      user: decoded 
     });
 
   } catch (error) {

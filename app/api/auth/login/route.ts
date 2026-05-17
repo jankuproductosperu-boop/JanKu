@@ -11,7 +11,7 @@ import { connectDB } from "@/lib/mongodb";
 import AdminUser from "@/models/AdminUser";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import LoginBlock from "@/models/LoginBlock";
 function getClientIP(headersList: Headers): string {
   const forwarded = headersList.get("x-forwarded-for");
   const realIp = headersList.get("x-real-ip");
@@ -34,8 +34,19 @@ export async function POST(request: Request) {
     const clientIP = getClientIP(headersList);
 
     // ── 1. Verificar si la IP está bloqueada ─────────────────────────────
-    const blockStatus = loginTracker.isBlocked(clientIP);
-    if (blockStatus.blocked) {
+    let blockStatus = loginTracker.isBlocked(clientIP);
+
+  // Si no está en memoria (servidor reiniciado), verificar MongoDB
+  if (!blockStatus.blocked) {
+    await connectDB();
+    const dbBlock = await LoginBlock.findOne({ ip: clientIP });
+    if (dbBlock?.blockedUntil && Date.now() < dbBlock.blockedUntil) {
+      const remainingTime = Math.ceil((dbBlock.blockedUntil - Date.now()) / 1000 / 60);
+      blockStatus = { blocked: true, remainingTime };
+    }
+  }
+
+  if (blockStatus.blocked) {
       console.warn(`🚫 IP bloqueada intentó acceder: ${clientIP}`);
       return NextResponse.json(
         {
@@ -71,6 +82,19 @@ export async function POST(request: Request) {
     // Limitar longitud para prevenir ataques
     if (username.length > 50 || password.length > 200) {
       loginTracker.recordAttempt(clientIP);
+      await LoginBlock.findOneAndUpdate(
+      { ip: clientIP },
+      {
+        $inc: { count: 1 },
+        $set: {
+          lastAttempt: Date.now(),
+          blockedUntil: loginTracker.isBlocked(clientIP).blocked
+            ? Date.now() + 15 * 60 * 1000
+            : null,
+        },
+      },
+      { upsert: true }
+    );
       return NextResponse.json(
         { error: "Usuario o contraseña incorrectos" },
         { status: 401, headers: SECURITY_HEADERS }
@@ -86,6 +110,19 @@ export async function POST(request: Request) {
 
     if (!user) {
       loginTracker.recordAttempt(clientIP);
+      await LoginBlock.findOneAndUpdate(
+        { ip: clientIP },
+        {
+          $inc: { count: 1 },
+          $set: {
+            lastAttempt: Date.now(),
+            blockedUntil: loginTracker.isBlocked(clientIP).blocked
+              ? Date.now() + 15 * 60 * 1000
+              : null,
+          },
+        },
+        { upsert: true }
+      );
       const remaining = loginTracker.getRemainingAttempts(clientIP);
       console.warn(`❌ Usuario no encontrado: "${username}" desde IP: ${clientIP}`);
       return NextResponse.json(
@@ -101,6 +138,19 @@ export async function POST(request: Request) {
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       loginTracker.recordAttempt(clientIP);
+      await LoginBlock.findOneAndUpdate(
+        { ip: clientIP },
+        {
+          $inc: { count: 1 },
+          $set: {
+            lastAttempt: Date.now(),
+            blockedUntil: loginTracker.isBlocked(clientIP).blocked
+              ? Date.now() + 15 * 60 * 1000
+              : null,
+          },
+        },
+        { upsert: true }
+      );
       const remaining = loginTracker.getRemainingAttempts(clientIP);
       console.warn(`❌ Contraseña incorrecta para "${username}" desde IP: ${clientIP}`);
       return NextResponse.json(
@@ -114,6 +164,7 @@ export async function POST(request: Request) {
 
     // ── 5. Login exitoso ─────────────────────────────────────────────────
     loginTracker.reset(clientIP);
+    await LoginBlock.deleteOne({ ip: clientIP });
     await AdminUser.findByIdAndUpdate(user._id, { ultimoAcceso: new Date() });
 
     const token = jwt.sign(
