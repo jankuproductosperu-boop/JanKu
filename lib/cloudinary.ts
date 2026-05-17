@@ -31,7 +31,8 @@
     ): string {
     const cat = generateSlug(categoriaSlug || "general");
     const prod = generateSlug(productoSlug || "producto");
-    return `productos/${cat}/${prod}-${index + 1}`;
+    const ts = Date.now();
+    return `productos/${cat}/${prod}-${index + 1}-${ts}`;
     }
 
     export function generateBannerPublicId(

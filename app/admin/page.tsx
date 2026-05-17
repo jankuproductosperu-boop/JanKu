@@ -163,6 +163,8 @@ function useImageUpload() {
         fd.append("nombreProducto", nombreProducto);
         fd.append("categoriaSlug", categoriaSlug);
         fd.append("tags", tags.join(","));
+        const existingCount = images.filter(i => i.status === "done" && i.public_id && i.public_id.trim() !== "").length;
+        fd.append("existingCount", existingCount.toString());
         pending.forEach((i) => i.file && fd.append("images", i.file));
         setUploadProgress(30);
         const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -185,20 +187,24 @@ function useImageUpload() {
       } finally { setIsUploading(false); setUploadProgress(0); }
     }
 
-    const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const ids = all.filter((i) => i.public_id).map((i) => i.public_id);
-    const mainImg = all.find((i) => i.isMain && i.public_id);
-    const imagenPrincipal = mainImg?.public_id || ids[0] || "";
-    const additionalIds = ids.filter((id) => id !== imagenPrincipal);
-    const base = `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto`;
-    return {
-      imagenes: ids,
-      imagenPrincipal,
-      imagenUrl: imagenPrincipal ? `${base}/${imagenPrincipal}` : "",
-      imagenesAdicionales: additionalIds.map((id) => `${base}/${id}`),
-    };
+  const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const cloudinaryImages = all.filter((i) => i.public_id && i.public_id.trim() !== "");
+  const legacyImage = all.find((i) => (!i.public_id || i.public_id.trim() === "") && (i.secure_url || i.previewUrl));
+  const ids = cloudinaryImages.map((i) => i.public_id);
+  const mainCloudinary = cloudinaryImages.find((i) => i.isMain);
+  const imagenPrincipal = mainCloudinary?.public_id || ids[0] || "";
+  const additionalIds = ids.filter((id) => id !== imagenPrincipal);
+  const base = `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto`;
+  const imagenUrl = imagenPrincipal
+    ? `${base}/${imagenPrincipal}`
+    : legacyImage?.secure_url || legacyImage?.previewUrl || "";
+  return {
+    imagenes: ids,
+    imagenPrincipal,
+    imagenUrl,
+    imagenesAdicionales: additionalIds.map((id) => `${base}/${id}`),
   };
-
+  };
   return { uploadPendingImages, isUploading, uploadProgress, uploadError };
 }
 
@@ -232,9 +238,11 @@ function ImageUploader({
         status: "done" as const,
       }));
       setImages(existing);
+    } else {
+      setImages([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [existingImages.join(","), imagenPrincipalActual]);
 
     // Notificar al padre DESPUÉS del render, no durante
     useEffect(() => {
@@ -510,6 +518,7 @@ export default function AdminPage() {
 
   // ── Cloudinary: productos ──
   const [productImages, setProductImages] = useState<UploadedImage[]>([]);
+  const [uploaderKey, setUploaderKey] = useState("new");
   const { uploadPendingImages, isUploading, uploadProgress, uploadError } = useImageUpload();
 
   // ── Cloudinary: banners ──
@@ -607,6 +616,7 @@ export default function AdminPage() {
   const resetProductForm = () => {
     setForm({ nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "", metaTitulo: "", metaDescripcion: "", mostrarEnHome: false, whatsappLink: "", videoUrl: "", tags: "" });
     setProductImages([]); setIsEditing(false); setSelectedProduct(null);
+    setUploaderKey("new-" + Date.now());
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -622,7 +632,6 @@ export default function AdminPage() {
 
       // 1. Subir imágenes pendientes a Cloudinary
       const imageResult = await uploadPendingImages(productImages, form.nombre, firstCategorySlug, tagsList);
-
       const selectedSlugs = selectedCategories.map(n => categories.find(c => c.nombre === n)?.slug).filter(Boolean);
 
       const productData = {
@@ -631,7 +640,7 @@ export default function AdminPage() {
         descripcionCompleta: form.descripcionCompleta?.trim() || "",
         categorias: selectedCategories, categoriaSlugs: selectedSlugs, stock: form.stock,
         // Cloudinary — public_ids
-        imagenes: imageResult.imagenes,
+        imagenes: imageResult.imagenes.filter(Boolean),
         imagenPrincipal: imageResult.imagenPrincipal,
         // Legacy — URLs completas para CartSidebar, FavoritosPage, etc.
         imagenUrl: imageResult.imagenUrl,
@@ -649,7 +658,16 @@ export default function AdminPage() {
 
       let response;
       if (isEditing && selectedProduct) {
-        response = await fetch(`/api/products/${selectedProduct._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(productData) });
+        const bodyString = JSON.stringify(productData);
+          if (!bodyString) {
+            alert("Error: no se pudo serializar el producto");
+            return;
+          }
+          response = await fetch(`/api/products/${selectedProduct._id}`, { 
+            method: "PUT", 
+            headers: { "Content-Type": "application/json" }, 
+            body: bodyString 
+          });
       } else {
         response = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(productData) });
       }
@@ -700,6 +718,7 @@ export default function AdminPage() {
       setProductImages([]);
     }
     setIsEditing(true); setShowProductForm(true);
+    setUploaderKey(product._id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -1180,7 +1199,7 @@ export default function AdminPage() {
                       <span className="text-xs text-gray-500">drag & drop · hasta 10 · máx 5MB · la portada = meta image automática</span>
                     </div>
                     <ImageUploader
-                      key={selectedProduct?._id || "new"}
+                      key={uploaderKey}
                       existingImages={productImages.filter(i => i.status === "done" && i.public_id).map(i => i.public_id)}
                       imagenPrincipalActual={productImages.find(i => i.isMain)?.public_id || ""}
                       onImagesChange={setProductImages}

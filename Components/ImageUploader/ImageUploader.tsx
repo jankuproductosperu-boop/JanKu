@@ -55,7 +55,7 @@
             })
         );
         setImages(existingUploaded);
-        onImagesChange(existingUploaded);
+        setTimeout(() => onImagesChange(existingUploaded), 0);
         }
     }, []);
 

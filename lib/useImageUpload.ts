@@ -103,10 +103,10 @@
 
         // Construir resultado final en el orden correcto
         const orderedPublicIds = allImages
-        .filter((img) => img.public_id)
+        .filter((img) => img.public_id && img.public_id.trim() !== "")
         .map((img) => img.public_id);
 
-        const mainImage = allImages.find((img) => img.isMain && img.public_id);
+        const mainImage = allImages.find((img) => img.isMain && img.public_id && img.public_id.trim() !== "");
         const imagenPrincipal = mainImage?.public_id || orderedPublicIds[0] || "";
 
         const additionalIds = orderedPublicIds.filter((id) => id !== imagenPrincipal);

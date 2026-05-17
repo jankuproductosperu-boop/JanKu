@@ -24,6 +24,7 @@
 
         // Campos para productos
         const nombreProducto = formData.get("nombreProducto") as string;
+        const existingCount = parseInt(formData.get("existingCount") as string || "0");
         const categoriaSlug = formData.get("categoriaSlug") as string;
         const tags = formData.get("tags") as string;
 
@@ -72,7 +73,7 @@
             // producto — incluye categoría dinámica
             const productoSlug = generateSlug(nombreProducto || "producto");
             const categoriaSlugClean = generateSlug(categoriaSlug || "general");
-            publicId = generatePublicId(categoriaSlugClean, productoSlug, index);
+            publicId = generatePublicId(categoriaSlugClean, productoSlug, existingCount + index);
             tagsList.push(categoriaSlugClean, productoSlug);
         }
 
