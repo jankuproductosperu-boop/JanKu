@@ -10,7 +10,7 @@ import { FavoritesProvider } from "@/context/FavoritesContext";
 import ErrorBoundary from "@/Components/ErrorBoundary/ErrorBoundary";
 import GoogleAnalytics from "@/Components/GoogleAnalytics/GoogleAnalytics";
 import FloatingWhatsApp from "@/Components/FloatingWhatsApp/FloatingWhatsApp";
-
+import { UserProvider } from "@/context/UserContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -89,6 +89,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <GoogleAnalytics />
         <ErrorBoundary>
+        <UserProvider>
         <CartProvider>
           <FavoritesProvider> 
             <Navbar /> 
@@ -100,6 +101,7 @@ export default function RootLayout({
           <FloatingCartButton />
           <CardSidebar />
         </CartProvider>
+        </UserProvider>
         <Footer />
         </ErrorBoundary>
       </body>
