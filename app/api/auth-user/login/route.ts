@@ -12,12 +12,16 @@ import {
   obtenerIP,
 } from "@/lib/authUtils";
 
+// ── Config de bloqueo por CUENTA (independiente del bloqueo por IP) ──────────
+const MAX_INTENTOS_CUENTA = 5;
+const BLOQUEO_CUENTA_MS = 15 * 60 * 1000; // 15 minutos
+
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers();
     const clientIP = obtenerIP(headersList);
 
-    // ── 1. Rate limiting doble capa (memoria + MongoDB) ───────────────────
+    // ── 1. Rate limiting doble capa (memoria + MongoDB) — por IP ───────────
     let bloqueo = userRateLimiter.estaBloqueado(clientIP);
 
     if (!bloqueo.bloqueado) {
@@ -71,8 +75,8 @@ export async function POST(request: NextRequest) {
     await connectDB();
     const user = await User.findOne({ email: email.toLowerCase().trim(), activo: true });
 
-    // Función para registrar intento fallido (memoria + MongoDB)
-    const registrarFallo = async () => {
+    // Función para registrar intento fallido por IP (memoria + MongoDB)
+    const registrarFalloIP = async () => {
       userRateLimiter.registrarIntento(clientIP);
       await UserLoginBlock.findOneAndUpdate(
         { ip: clientIP },
@@ -92,7 +96,7 @@ export async function POST(request: NextRequest) {
     // Mismo mensaje si no existe el usuario o la contraseña es incorrecta
     // — evita enumeración de usuarios
     if (!user) {
-      await registrarFallo();
+      await registrarFalloIP();
       const restantes = userRateLimiter.intentosRestantes(clientIP);
       return NextResponse.json(
         { error: "Credenciales incorrectas", intentosRestantes: restantes },
@@ -100,10 +104,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 4. Verificar contraseña ───────────────────────────────────────────
+    // ── 4. Verificar si la CUENTA está bloqueada (independiente de la IP) ──
+    if (user.bloqueadoHasta && user.bloqueadoHasta.getTime() > Date.now()) {
+      const tiempoRestante = Math.ceil((user.bloqueadoHasta.getTime() - Date.now()) / 1000 / 60);
+      console.warn(`🚫 Cuenta bloqueada intentó acceder: ${user.email} desde IP: ${clientIP}`);
+      return NextResponse.json(
+        {
+          error: `Esta cuenta está bloqueada temporalmente. Intenta en ${tiempoRestante} minutos.`,
+          bloqueado: true,
+        },
+        { status: 429, headers: SECURITY_HEADERS }
+      );
+    }
+
+    // ── 5. Verificar contraseña ───────────────────────────────────────────
     const passwordValida = await bcrypt.compare(password, user.password);
     if (!passwordValida) {
-      await registrarFallo();
+      await registrarFalloIP();
+
+      // Incrementar intentos fallidos de LA CUENTA
+      const nuevosIntentos = (user.intentosFallidos || 0) + 1;
+      const actualizacion: Record<string, unknown> = { intentosFallidos: nuevosIntentos };
+      if (nuevosIntentos >= MAX_INTENTOS_CUENTA) {
+        actualizacion.bloqueadoHasta = new Date(Date.now() + BLOQUEO_CUENTA_MS);
+        console.warn(`🔒 Cuenta bloqueada por intentos fallidos: ${user.email}`);
+      }
+      await User.findByIdAndUpdate(user._id, actualizacion);
+
       const restantes = userRateLimiter.intentosRestantes(clientIP);
       return NextResponse.json(
         { error: "Credenciales incorrectas", intentosRestantes: restantes },
@@ -111,7 +138,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 5. Verificar que el email esté confirmado ─────────────────────────
+    // ── 6. Verificar que el email esté confirmado ─────────────────────────
     if (!user.emailVerificado) {
       return NextResponse.json(
         { error: "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja." },
@@ -119,10 +146,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 6. Login exitoso ──────────────────────────────────────────────────
+    // ── 7. Login exitoso — resetear TODO (IP y cuenta) ──────────────────────
     userRateLimiter.resetear(clientIP);
     await UserLoginBlock.deleteOne({ ip: clientIP });
-    await User.findByIdAndUpdate(user._id, { ultimoAcceso: new Date() });
+    await User.findByIdAndUpdate(user._id, {
+      ultimoAcceso: new Date(),
+      intentosFallidos: 0,
+      bloqueadoHasta: null,
+    });
 
     // JWT separado del admin — usa una secret diferente
     const token = jwt.sign(

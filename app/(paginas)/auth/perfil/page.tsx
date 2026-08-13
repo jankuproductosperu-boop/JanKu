@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Mail, MapPin, LogOut, Save, AlertCircle, CheckCircle, ShoppingBag, Heart } from "lucide-react";
+import { User, Mail, MapPin, LogOut, Save, AlertCircle, CheckCircle, ShoppingBag, Heart, Trash2, X } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
 type Perfil = {
@@ -21,7 +21,7 @@ type Perfil = {
 
 export default function PerfilPage() {
   const router = useRouter();
-  const { user, isChecking, isAuthenticated, logout } = useUser();
+  const { user, isChecking, isAuthenticated, logout, setUser } = useUser();
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [form, setForm] = useState({
     nombre: "",
@@ -34,6 +34,12 @@ export default function PerfilPage() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [exito, setExito] = useState(false);
+
+  // ── Eliminar cuenta ──────────────────────────────────────────────────────
+  const [mostrarEliminar, setMostrarEliminar] = useState(false);
+  const [passwordEliminar, setPasswordEliminar] = useState("");
+  const [errorEliminar, setErrorEliminar] = useState("");
+  const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     if (!isChecking && !isAuthenticated) {
@@ -108,6 +114,46 @@ export default function PerfilPage() {
   const handleLogout = async () => {
     await logout();
     router.push("/");
+  };
+
+  // ── Eliminar cuenta ──────────────────────────────────────────────────────
+  const handleEliminarCuenta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorEliminar("");
+
+    if (!passwordEliminar) {
+      setErrorEliminar("Debes ingresar tu contraseña");
+      return;
+    }
+
+    setEliminando(true);
+    try {
+      const res = await fetch("/api/auth-user/profile", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: passwordEliminar }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // La cookie ya se borró en el servidor — limpiamos el estado local también
+        setUser(null);
+        router.push("/");
+      } else {
+        setErrorEliminar(data.error || "No se pudo eliminar la cuenta");
+        setEliminando(false);
+      }
+    } catch {
+      setErrorEliminar("Error de conexión");
+      setEliminando(false);
+    }
+  };
+
+  const cancelarEliminar = () => {
+    setMostrarEliminar(false);
+    setPasswordEliminar("");
+    setErrorEliminar("");
   };
 
   if (isChecking || loading) {
@@ -285,6 +331,78 @@ export default function PerfilPage() {
             Miembro desde {new Date(perfil.createdAt).toLocaleDateString("es-PE", { year: "numeric", month: "long", day: "numeric" })}
           </p>
         )}
+
+        {/* ── Zona de peligro — eliminar cuenta ──────────────────────────── */}
+        <div className="bg-white rounded-2xl shadow-sm border-2 border-red-100 p-6">
+          <h2 className="text-lg font-bold text-red-700 mb-2 flex items-center gap-2">
+            <Trash2 className="w-5 h-5" />
+            Zona de peligro
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Al eliminar tu cuenta se borrarán permanentemente tus datos de perfil y dirección.
+            Esta acción no se puede deshacer.
+          </p>
+
+          {!mostrarEliminar ? (
+            <button
+              onClick={() => setMostrarEliminar(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-lg font-semibold hover:bg-red-100 transition text-sm"
+            >
+              <Trash2 className="w-4 h-4" />
+              Eliminar mi cuenta
+            </button>
+          ) : (
+            <form onSubmit={handleEliminarCuenta} className="space-y-3 bg-red-50/50 border border-red-200 rounded-xl p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm text-red-800 font-medium">
+                  Ingresa tu contraseña para confirmar que quieres eliminar tu cuenta permanentemente.
+                </p>
+                <button
+                  type="button"
+                  onClick={cancelarEliminar}
+                  className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <input
+                type="password"
+                value={passwordEliminar}
+                onChange={(e) => setPasswordEliminar(e.target.value)}
+                placeholder="Tu contraseña"
+                maxLength={200}
+                autoComplete="current-password"
+                className="w-full px-4 py-3 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-sm bg-white"
+              />
+
+              {errorEliminar && (
+                <div className="flex items-center gap-2 bg-red-100 border border-red-300 text-red-700 px-3 py-2 rounded-lg text-xs">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {errorEliminar}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={eliminando}
+                  className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50 text-sm"
+                >
+                  {eliminando ? "Eliminando..." : "Sí, eliminar mi cuenta permanentemente"}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelarEliminar}
+                  disabled={eliminando}
+                  className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition text-sm disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

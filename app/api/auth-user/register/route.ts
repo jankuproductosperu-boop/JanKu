@@ -9,6 +9,7 @@ import {
   generarToken,
   hashearToken,
   registerRateLimiter,
+  resendVerificationLimiter,
   SECURITY_HEADERS,
   obtenerIP,
 } from "@/lib/authUtils";
@@ -71,14 +72,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const emailNormalizado = email.toLowerCase().trim();
+
     // ── 4. Verificar si el email ya existe ────────────────────────────────
     await connectDB();
-    const usuarioExistente = await User.findOne({ email: email.toLowerCase().trim() });
+    const usuarioExistente = await User.findOne({ email: emailNormalizado });
 
     // IMPORTANTE: mismo mensaje si existe o no — evita enumeración de usuarios
     if (usuarioExistente) {
       // Si ya existe pero no verificó el email, reenviar verificación
       if (!usuarioExistente.emailVerificado) {
+        // ── Límite de reenvío por EMAIL — evita "email bombing" a una víctima ──
+        const { permitido, tiempoRestante } = resendVerificationLimiter.puedeReenviar(emailNormalizado);
+
+        if (!permitido) {
+          // Respondemos igual que siempre para no revelar que el límite se activó
+          // por este email específico (evita enumeración), pero no reenviamos nada.
+          console.warn(`⚠️ Límite de reenvío alcanzado para: ${emailNormalizado} (${tiempoRestante} min restantes)`);
+          return NextResponse.json(
+            { message: "Te enviamos un email de verificación. Revisa tu bandeja." },
+            { status: 200, headers: SECURITY_HEADERS }
+          );
+        }
+
         const token = generarToken();
         const tokenHash = hashearToken(token);
         await User.findByIdAndUpdate(usuarioExistente._id, {
@@ -108,7 +124,7 @@ export async function POST(request: NextRequest) {
     // ── 7. Crear usuario ──────────────────────────────────────────────────
     await User.create({
       nombre: nombre.trim(),
-      email: email.toLowerCase().trim(),
+      email: emailNormalizado,
       password: passwordHash,
       tokenVerificacion: tokenHash,
       tokenVerificacionExpira: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h

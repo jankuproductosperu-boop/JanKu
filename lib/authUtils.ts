@@ -134,6 +134,51 @@ class RegisterRateLimiter {
 
 export const registerRateLimiter = new RegisterRateLimiter();
 
+// ── Rate limiting para REENVÍO de verificación — evita email bombing ─────────
+// Clave por EMAIL (no por IP), porque un atacante puede rotar IPs pero
+// el email de la víctima siempre es el mismo.
+
+class ResendVerificationLimiter {
+  private intentos: Map<string, { count: number; lastAttempt: number }> = new Map();
+  private readonly MAX_REENVIOS = 3;          // máx 3 reenvíos por email por hora
+  private readonly VENTANA = 60 * 60 * 1000; // 1 hora
+
+  constructor() {
+    if (typeof setInterval !== "undefined") {
+      setInterval(() => this.limpiar(), 10 * 60 * 1000);
+    }
+  }
+
+  puedeReenviar(email: string): { permitido: boolean; tiempoRestante?: number } {
+    const now = Date.now();
+    const actual = this.intentos.get(email);
+
+    if (!actual || now - actual.lastAttempt > this.VENTANA) {
+      this.intentos.set(email, { count: 1, lastAttempt: now });
+      return { permitido: true };
+    }
+
+    if (actual.count >= this.MAX_REENVIOS) {
+      const tiempoRestante = Math.ceil((this.VENTANA - (now - actual.lastAttempt)) / 1000 / 60);
+      return { permitido: false, tiempoRestante };
+    }
+
+    this.intentos.set(email, { count: actual.count + 1, lastAttempt: actual.lastAttempt });
+    return { permitido: true };
+  }
+
+  private limpiar(): void {
+    const now = Date.now();
+    for (const [key, intento] of this.intentos.entries()) {
+      if (now - intento.lastAttempt > this.VENTANA) {
+        this.intentos.delete(key);
+      }
+    }
+  }
+}
+
+export const resendVerificationLimiter = new ResendVerificationLimiter();
+
 // ── Headers de seguridad ─────────────────────────────────────────────────────
 
 export const SECURITY_HEADERS = {

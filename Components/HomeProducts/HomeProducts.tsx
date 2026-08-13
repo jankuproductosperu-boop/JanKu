@@ -33,6 +33,66 @@ type Banner = {
   activo: boolean;
 };
 
+// ── Componentes movidos FUERA del componente padre ───────────────────────────
+// Antes se declaraban dentro de HomeProducts(), lo que hacía que React los
+// tratara como componentes "nuevos" en cada render, perdiendo su identidad
+// (parpadeos, remontajes innecesarios). Ahora son componentes estables que
+// reciben todo lo que necesitan por props.
+
+function BannerBox({ banner, placeholder }: { banner?: Banner; placeholder?: string }) {
+  if (!banner) {
+    return (
+      <div className="w-full aspect-[16/9] bg-gray-300 rounded-md flex items-center justify-center">
+        <span className="text-gray-500 text-xs">
+          {placeholder || "Sin banner"}
+        </span>
+      </div>
+    );
+  }
+
+  const content = (
+    <div className="w-full aspect-[16/9] rounded-md overflow-hidden relative transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
+      <Image
+        src={banner.imagenUrl}
+        alt={banner.titulo}
+        fill
+        className="object-contain"
+        priority
+        sizes="(max-width: 768px) 100vw, 50vw"
+      />
+    </div>
+  );
+
+  if (banner.enlace) {
+    return <Link href={banner.enlace}>{content}</Link>;
+  }
+
+  return content;
+}
+
+function BannerFullWidth({ banner }: { banner?: Banner }) {
+  if (!banner) {
+    return (
+      <div className="w-full aspect-[16/5] bg-gray-200 rounded-md flex items-center justify-center">
+        <span className="text-gray-500 text-xs">Sin banner promocional</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full aspect-[16/5] rounded-md overflow-hidden relative">
+      <Image
+        src={banner.imagenUrl}
+        alt={banner.titulo}
+        fill
+        className="object-contain"
+        sizes="(max-width: 768px) 100vw, 50vw"
+        priority
+      />
+    </div>
+  );
+}
+
 export default function HomeProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -79,19 +139,6 @@ export default function HomeProducts() {
     loadData();
   }, []);
 
-  const getStockColor = (stock?: string) => {
-    switch (stock) {
-      case "Disponible":
-        return "bg-green-500";
-      case "Limitado":
-        return "bg-yellow-500";
-      case "Agotado":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   if (loading) {
     return (
       <section className="w-full max-w-[1000px] mx-auto pb-10 select-none pl-2">
@@ -113,60 +160,6 @@ export default function HomeProducts() {
   const bottomLeft = getBannerByPosition("bottom-left");
   const bottomRight = getBannerByPosition("bottom-right");
 
-  const BannerBox = ({ banner, placeholder }: { banner?: Banner; placeholder?: string }) => {
-    if (!banner) {
-      return (
-        <div className="w-full aspect-[16/9] bg-gray-300 rounded-md flex items-center justify-center">
-          <span className="text-gray-500 text-xs">
-            {placeholder || "Sin banner"}
-          </span>
-        </div>
-      );
-    }
-
-    const content = (
-      <div className="w-full aspect-[16/9] rounded-md overflow-hidden relative transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
-        <Image
-          src={banner.imagenUrl}
-          alt={banner.titulo}
-          fill
-          className="object-contain"
-          priority
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
-      </div>
-    );
-
-    if (banner.enlace) {
-      return <Link href={banner.enlace}>{content}</Link>;
-    }
-
-    return content;
-  };
-
-  const BannerFullWidth = ({ banner }: { banner?: Banner }) => {
-    if (!banner) {
-      return (
-        <div className="w-full aspect-[16/5] bg-gray-200 rounded-md flex items-center justify-center">
-          <span className="text-gray-500 text-xs">Sin banner promocional</span>
-        </div>
-      );
-    }
-
-    return (
-      <div className="w-full aspect-[16/5] rounded-md overflow-hidden relative">
-        <Image
-          src={banner.imagenUrl}
-          alt={banner.titulo}
-          fill
-          className="object-contain"
-          sizes="(max-width: 768px) 100vw, 50vw"
-          priority
-        />
-      </div>
-    );
-  };
-  
   return (
     <section className="w-full max-w-[1000px] mx-auto pb-10 select-none px-2 md:px-4">
       <div className="grid grid-cols-2 gap-2 md:gap-4 mb-4 md:mb-6">

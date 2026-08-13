@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import ProductCard from "@/Components/ProductCard/ProductCard";
@@ -43,12 +43,37 @@ type Category = {
 type SortOption = "default" | "price-asc" | "price-desc" | "name-asc" | "name-desc";
 type StockFilter = "all" | "Disponible" | "Limitado";
 
+// ── Movido FUERA del componente padre ─────────────────────────────────────
+// Antes se declaraba dentro de CategoryPage(), lo que hacía que React lo
+// tratara como un componente "nuevo" en cada render (parpadeos, remontajes
+// innecesarios del banner). Ahora es un componente estable vía props.
+function BannerLarge({ banner }: { banner: Banner }) {
+  const content = (
+    <div className="w-full rounded-md overflow-hidden relative mb-4 md:mb-6">
+      <Image
+        src={banner.imagenUrl}
+        alt={banner.titulo}
+        width={1920}
+        height={1080}
+        className="w-full h-auto object-contain"
+        priority
+        sizes="100vw"
+      />
+    </div>
+  );
+
+  if (banner.enlace) {
+    return <Link href={banner.enlace}>{content}</Link>;
+  }
+
+  return content;
+}
+
 export default function CategoryPage() {
   const params = useParams();
   const categorySlug = params.categoria as string;
   
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,7 +106,6 @@ export default function CategoryPage() {
           (p: Product) => p.categoriaSlugs?.includes(categorySlug)
         );
         setProducts(filtered);
-        setFilteredProducts(filtered);
 
         const categoryBanners = bannersData.filter(
           (b: Banner) => b.ubicaciones && b.ubicaciones.includes(categorySlug) && b.activo
@@ -99,7 +123,10 @@ export default function CategoryPage() {
   }, [categorySlug]);
 
   // Aplicar filtros y ordenamiento
-  useEffect(() => {
+  // ── Antes: useState + useEffect + setState (recalculaba en un efecto aparte).
+  // Ahora: useMemo — es un valor DERIVADO de products/sortBy/stockFilter,
+  // se recalcula durante el render sin necesitar un efecto ni un estado extra.
+  const filteredProducts = useMemo(() => {
     let result = [...products];
 
     // Filtrar por stock
@@ -126,30 +153,8 @@ export default function CategoryPage() {
         break;
     }
 
-    setFilteredProducts(result);
+    return result;
   }, [products, sortBy, stockFilter]);
-
-  const BannerLarge = ({ banner }: { banner: Banner }) => {
-    const content = (
-      <div className="w-full rounded-md overflow-hidden relative mb-4 md:mb-6">
-        <Image
-          src={banner.imagenUrl}
-          alt={banner.titulo}
-          width={1920}
-          height={1080}
-          className="w-full h-auto object-contain"
-          priority
-          sizes="100vw"
-        />
-      </div>
-    );
-
-    if (banner.enlace) {
-      return <Link href={banner.enlace}>{content}</Link>;
-    }
-
-    return content;
-  };
 
   if (loading) {
     return (
