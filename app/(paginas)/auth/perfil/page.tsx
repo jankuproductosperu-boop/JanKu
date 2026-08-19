@@ -21,7 +21,7 @@ type Perfil = {
 
 export default function PerfilPage() {
   const router = useRouter();
-  const { user, isChecking, isAuthenticated, logout, setUser } = useUser();
+  const { isChecking, isAuthenticated, logout, setUser } = useUser();
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [form, setForm] = useState({
     nombre: "",

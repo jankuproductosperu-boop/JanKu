@@ -27,6 +27,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { invalidateCachePattern } from "@/lib/cache";
 import {
   Package,
@@ -589,9 +590,17 @@ export default function AdminPage() {
     try { const res = await fetch("/api/promotions"); const d = await res.json(); setPromotions(Array.isArray(d) ? d : []); }
     catch { setPromotions([]); }
   };
-
-  useEffect(() => { loadProducts(); loadBanners(); loadCategories(); loadPromotions(); }, []);
-
+    useEffect(() => {
+    const cargarTodo = async () => {
+      await Promise.all([
+        loadProducts(),
+        loadBanners(),
+        loadCategories(),
+        loadPromotions(),
+      ]);
+    };
+    cargarTodo();
+  }, []);
   // ─── STATS ──────────────────────────────────────────────────────────────────
 
   const stats = [
@@ -1004,6 +1013,10 @@ export default function AdminPage() {
             <h1 className="text-2xl md:text-4xl font-bold text-gray-800">Panel Administrativo</h1>
             <p className="text-gray-600 text-sm md:text-base mt-1">Gestiona productos, banners y categorías</p>
           </div>
+          <Link href="/admin/inventario" className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+            <Package className="w-5 h-5" />
+            <span className="hidden sm:inline">Inventario</span>
+          </Link>
           <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             <span className="hidden sm:inline">Cerrar Sesión</span>
@@ -1015,7 +1028,7 @@ export default function AdminPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat, i) => (
-              <button key={i} onClick={() => setActiveTab(stat.link as any)} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 text-left">
+              <button key={i} onClick={() => setActiveTab(stat.link as "products" | "banners" | "categories" | "promotions")} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 text-left">
                 <div className="flex items-start justify-between mb-4">
                   <div className={`${stat.color} p-3 rounded-xl text-white`}><stat.icon className="w-6 h-6" /></div>
                   <TrendingUp className="w-5 h-5 text-green-500" />
@@ -1065,7 +1078,7 @@ export default function AdminPage() {
               { key: "categories", label: "📂 Categorías", grad: "from-purple-600 to-purple-700" },
               { key: "promotions", label: "✨ Promociones", grad: "from-pink-600 to-pink-700" },
             ].map(({ key, label, grad }) => (
-              <button key={key} onClick={() => setActiveTab(key as any)}
+              <button key={key} onClick={() => setActiveTab(key as "products" | "banners" | "categories" | "promotions")}
                 className={`flex-shrink-0 py-2 md:py-3 px-4 md:px-6 rounded-xl font-semibold transition text-sm md:text-base whitespace-nowrap ${activeTab === key ? `bg-gradient-to-r ${grad} text-white shadow-md` : "text-gray-600 hover:bg-gray-100"}`}>
                 {label}
               </button>

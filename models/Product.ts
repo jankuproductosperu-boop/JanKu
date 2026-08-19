@@ -10,7 +10,7 @@ interface IProduct extends Document {
   descripcionCompleta?: string;
   categorias?: string[];
   categoriaSlugs?: string[];
-  stock: "Disponible" | "Limitado" | "Agotado";
+  stock: "Disponible" | "Limitado" | "Agotado"; // ahora se calcula automáticamente
   imagenUrl?: string;
   imagenesAdicionales?: string[];
   videoUrl?: string;
@@ -23,6 +23,15 @@ interface IProduct extends Document {
   caracteristicas?: string[];
   garantia?: string;
   envioGratis: boolean;
+
+  // ── Inventario (nuevo) ──────────────────────────────────────────────────
+  codigo?: string;          // SKU / código interno, único
+  precioCosto?: number;     // lo que te cuesta a ti
+  stockCantidad: number;    // cantidad real de unidades disponibles
+  stockMinimo: number;      // umbral para marcar "Limitado" / alertar
+  proveedor?: string;       // opcional, si compras a varios proveedores
+  activo: boolean;          // permite "pausar" un producto sin borrarlo
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,10 +45,10 @@ const ProductSchema = new Schema<IProduct>(
     descripcionCompleta: { type: String, default: "" },
     categorias: [{ type: String }],
     categoriaSlugs: [{ type: String }],
-    stock: { 
-      type: String, 
+    stock: {
+      type: String,
       enum: ["Disponible", "Limitado", "Agotado"],
-      default: "Disponible" 
+      default: "Disponible"
     },
     imagenUrl: { type: String, default: "" },
     imagenesAdicionales: [{ type: String }],
@@ -52,12 +61,20 @@ const ProductSchema = new Schema<IProduct>(
     metaImagen: { type: String, default: "" },
     caracteristicas: [{ type: String }],
     garantia: { type: String, default: "" },
-    envioGratis: { type: Boolean, default: true }
+    envioGratis: { type: Boolean, default: true },
+
+    // ── Inventario (nuevo) ──────────────────────────────────────────────────
+    codigo: { type: String, unique: true, sparse: true, trim: true, uppercase: true },
+    precioCosto: { type: Number, default: 0, min: 0 },
+    stockCantidad: { type: Number, default: 0, min: 0 },
+    stockMinimo: { type: Number, default: 5, min: 0 },
+    proveedor: { type: String, default: "" },
+    activo: { type: Boolean, default: true },
   },
-  { 
+  {
     timestamps: true,
     strict: false,
-    autoIndex: true // ✅ Agregar esto
+    autoIndex: true
   }
 );
 
@@ -68,29 +85,49 @@ ProductSchema.index({ nombre: 'text', descripcion: 'text' });
 ProductSchema.index({ precio: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ categoriaSlug: 1, stock: 1, precio: 1 });
+ProductSchema.index({ stockCantidad: 1 });
 
-// Generar slug automáticamente
-ProductSchema.pre('validate', async function() {
+// Generar slug automáticamente + calcular estado de stock automáticamente
+ProductSchema.pre('validate', async function () {
   if (this.nombre && !this.slug) {
-    let baseSlug = this.nombre
+        const baseSlug = this.nombre
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
-    
+
     let slug = baseSlug;
     let counter = 1;
     const Product = models.Product || model<IProduct>("Product", ProductSchema);
-    
+
     let exists = await Product.findOne({ slug, _id: { $ne: this._id } }).exec();
-    while (exists) {
+        while (exists) {
       slug = `${baseSlug}-${counter}`;
       counter++;
       exists = await Product.findOne({ slug, _id: { $ne: this._id } }).exec();
     }
-    
+
     this.slug = slug;
+  }
+
+  // ── Calcular automáticamente el estado de stock ──────────────────────────
+  // Ya no se elige manualmente: se deriva de stockCantidad vs stockMinimo.
+  // Así el badge "Disponible/Limitado/Agotado" siempre refleja la realidad.
+  if (typeof this.stockCantidad === "number") {
+    const minimo = typeof this.stockMinimo === "number" ? this.stockMinimo : 5;
+    if (this.stockCantidad <= 0) {
+      this.stock = "Agotado";
+    } else if (this.stockCantidad <= minimo) {
+      this.stock = "Limitado";
+    } else {
+      this.stock = "Disponible";
+    }
+  }
+
+  // Normalizar código vacío a undefined para no romper el índice único+sparse
+  if (this.codigo !== undefined && this.codigo.trim() === "") {
+    this.codigo = undefined;
   }
 });
 
