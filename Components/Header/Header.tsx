@@ -104,12 +104,18 @@ React.useEffect(() => {
             className="absolute inset-0 flex transition-transform duration-700 ease-in-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
+            {/* ✅ Optimización LCP: la primera imagen (la que se ve al cargar
+                la página) se marca como prioritaria y de carga inmediata.
+                Las demás, al no ser visibles al inicio, se cargan diferidas. */}
             {promoImages.map((img, i) => (
               <img
                 key={i}
                 src={img}
                 alt={`promo-${i}`}
                 className="w-full h-full object-contain shrink-0"
+                fetchPriority={i === 0 ? "high" : "low"}
+                loading={i === 0 ? "eager" : "lazy"}
+                decoding={i === 0 ? "sync" : "async"}
               />
             ))}
           </div>

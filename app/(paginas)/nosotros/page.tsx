@@ -5,7 +5,7 @@ export const metadata = {
 };
 
 export default function NosotrosPage() {
-  const imagenUrl = "https://i.postimg.cc/2yzY6dQB/nosotros-img.webp";
+  const imagenUrl = "https://res.cloudinary.com/janku/image/upload/v1787183103/nosotros_eqgukv.webp";
 
   return (
     <div className="min-h-screen bg-[#f5f6fa]">
