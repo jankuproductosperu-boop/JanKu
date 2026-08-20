@@ -4,7 +4,10 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   // Optimización de imágenes
   images: {
-    unoptimized: true,
+    // ✅ Se quitó "unoptimized: true" — ahora Next.js SÍ comprime, convierte
+    // a WebP/AVIF y genera tamaños responsivos automáticamente para
+    // cualquier imagen servida con <Image />. Requiere el paquete "sharp"
+    // instalado (npm install sharp) para funcionar en producción.
     remotePatterns: [
       // Mantenido para el logo del negocio
       {
