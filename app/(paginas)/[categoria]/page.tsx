@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import ProductCard from "@/Components/ProductCard/ProductCard";
 import { fetchWithCache } from "@/lib/cache";
 
@@ -20,6 +19,7 @@ type Product = {
   slug?: string;
   deliveryHuancayo?: boolean;
   imagenesAdicionales?: string[];
+  ordenPorCategoria?: Record<string, number>;
 };
 
 type Banner = {
@@ -43,10 +43,6 @@ type Category = {
 type SortOption = "default" | "price-asc" | "price-desc" | "name-asc" | "name-desc";
 type StockFilter = "all" | "Disponible" | "Limitado";
 
-// ── Movido FUERA del componente padre ─────────────────────────────────────
-// Antes se declaraba dentro de CategoryPage(), lo que hacía que React lo
-// tratara como un componente "nuevo" en cada render (parpadeos, remontajes
-// innecesarios del banner). Ahora es un componente estable vía props.
 function BannerLarge({ banner }: { banner: Banner }) {
   const content = (
     <div className="w-full rounded-md overflow-hidden relative mb-4 md:mb-6">
@@ -78,10 +74,8 @@ export default function CategoryPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // Estados de filtros
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -102,9 +96,17 @@ export default function CategoryPage() {
           return;
         }
 
-        const filtered = productsData.filter(
-          (p: Product) => p.categoriaSlugs?.includes(categorySlug)
-        );
+        // Filtrar productos de esta categoría y ordenarlos según el orden
+        // manual definido específicamente para ESTA categoría (independiente
+        // del orden que tengan en Home u otras categorías). Los productos sin
+        // valor asignado quedan al final.
+        const filtered = productsData
+          .filter((p: Product) => p.categoriaSlugs?.includes(categorySlug))
+          .sort((a, b) => {
+            const ordenA = a.ordenPorCategoria?.[categorySlug] ?? Infinity;
+            const ordenB = b.ordenPorCategoria?.[categorySlug] ?? Infinity;
+            return ordenA - ordenB;
+          });
         setProducts(filtered);
 
         const categoryBanners = bannersData.filter(
@@ -122,19 +124,17 @@ export default function CategoryPage() {
     loadData();
   }, [categorySlug]);
 
-  // Aplicar filtros y ordenamiento
-  // ── Antes: useState + useEffect + setState (recalculaba en un efecto aparte).
-  // Ahora: useMemo — es un valor DERIVADO de products/sortBy/stockFilter,
-  // se recalcula durante el render sin necesitar un efecto ni un estado extra.
+  // Aplicar filtros y ordenamiento — valor derivado, se recalcula en el render.
+  // Cuando sortBy === "default", se conserva el orden manual ya aplicado
+  // arriba (ordenPorCategoria). Si el usuario elige precio o nombre, eso
+  // tiene prioridad sobre el orden manual, como es esperable.
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Filtrar por stock
     if (stockFilter !== "all") {
       result = result.filter(p => p.stock === stockFilter);
     }
 
-    // Ordenar
     switch (sortBy) {
       case "price-asc":
         result.sort((a, b) => a.precio - b.precio);
@@ -149,7 +149,7 @@ export default function CategoryPage() {
         result.sort((a, b) => b.nombre.localeCompare(a.nombre));
         break;
       default:
-        // Orden por defecto (como viene de la BD)
+        // Mantiene el orden manual por categoría ya aplicado en products
         break;
     }
 
@@ -219,7 +219,7 @@ export default function CategoryPage() {
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
                 className="flex-1 md:flex-none px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
               >
-                <option value="default">Ordenar por</option>
+                <option value="default">Orden de la tienda</option>
                 <option value="price-asc">💰 Precio: Menor a Mayor</option>
                 <option value="price-desc">💰 Precio: Mayor a Menor</option>
                 <option value="name-asc">🔤 Nombre: A - Z</option>

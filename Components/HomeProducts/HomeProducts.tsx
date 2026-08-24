@@ -3,8 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ShoppingCart } from "lucide-react";
-import { useCart } from "@/context/CartContext";
 import { fetchWithCache } from "@/lib/cache";
 import ProductCard from "../ProductCard/ProductCard";
 
@@ -21,6 +19,7 @@ type Product = {
   deliveryHuancayo?: boolean;
   mostrarEnHome?: boolean;
   imagenesAdicionales?: string[];
+  ordenHome?: number;
 };
 
 type Banner = {
@@ -32,12 +31,6 @@ type Banner = {
   ubicaciones?: string[];
   activo: boolean;
 };
-
-// ── Componentes movidos FUERA del componente padre ───────────────────────────
-// Antes se declaraban dentro de HomeProducts(), lo que hacía que React los
-// tratara como componentes "nuevos" en cada render, perdiendo su identidad
-// (parpadeos, remontajes innecesarios). Ahora son componentes estables que
-// reciben todo lo que necesitan por props.
 
 function BannerBox({ banner, placeholder }: { banner?: Banner; placeholder?: string }) {
   if (!banner) {
@@ -103,28 +96,24 @@ export default function HomeProducts() {
       try {
         setLoading(true);
 
-        // ✅ Cargar productos y banners en paralelo con caché
         const [productsData, bannersData] = await Promise.all([
           fetchWithCache<Product[]>("/api/products"),
           fetchWithCache<Banner[]>("/api/banners")
         ]);
 
-        // ✅ VALIDAR que sea array antes de filtrar
         const validProducts = Array.isArray(productsData) ? productsData : [];
         const validBanners = Array.isArray(bannersData) ? bannersData : [];
 
-        // Filtrar productos para home
-        const homeProducts = validProducts.filter(
-          (p: Product) => p.mostrarEnHome === true
-        );
-        console.log("🏠 Productos para home:", homeProducts.length);
+        // Filtrar productos para home y ordenarlos según "ordenHome"
+        // (los que no tienen valor asignado quedan al final).
+        const homeProducts = validProducts
+          .filter((p: Product) => p.mostrarEnHome === true)
+          .sort((a, b) => (a.ordenHome ?? Infinity) - (b.ordenHome ?? Infinity));
         setProducts(homeProducts);
 
-        // Filtrar banners para home
         const homeBanners = validBanners.filter(
           (b: Banner) => b.ubicaciones && Array.isArray(b.ubicaciones) && b.ubicaciones.includes("")
         );
-        console.log("🏠 Banners para home:", homeBanners.length);
         setBanners(homeBanners);
         
         setLoading(false);
@@ -167,7 +156,6 @@ export default function HomeProducts() {
         <BannerBox banner={topRight} placeholder="Banner arriba derecha" />
       </div>
 
-      {/* ✅ Responsivo: 2 columnas móviles pequeños, 3 para tablets/móviles grandes, 4 desktop */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
         {products.slice(0, 12).map((p) => (
           <ProductCard key={p._id} product={p} />

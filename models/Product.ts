@@ -10,7 +10,7 @@ interface IProduct extends Document {
   descripcionCompleta?: string;
   categorias?: string[];
   categoriaSlugs?: string[];
-  stock: "Disponible" | "Limitado" | "Agotado"; // ahora se calcula automáticamente
+  stock: "Disponible" | "Limitado" | "Agotado";
   imagenUrl?: string;
   imagenesAdicionales?: string[];
   videoUrl?: string;
@@ -24,13 +24,19 @@ interface IProduct extends Document {
   garantia?: string;
   envioGratis: boolean;
 
-  // ── Inventario (nuevo) ──────────────────────────────────────────────────
-  codigo?: string;          // SKU / código interno, único
-  precioCosto?: number;     // lo que te cuesta a ti
-  stockCantidad: number;    // cantidad real de unidades disponibles
-  stockMinimo: number;      // umbral para marcar "Limitado" / alertar
-  proveedor?: string;       // opcional, si compras a varios proveedores
-  activo: boolean;          // permite "pausar" un producto sin borrarlo
+  // ── Inventario ────────────────────────────────────────────────────────
+  codigo?: string;
+  precioCosto?: number;
+  stockCantidad: number;
+  stockMinimo: number;
+  proveedor?: string;
+  activo: boolean;
+
+  // ── Orden manual (nuevo) ─────────────────────────────────────────────────
+  // Número más bajo = aparece primero. Los productos sin valor asignado
+  // quedan al final, ordenados por defecto.
+  ordenHome: number;                       // orden dentro de la página de inicio
+  ordenPorCategoria?: Map<string, number>; // orden independiente por cada categoría (clave = slug)
 
   createdAt: Date;
   updatedAt: Date;
@@ -63,13 +69,17 @@ const ProductSchema = new Schema<IProduct>(
     garantia: { type: String, default: "" },
     envioGratis: { type: Boolean, default: true },
 
-    // ── Inventario (nuevo) ──────────────────────────────────────────────────
+    // ── Inventario ────────────────────────────────────────────────────────
     codigo: { type: String, unique: true, sparse: true, trim: true, uppercase: true },
     precioCosto: { type: Number, default: 0, min: 0 },
     stockCantidad: { type: Number, default: 0, min: 0 },
     stockMinimo: { type: Number, default: 5, min: 0 },
     proveedor: { type: String, default: "" },
     activo: { type: Boolean, default: true },
+
+    // ── Orden manual (nuevo) ─────────────────────────────────────────────────
+    ordenHome: { type: Number, default: 0 },
+    ordenPorCategoria: { type: Map, of: Number, default: {} },
   },
   {
     timestamps: true,
@@ -86,11 +96,12 @@ ProductSchema.index({ precio: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ categoriaSlug: 1, stock: 1, precio: 1 });
 ProductSchema.index({ stockCantidad: 1 });
+ProductSchema.index({ ordenHome: 1 });
 
 // Generar slug automáticamente + calcular estado de stock automáticamente
 ProductSchema.pre('validate', async function () {
   if (this.nombre && !this.slug) {
-        const baseSlug = this.nombre
+    const baseSlug = this.nombre
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -102,7 +113,7 @@ ProductSchema.pre('validate', async function () {
     const Product = models.Product || model<IProduct>("Product", ProductSchema);
 
     let exists = await Product.findOne({ slug, _id: { $ne: this._id } }).exec();
-        while (exists) {
+    while (exists) {
       slug = `${baseSlug}-${counter}`;
       counter++;
       exists = await Product.findOne({ slug, _id: { $ne: this._id } }).exec();
@@ -112,8 +123,6 @@ ProductSchema.pre('validate', async function () {
   }
 
   // ── Calcular automáticamente el estado de stock ──────────────────────────
-  // Ya no se elige manualmente: se deriva de stockCantidad vs stockMinimo.
-  // Así el badge "Disponible/Limitado/Agotado" siempre refleja la realidad.
   if (typeof this.stockCantidad === "number") {
     const minimo = typeof this.stockMinimo === "number" ? this.stockMinimo : 5;
     if (this.stockCantidad <= 0) {

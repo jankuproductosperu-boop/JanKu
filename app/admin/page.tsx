@@ -1,30 +1,4 @@
 "use client";
-
-// ─── CAMBIOS RESPECTO AL ORIGINAL ─────────────────────────────────────────
-// 1. IMPORTS: eliminado validateImageUrl/validateMultipleImageUrls/IMAGE_LIMITS
-//             eliminado "Image" de lucide (conflicto con next/image)
-//             añadido: useState callbacks extras, Upload, X, Star, GripVertical, Loader2
-// 2. TIPO Product: añadidos imagenes[], imagenPrincipal, tags[]
-// 3. FORM PRODUCTOS: eliminados imagenUrl, imagenesAdicionales, metaImagen
-//                   añadido tags
-// 4. FORM PROMOTIONS: eliminado metaImagen
-// 5. ESTADOS nuevos: productImages, uploadPendingImages, isUploading, uploadProgress,
-//                    uploadError, bannerImageFile, bannerImagePreview,
-//                    promocionImageFile, promocionImagePreview
-// 6. handleSubmit productos: ahora sube a Cloudinary antes de guardar
-// 7. handleSelect productos: carga imágenes existentes en el uploader
-// 8. handleCancel / handleDelete: resetean productImages
-// 9. handleBannerSubmit: sube imagen a banners/ en Cloudinary
-// 10. handleBannerCancel/Select: resetean bannerImageFile y bannerImagePreview
-// 11. handlePromotionSubmit: sube imagen a promociones/ en Cloudinary, metaImagen automática
-// 12. handlePromotionCancel/Select: resetean promocionImageFile y promocionImagePreview
-// 13. JSX PRODUCTOS: eliminados campos URL Imagen, Imágenes Adicionales, Meta Imagen
-//                    añadidos componente ImageUploader, campo Tags
-// 14. JSX BANNERS: eliminado input URL Imagen, añadido BannerImageField
-// 15. JSX PROMOCIONES: eliminado input URL Imagen Principal, añadido PromocionImageField
-//                      eliminado campo Meta Imagen del formulario
-// ──────────────────────────────────────────────────────────────────────────
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -40,6 +14,7 @@ import {
   Star,
   GripVertical,
   Loader2,
+  ListOrdered
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 
@@ -1016,6 +991,10 @@ export default function AdminPage() {
           <Link href="/admin/inventario" className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
             <Package className="w-5 h-5" />
             <span className="hidden sm:inline">Inventario</span>
+          </Link>
+          <Link href="/admin/orden" className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium">
+            <ListOrdered className="w-5 h-5" />
+            <span className="hidden sm:inline">Orden</span>
           </Link>
           <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
