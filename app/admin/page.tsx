@@ -14,7 +14,8 @@ import {
   Star,
   GripVertical,
   Loader2,
-  ListOrdered
+  ListOrdered,
+  Tag
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 
@@ -995,6 +996,10 @@ export default function AdminPage() {
           <Link href="/admin/orden" className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium">
             <ListOrdered className="w-5 h-5" />
             <span className="hidden sm:inline">Orden</span>
+          </Link>
+          <Link href="/admin/descuentos" className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition font-medium">
+            <Tag className="w-5 h-5" />
+            <span className="hidden sm:inline">Descuentos</span>
           </Link>
           <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>

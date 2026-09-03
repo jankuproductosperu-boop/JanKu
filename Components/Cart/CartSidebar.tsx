@@ -3,10 +3,22 @@
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { X, Trash2, Minus, Plus, ShoppingCart } from "lucide-react";
+import { X, Trash2, Minus, Plus, ShoppingCart, Sparkles, Tag } from "lucide-react";
 
 export default function CartSidebar() {
-  const { cart, removeFromCart, updateQuantity, totalPrice, isCartOpen, toggleCart } = useCart();
+  const {
+    cart,
+    removeFromCart,
+    updateQuantity,
+    totalPrice,
+    isCartOpen,
+    toggleCart,
+    nivelDescuentoAplicado,
+    montoDescuento,
+    totalFinal,
+    proximoNivel,
+    montoParaProximoNivel,
+  } = useCart();
 
   const generateWhatsAppLink = () => {
     if (cart.length === 0) return "#";
@@ -20,7 +32,11 @@ export default function CartSidebar() {
       message += `   💵 Subtotal: S/ ${(item.precio * item.cantidad).toFixed(2)}\n\n`;
     });
 
-    message += `*TOTAL: S/ ${totalPrice.toFixed(2)}*\n\n`;
+    message += `Subtotal: S/ ${totalPrice.toFixed(2)}\n`;
+    if (nivelDescuentoAplicado) {
+      message += `🎉 Descuento aplicado (${nivelDescuentoAplicado.nombre}): -S/ ${montoDescuento.toFixed(2)}\n`;
+    }
+    message += `*TOTAL: S/ ${totalFinal.toFixed(2)}*\n\n`;
     message += "Deseo comprar estos productos. ¡Gracias! 😊";
 
     const phoneNumber = "51978339737"; // 👈 CAMBIA ESTE NÚMERO
@@ -66,6 +82,28 @@ export default function CartSidebar() {
             </div>
           ) : (
             <div className="space-y-4">
+              {/* Aviso de descuento activo o próximo a desbloquear */}
+              {nivelDescuentoAplicado ? (
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl p-3 flex items-center gap-2 shadow-md">
+                  <Sparkles className="w-5 h-5 flex-shrink-0" />
+                  <p className="text-sm font-semibold">
+                    ¡Descuento aplicado! Ahorras S/ {montoDescuento.toFixed(2)}
+                  </p>
+                </div>
+              ) : proximoNivel ? (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                  <p className="text-xs text-indigo-800">
+                    Agrega <strong>S/ {montoParaProximoNivel.toFixed(2)}</strong> más y obtén{" "}
+                    <strong>
+                      {proximoNivel.tipoDescuento === "porcentaje"
+                        ? `${proximoNivel.valorDescuento}% de descuento`
+                        : `S/ ${proximoNivel.valorDescuento.toFixed(2)} de descuento`}
+                    </strong>
+                  </p>
+                </div>
+              ) : null}
+
               {cart.map((item) => (
                 <div 
                   key={item._id} 
@@ -152,9 +190,20 @@ export default function CartSidebar() {
                 <span>Productos ({cart.reduce((sum, item) => sum + item.cantidad, 0)})</span>
                 <span>S/ {totalPrice.toFixed(2)}</span>
               </div>
+
+              {nivelDescuentoAplicado && (
+                <div className="flex justify-between text-sm text-green-600 font-medium">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Descuento ({nivelDescuentoAplicado.nombre})
+                  </span>
+                  <span>- S/ {montoDescuento.toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t">
                 <span>TOTAL</span>
-                <span className="text-[#2C2C6C]">S/ {totalPrice.toFixed(2)}</span>
+                <span className="text-[#2C2C6C]">S/ {totalFinal.toFixed(2)}</span>
               </div>
             </div>
 

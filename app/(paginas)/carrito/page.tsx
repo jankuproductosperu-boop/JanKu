@@ -3,10 +3,21 @@
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Trash2, Minus, Plus, ArrowLeft } from "lucide-react";
+import { ShoppingCart, Trash2, Minus, Plus, ArrowLeft, Sparkles, Tag } from "lucide-react";
 
 export default function CarritoPage() {
-  const { cart, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart();
+  const {
+    cart,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
+    totalPrice,
+    nivelDescuentoAplicado,
+    montoDescuento,
+    totalFinal,
+    proximoNivel,
+    montoParaProximoNivel,
+  } = useCart();
 
   const generateWhatsAppLink = () => {
     if (cart.length === 0) return "#";
@@ -20,7 +31,11 @@ export default function CarritoPage() {
       message += `   💵 Subtotal: S/ ${(item.precio * item.cantidad).toFixed(2)}\n\n`;
     });
 
-    message += `*TOTAL: S/ ${totalPrice.toFixed(2)}*\n\n`;
+    message += `Subtotal: S/ ${totalPrice.toFixed(2)}\n`;
+    if (nivelDescuentoAplicado) {
+      message += `🎉 Descuento aplicado (${nivelDescuentoAplicado.nombre}): -S/ ${montoDescuento.toFixed(2)}\n`;
+    }
+    message += `*TOTAL: S/ ${totalFinal.toFixed(2)}*\n\n`;
     message += "Deseo comprar estos productos. ¡Gracias! 😊";
 
     const phoneNumber = "51978339737"; // 👈 CAMBIA ESTE NÚMERO
@@ -82,6 +97,32 @@ export default function CarritoPage() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Lista de productos */}
             <div className="lg:col-span-2 space-y-4">
+              {/* Aviso de descuento activo o próximo a desbloquear */}
+              {nivelDescuentoAplicado ? (
+                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl p-4 flex items-center gap-3 shadow-md">
+                  <Sparkles className="w-6 h-6 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold">¡Descuento aplicado!</p>
+                    <p className="text-sm opacity-90">
+                      {nivelDescuentoAplicado.nombre} — ahorras S/ {montoDescuento.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              ) : proximoNivel ? (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-3">
+                  <Tag className="w-6 h-6 text-indigo-600 flex-shrink-0" />
+                  <p className="text-sm text-indigo-800">
+                    Agrega <strong>S/ {montoParaProximoNivel.toFixed(2)}</strong> más a tu carrito y obtén{" "}
+                    <strong>
+                      {proximoNivel.tipoDescuento === "porcentaje"
+                        ? `${proximoNivel.valorDescuento}% de descuento`
+                        : `S/ ${proximoNivel.valorDescuento.toFixed(2)} de descuento`}
+                    </strong>{" "}
+                    en tu compra
+                  </p>
+                </div>
+              ) : null}
+
               {cart.map((item) => (
                 <div 
                   key={item._id}
@@ -193,13 +234,24 @@ export default function CarritoPage() {
                     <span>Subtotal</span>
                     <span>S/ {totalPrice.toFixed(2)}</span>
                   </div>
+
+                  {nivelDescuentoAplicado && (
+                    <div className="flex justify-between text-xs md:text-sm text-green-600 font-semibold mb-2">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Descuento ({nivelDescuentoAplicado.nombre})
+                      </span>
+                      <span>- S/ {montoDescuento.toFixed(2)}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
                     <span>Delivery Huancayo</span>
                     <span className="text-green-600 font-semibold">GRATIS</span>
                   </div>
                   <div className="flex justify-between text-lg md:text-xl font-bold text-gray-900">
                     <span>Total</span>
-                    <span className="text-[#2C2C6C]">S/ {totalPrice.toFixed(2)}</span>
+                    <span className="text-[#2C2C6C]">S/ {totalFinal.toFixed(2)}</span>
                   </div>
                 </div>
 

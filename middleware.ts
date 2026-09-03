@@ -9,6 +9,7 @@ const PROTECTED_API_ROUTES = [
   "/api/categories",
   "/api/promotions",
   "/api/upload",
+  "/api/discounts",
 ];
 
 // Rutas del panel admin que requieren autenticación de ADMIN para ver
