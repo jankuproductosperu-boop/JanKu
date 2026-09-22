@@ -70,7 +70,7 @@ export default function PromocionesPage() {
   if (loading) {
     return (
       <section className="w-full max-w-[1000px] mx-auto px-2 md:px-4 py-8">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-96 bg-gray-300 rounded-xl animate-pulse" />
           ))}
@@ -103,7 +103,6 @@ export default function PromocionesPage() {
       setTimeout(() => setShowAddedMessage(false), 2000);
     };
 
-    // Calcular porcentaje de descuento
     const discountPercentage = promotion.precioAnterior 
       ? Math.round(((promotion.precioAnterior - promotion.precio) / promotion.precioAnterior) * 100)
       : 0;
@@ -262,7 +261,7 @@ return (
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {promotions.map((promo, index) => (
               <PromotionCard key={promo._id} promotion={promo} index={index} />
             ))}
