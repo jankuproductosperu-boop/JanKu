@@ -4,6 +4,7 @@ import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
 import { X, Trash2, Minus, Plus, ShoppingCart, Sparkles, Tag } from "lucide-react";
+import { useState } from "react";
 
 export default function CartSidebar() {
   const {
@@ -19,6 +20,8 @@ export default function CartSidebar() {
     proximoNivel,
     montoParaProximoNivel,
   } = useCart();
+
+  const [imagenesRotas, setImagenesRotas] = useState<Record<string, boolean>>({});
 
   const generateWhatsAppLink = () => {
     if (cart.length === 0) return "#";
@@ -120,13 +123,14 @@ export default function CartSidebar() {
                   <div className="flex gap-3">
                     {/* Imagen */}
                     <div className="w-20 h-20 bg-white rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
-                      {item.imagenUrl ? (
+                      {item.imagenUrl && !imagenesRotas[item._id] ? (
                         <Image
                           src={item.imagenUrl}
                           alt={item.nombre}
                           width={80}
                           height={80}
                           className="object-cover w-full h-full"
+                          onError={() => setImagenesRotas((prev) => ({ ...prev, [item._id]: true }))}
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center">

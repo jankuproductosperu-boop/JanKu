@@ -4,6 +4,7 @@ import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Trash2, Minus, Plus, ArrowLeft, Sparkles, Tag } from "lucide-react";
+import { buildProductUrl } from "@/lib/productUrl";
 
 export default function CarritoPage() {
   const {
@@ -150,7 +151,7 @@ export default function CarritoPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between gap-2 md:gap-4 mb-2">
                         <Link
-                          href={`/producto/${item.slug || item._id}`}
+                          href={`/producto/${buildProductUrl(item.nombre, item.codigoUrl)}`}
                           className="font-bold text-gray-900 text-base md:text-lg hover:text-[#2C2C6C] transition line-clamp-2"
                         >
                           {item.nombre}

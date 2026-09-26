@@ -5,6 +5,7 @@ interface IProduct extends Document {
   _id: mongoose.Types.ObjectId;
   nombre: string;
   slug?: string;
+  codigoUrl?: string;
   precio: number;
   descripcion?: string;
   descripcionCompleta?: string;
@@ -46,6 +47,7 @@ const ProductSchema = new Schema<IProduct>(
   {
     nombre: { type: String, required: true },
     slug: { type: String, unique: true, sparse: true },
+    codigoUrl: { type: String, unique: true, sparse: true, index: true },
     precio: { type: Number, required: true },
     descripcion: { type: String, default: "" },
     descripcionCompleta: { type: String, default: "" },
@@ -120,6 +122,9 @@ ProductSchema.pre('validate', async function () {
     }
 
     this.slug = slug;
+  }
+  if (!this.codigoUrl && this._id) {
+    this.codigoUrl = this._id.toString().slice(-8);
   }
 
   // ── Calcular automáticamente el estado de stock ──────────────────────────

@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { Heart, ShoppingCart, Trash2 } from "lucide-react";
-import { useFavorites } from "@/context/FavoritesContext";
+import { useFavorites, type FavoriteProduct } from "@/context/FavoritesContext";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import { useState } from "react";
+import { buildProductUrl } from "@/lib/productUrl";
 
 export default function FavoritosPage() {
   const { favorites, removeFromFavorites, clearFavorites } = useFavorites();
   const { addToCart } = useCart();
   const [showAddedMessage, setShowAddedMessage] = useState<string | null>(null);
 
-  const handleAddToCart = (favorite: any) => {
+    const handleAddToCart = (favorite: FavoriteProduct) => {
     addToCart(favorite);
     setShowAddedMessage(favorite._id);
     setTimeout(() => setShowAddedMessage(null), 2000);
@@ -78,7 +79,7 @@ export default function FavoritosPage() {
             key={product._id}
             className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group relative"
           >
-            <Link href={`/producto/${product.slug || product._id}`}>
+            <Link href={`/producto/${buildProductUrl(product.nombre, product.codigoUrl)}`}>
               <div className="aspect-square relative bg-gray-200">
                 {product.imagenUrl && (
                   <Image

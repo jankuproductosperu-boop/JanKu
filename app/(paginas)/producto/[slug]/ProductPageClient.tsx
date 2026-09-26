@@ -107,6 +107,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
         precio: product.precio,
         imagenUrl: product.imagenUrl,
         slug: product.slug,
+        codigoUrl: product.codigoUrl,
       });
     }
 

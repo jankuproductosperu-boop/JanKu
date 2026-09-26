@@ -2,12 +2,13 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-type FavoriteProduct = {
+export type FavoriteProduct = {
   _id: string;
   nombre: string;
   precio: number;
   imagenUrl?: string;
   slug?: string;
+  codigoUrl?: string;
 };
 
 type FavoritesContextType = {

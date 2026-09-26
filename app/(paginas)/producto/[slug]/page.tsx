@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connectDB } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import ProductPageClient from "./ProductPageClient";
+import { extractCodigoUrl } from "@/lib/productUrl";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -11,8 +12,14 @@ type Props = {
 async function getProduct(slug: string) {
   await connectDB();
 
-  const esObjectId = /^[0-9a-fA-F]{24}$/.test(slug);
+  // 1. Intentar por el código corto — es como funcionan los links nuevos
+  const codigoUrl = extractCodigoUrl(slug);
+  const porCodigo = await Product.findOne({ codigoUrl }).lean();
+  if (porCodigo) return porCodigo;
 
+  // 2. Fallback — links viejos ya compartidos antes de este cambio,
+  // o alguien que entró directo con el _id
+  const esObjectId = /^[0-9a-fA-F]{24}$/.test(slug);
   const product = await Product.findOne(
     esObjectId ? { $or: [{ slug }, { _id: slug }] } : { slug }
   ).lean();

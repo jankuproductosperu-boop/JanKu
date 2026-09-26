@@ -6,6 +6,7 @@
   import { ShoppingCart, Heart } from "lucide-react";
   import { useCart } from "@/context/CartContext";
   import { useFavorites } from "@/context/FavoritesContext";
+  import { buildProductUrl } from "@/lib/productUrl";
 
   // Función inline para no depender de la lib en el cliente directamente
   function getCloudinaryUrl(
@@ -48,8 +49,8 @@
     // Legacy (compatibilidad)
     imagenUrl?: string;
     imagenesAdicionales?: string[];
-
     slug?: string;
+    codigoUrl?: string;
     deliveryHuancayo?: boolean;
   };
 
@@ -112,6 +113,7 @@
         precio: product.precio,
         imagenUrl: imageForCart,
         slug: product.slug,
+        codigoUrl: product.codigoUrl,
       });
 
       setShowAddedMessage(true);
@@ -131,6 +133,7 @@
           precio: product.precio,
           imagenUrl: getCloudinaryUrl(mainImage, { width: 300 }),
           slug: product.slug,
+          codigoUrl: product.codigoUrl,
         });
         setShowFavoriteMessage(true);
         setTimeout(() => setShowFavoriteMessage(false), 2000);
@@ -152,7 +155,7 @@
 
     return (
       <Link
-        href={`/producto/${product.slug || product._id}`}
+        href={`/producto/${buildProductUrl(product.nombre, product.codigoUrl)}`}
         className={`block transition-all duration-300 hover:scale-[1.02] hover:shadow-lg rounded-md group ${className}`}
         onMouseEnter={() => {
           if (hoverImage) setCurrentImage(hoverImage);

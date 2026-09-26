@@ -8,6 +8,7 @@ type CartItem = {
   precio: number;
   imagenUrl?: string;
   slug?: string;
+  codigoUrl?: string;
   cantidad: number;
 };
 
