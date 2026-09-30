@@ -46,6 +46,7 @@ type Product = {
   metaDescripcion?: string;
   metaImagen?: string;
   whatsappLink?: string;
+  whatsappNumero?: string;
   videoUrl?: string;
   tags?: string[];              // nuevo
 };
@@ -84,6 +85,7 @@ type Promotion = {
   activo: boolean;
   orden: number;
   whatsappLink?: string;
+  whatsappNumero?: string;
   caracteristicas?: string[];
   metaTitulo?: string;
   metaDescripcion?: string;
@@ -511,7 +513,7 @@ export default function AdminPage() {
     nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible",
     deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
     metaTitulo: "", metaDescripcion: "", mostrarEnHome: false,
-    whatsappLink: "", videoUrl: "", tags: "",
+    whatsappNumero: "", videoUrl: "", tags: "",
   });
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -541,7 +543,7 @@ export default function AdminPage() {
     imagenUrl: "", imagenesAdicionales: "",
     tipoEtiqueta: "Oferta" as Promotion["tipoEtiqueta"],
     stock: "Disponible" as Promotion["stock"],
-    activo: true, orden: 0, whatsappLink: "", caracteristicas: "",
+    activo: true, orden: 0, whatsappNumero: "", caracteristicas: "",
     metaTitulo: "", metaDescripcion: "",
   });
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -599,7 +601,7 @@ export default function AdminPage() {
   };
 
   const resetProductForm = () => {
-    setForm({ nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "", metaTitulo: "", metaDescripcion: "", mostrarEnHome: false, whatsappLink: "", videoUrl: "", tags: "" });
+    setForm({ nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible", deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "", metaTitulo: "", metaDescripcion: "", mostrarEnHome: false, whatsappNumero: "", videoUrl: "", tags: "" });
     setProductImages([]); setIsEditing(false); setSelectedProduct(null);
     setUploaderKey("new-" + Date.now());
   };
@@ -632,7 +634,7 @@ export default function AdminPage() {
         imagenesAdicionales: imageResult.imagenesAdicionales,
         videoUrl: form.videoUrl?.trim() || "",
         deliveryHuancayo: form.deliveryHuancayo, mostrarEnHome: form.mostrarEnHome,
-        whatsappLink: form.whatsappLink?.trim() || "",
+        whatsappNumero: form.whatsappNumero?.trim() || "",
         caracteristicas: form.caracteristicas ? form.caracteristicas.split("\n").filter(c => c.trim()) : [],
         tags: tagsList,
         metaTitulo: form.metaTitulo?.trim() || form.nombre.trim(),
@@ -673,7 +675,7 @@ export default function AdminPage() {
       stock: product.stock || "Disponible",
       deliveryHuancayo: product.deliveryHuancayo ?? true,
       mostrarEnHome: product.mostrarEnHome ?? false,
-      whatsappLink: product.whatsappLink || "", videoUrl: product.videoUrl || "",
+      whatsappNumero: product.whatsappNumero || "", videoUrl: product.videoUrl || "",
       tags: Array.isArray(product.tags) ? product.tags.join(", ") : "",
       caracteristicas: product.caracteristicas?.join("\n") || "",
       metaTitulo: product.metaTitulo || "", metaDescripcion: product.metaDescripcion || "",
@@ -861,7 +863,7 @@ export default function AdminPage() {
   };
 
   const resetPromotionForm = () => {
-    setPromotionForm({ titulo: "", descripcion: "", descripcionCompleta: "", precio: "", precioAnterior: "", imagenUrl: "", imagenesAdicionales: "", tipoEtiqueta: "Oferta", stock: "Disponible", activo: true, orden: 0, whatsappLink: "", caracteristicas: "", metaTitulo: "", metaDescripcion: "" });
+    setPromotionForm({ titulo: "", descripcion: "", descripcionCompleta: "", precio: "", precioAnterior: "", imagenUrl: "", imagenesAdicionales: "", tipoEtiqueta: "Oferta", stock: "Disponible", activo: true, orden: 0, whatsappNumero: "", caracteristicas: "", metaTitulo: "", metaDescripcion: "" });
     setPromocionImageFile(null); setPromocionImagePreview("");
     setIsEditingPromotion(false); setSelectedPromotion(null);
   };
@@ -894,7 +896,7 @@ export default function AdminPage() {
       imagenesAdicionales: promotionForm.imagenesAdicionales ? promotionForm.imagenesAdicionales.split("\n").filter(u => u.trim()) : [],
       tipoEtiqueta: promotionForm.tipoEtiqueta, stock: promotionForm.stock,
       activo: promotionForm.activo, orden: Number(promotionForm.orden) || 0,
-      whatsappLink: promotionForm.whatsappLink?.trim() || "",
+      whatsappNumero: promotionForm.whatsappNumero?.trim() || "",
       caracteristicas: promotionForm.caracteristicas ? promotionForm.caracteristicas.split("\n").filter(c => c.trim()) : [],
       metaTitulo: promotionForm.metaTitulo?.trim() || promotionForm.titulo.trim(),
       metaDescripcion: promotionForm.metaDescripcion?.trim() || promotionForm.descripcion?.trim() || "",
@@ -923,7 +925,7 @@ export default function AdminPage() {
       precio: promotion.precio.toString(), precioAnterior: promotion.precioAnterior?.toString() || "",
       imagenUrl: promotion.imagenUrl || "", imagenesAdicionales: promotion.imagenesAdicionales?.join("\n") || "",
       tipoEtiqueta: promotion.tipoEtiqueta, stock: promotion.stock, activo: promotion.activo,
-      orden: promotion.orden || 0, whatsappLink: promotion.whatsappLink || "",
+      orden: promotion.orden || 0, whatsappNumero: promotion.whatsappNumero || "",
       caracteristicas: promotion.caracteristicas?.join("\n") || "",
       metaTitulo: promotion.metaTitulo || "", metaDescripcion: promotion.metaDescripcion || "",
     });
@@ -1220,9 +1222,9 @@ export default function AdminPage() {
 
                   {/* WhatsApp */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Link de WhatsApp</label>
-                    <input name="whatsappLink" value={form.whatsappLink} onChange={handleChange} placeholder="https://wa.me/51978339737?text=Hola..." className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-                    <p className="text-xs text-gray-500 mt-1">Formato: https://wa.me/51978339737?text=Hola...</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Número de WhatsApp</label>
+                    <input name="whatsappNumero" value={form.whatsappNumero} onChange={handleChange} placeholder="51978339737" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                    <p className="text-xs text-gray-500 mt-1">Solo el número, con código de país (51...) — el mensaje y el link del producto se arman solos.</p>
                   </div>
 
                   {/* Tags */}
@@ -1447,7 +1449,7 @@ export default function AdminPage() {
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Descripción Corta</label><textarea name="descripcion" value={promotionForm.descripcion} onChange={handlePromotionChange} placeholder="Descripción breve para la tarjeta..." rows={2} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none resize-none" /></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Descripción Completa</label><textarea name="descripcionCompleta" value={promotionForm.descripcionCompleta} onChange={handlePromotionChange} placeholder="Descripción detallada para la página individual..." rows={4} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none resize-none" /></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Lo que Incluye (una característica por línea)</label><textarea name="caracteristicas" value={promotionForm.caracteristicas} onChange={handlePromotionChange} placeholder="Lámpara parlante&#10;Miniparlante hongo&#10;Set de cubiertos" rows={4} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none resize-none" /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Link de WhatsApp</label><input name="whatsappLink" value={promotionForm.whatsappLink} onChange={handlePromotionChange} placeholder="https://wa.me/51..." className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none" /></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-2">Número de WhatsApp</label><input name="whatsappNumero" value={promotionForm.whatsappNumero} onChange={handlePromotionChange} placeholder="51978339737" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none" /><p className="text-xs text-gray-500 mt-1">Solo el número — el mensaje se arma solo.</p></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Orden (para organizar)</label><input name="orden" type="number" value={promotionForm.orden} onChange={handlePromotionChange} placeholder="0" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none" /></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Meta Título (SEO)</label><input name="metaTitulo" value={promotionForm.metaTitulo} onChange={handlePromotionChange} placeholder="Se usa el título si está vacío" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none" /></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-2">Meta Descripción (SEO)</label><textarea name="metaDescripcion" value={promotionForm.metaDescripcion} onChange={handlePromotionChange} placeholder="Descripción para redes sociales..." rows={2} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none resize-none" /></div>

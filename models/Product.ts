@@ -18,6 +18,7 @@ interface IProduct extends Document {
   deliveryHuancayo: boolean;
   mostrarEnHome: boolean;
   whatsappLink?: string;
+  whatsappNumero?: string;
   metaTitulo?: string;
   metaDescripcion?: string;
   metaImagen?: string;
@@ -64,6 +65,7 @@ const ProductSchema = new Schema<IProduct>(
     deliveryHuancayo: { type: Boolean, default: true },
     mostrarEnHome: { type: Boolean, default: false },
     whatsappLink: { type: String, default: "" },
+    whatsappNumero: { type: String, default: "" },
     metaTitulo: { type: String, default: "" },
     metaDescripcion: { type: String, default: "" },
     metaImagen: { type: String, default: "" },

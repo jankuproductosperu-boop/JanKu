@@ -8,6 +8,8 @@ import { useCart } from "@/context/CartContext";
 import { fetchWithCache } from "@/lib/cache";
 import Accordion from "@/Components/Accordion/Accordion";
 import ProductCard from "@/Components/ProductCard/ProductCard";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { buildProductUrl } from "@/lib/productUrl";
 
 type Product = {
   _id: string;
@@ -24,7 +26,8 @@ type Product = {
   slug?: string;
   deliveryHuancayo?: boolean;
   caracteristicas?: string[];
-  whatsappLink?: string;
+  whatsappNumero?: string;
+  codigoUrl?: string;
   metaTitulo?: string;
   metaDescripcion?: string;
   metaImagen?: string;
@@ -122,6 +125,12 @@ export default function ProductPageClient({ product }: { product: Product }) {
 
   // Obtener ID del video de YouTube si existe
   const videoId = product.videoUrl ? getYouTubeVideoId(product.videoUrl) : null;
+
+  const whatsappLink = buildWhatsAppLink(
+    product.whatsappNumero,
+    product.nombre,
+    `/producto/${buildProductUrl(product.nombre, product.codigoUrl)}`
+  );
 
   return (
     <section className="w-full max-w-[1000px] mx-auto pb-10 px-4 pt-6">
@@ -344,9 +353,9 @@ export default function ProductPageClient({ product }: { product: Product }) {
                   Agregar al Carrito ({quantity})
                 </button>
 
-                {product.whatsappLink ? (
+                {whatsappLink ? (
                   <a
-                    href={product.whatsappLink}
+                    href={whatsappLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center gap-2"

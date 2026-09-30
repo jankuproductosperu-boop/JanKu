@@ -22,6 +22,7 @@ const PromotionSchema = new Schema(
     activo: { type: Boolean, default: true },
     orden: { type: Number, default: 0 }, // Para ordenar las promociones
     whatsappLink: { type: String, default: "" },
+    whatsappNumero: { type: String, default: "" },
     caracteristicas: [{ type: String }],
     
     // SEO

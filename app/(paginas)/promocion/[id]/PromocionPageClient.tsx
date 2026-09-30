@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ShoppingCart, Minus, Plus, ArrowLeft, Sparkles } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 type Promotion = {
   _id: string;
@@ -18,7 +19,7 @@ type Promotion = {
   tipoEtiqueta: "Combo" | "2x1" | "Descuento" | "Oferta" | "Nuevo";
   stock: "Disponible" | "Limitado" | "Agotado";
   caracteristicas?: string[];
-  whatsappLink?: string;
+  whatsappNumero?: string;
   metaTitulo?: string;
   metaDescripcion?: string;
   metaImagen?: string;
@@ -106,7 +107,11 @@ export default function PromocionPageClient({
   const descuento = promotion.precioAnterior
     ? Math.round(((promotion.precioAnterior - promotion.precio) / promotion.precioAnterior) * 100)
     : 0;
-
+  const whatsappLink = buildWhatsAppLink(
+    promotion.whatsappNumero,
+    promotion.titulo,
+    `/promocion/${promotion._id}`
+  );
   return (
     <section className="w-full max-w-[1000px] mx-auto pb-10 px-4 pt-6">
       {/* Breadcrumb */}
@@ -265,9 +270,9 @@ export default function PromocionPageClient({
                   Agregar al Carrito ({quantity})
                 </button>
 
-                {promotion.whatsappLink ? (
+                {whatsappLink ? (
                   <a
-                    href={promotion.whatsappLink}
+                    href={whatsappLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full bg-green-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center gap-2"
