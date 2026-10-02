@@ -50,11 +50,34 @@ const nextConfig: NextConfig = {
 
   // ── Headers de seguridad HTTP ──────────────────────────────────────────
   async headers() {
+    // Content-Security-Policy — por ahora en modo "Report-Only": el navegador
+    // SOLO AVISA en la consola qué bloquearía, pero no bloquea nada todavía.
+    // Esto nos deja confirmar que la lista de dominios está completa antes
+    // de activarlo de verdad (ver nota más abajo para el siguiente paso).
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https://res.cloudinary.com https://i.postimg.cc https://postimg.cc https://img.jan-ku.com https://img.youtube.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com",
+      "frame-src https://www.youtube.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join('; ');
+
     return [
       {
         // Aplica a todas las rutas
         source: '/(.*)',
         headers: [
+          // CSP en modo "Report-Only" — solo avisa en consola, no bloquea nada todavía
+          {
+            key: 'Content-Security-Policy',
+            value: csp,
+          },
           // Evita que el navegador adivine el tipo de contenido
           {
             key: 'X-Content-Type-Options',
