@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import User from "@/models/User";
-import {
-  validarEmail,
-  generarToken,
-  hashearToken,
-  SECURITY_HEADERS,
-} from "@/lib/authUtils";
-import { enviarEmailResetPassword } from "@/lib/email";
+import { validarEmail } from "@/server/auth/validators";
+import { generarToken, hashearToken } from "@/server/auth/tokens";
+import { SECURITY_HEADERS } from "@/server/http/respond";
+import { enviarEmailResetPassword } from "@/server/email/auth-emails";
 
 export async function POST(request: NextRequest) {
   try {

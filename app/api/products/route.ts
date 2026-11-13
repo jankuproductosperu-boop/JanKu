@@ -1,6 +1,6 @@
 // api/products/route.ts
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import Product from "@/models/Product";
 
 export async function GET() {

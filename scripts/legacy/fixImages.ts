@@ -1,3 +1,4 @@
+// LEGACY: script ya aplicado. No ejecutar sin revisar. Ver docs/plan/02-datos.md
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI || "TU_URI_DE_MONGO_AQUI";

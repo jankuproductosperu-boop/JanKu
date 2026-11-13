@@ -1,5 +1,5 @@
     import { NextRequest, NextResponse } from "next/server";
-    import { deleteFromCloudinary } from "@/lib/cloudinary";
+    import { deleteFromCloudinary } from "@/server/cloudinary";
 
     export const runtime = "nodejs";
 

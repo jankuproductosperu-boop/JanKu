@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import Promotion from "@/models/Promotion";
 
 type Params = {

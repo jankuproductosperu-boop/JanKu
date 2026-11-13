@@ -25,3 +25,20 @@ Fecha: 2026-11-12 · Commit de partida: 71e5e74 (rama `fase-01-linea-base`)
 | aviso | react-hooks/exhaustive-deps | 2 |
 
 **Referencia de N1-10:** ninguna fase puede superar 40 errores de lint.
+
+---
+
+## Actualización · Fase 03
+
+Fecha: 2026-11-13 · Rama `fase-03-reorganizar-lib`
+
+| Comando | Resultado |
+|---|---|
+| `npm run typecheck` | 0 errores |
+| `npm test` | 1 archivo, 1 prueba, pasa |
+| `npm run lint` | **18 errores**, 29 avisos (antes 40 / 38) |
+| `npm run build` | Compila sin errores |
+
+Los 21 errores de `no-require-imports` desaparecen (scripts a `scripts/legacy/`, excluido del lint). Un error más desaparece: `react-hooks/set-state-in-effect` baja de 4 a 3 al borrar el `ImageUploader.tsx` muerto.
+
+**Referencia de N1-10 desde ahora:** ninguna fase puede superar 18 errores de lint.

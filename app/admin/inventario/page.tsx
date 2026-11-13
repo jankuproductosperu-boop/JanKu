@@ -14,7 +14,7 @@ import {
   Pencil,
   CheckCircle,
 } from "lucide-react";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { invalidateCachePattern } from "@/lib/cache";
 import type { ProductAdmin, Category, StockEstado } from "@/types";
 

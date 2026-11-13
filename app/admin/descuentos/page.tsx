@@ -14,7 +14,7 @@ import {
   AlertCircle,
   Tag,
 } from "lucide-react";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import type { DiscountTier } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────

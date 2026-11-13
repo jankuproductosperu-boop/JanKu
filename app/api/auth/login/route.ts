@@ -6,32 +6,19 @@
 
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
-import { loginTracker } from "@/lib/loginAttempts";
-import { connectDB } from "@/lib/mongodb";
+import { loginTracker } from "@/server/auth/legacyLimiters";
+import { connectDB } from "@/server/db";
 import AdminUser from "@/models/AdminUser";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import LoginBlock from "@/models/LoginBlock";
-function getClientIP(headersList: Headers): string {
-  const forwarded = headersList.get("x-forwarded-for");
-  const realIp = headersList.get("x-real-ip");
-  // Tomar solo la primera IP si hay varias
-  const ip = forwarded?.split(",")[0]?.trim() || realIp || "unknown";
-  // Sanitizar la IP
-  return ip.replace(/[^0-9a-fA-F.:]/g, "").slice(0, 45);
-}
-
-// Headers de seguridad para respuestas de auth
-const SECURITY_HEADERS = {
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Cache-Control": "no-store, no-cache, must-revalidate",
-};
+import { obtenerIP } from "@/server/auth/ip";
+import { SECURITY_HEADERS } from "@/server/http/respond";
 
 export async function POST(request: Request) {
   try {
     const headersList = await headers();
-    const clientIP = getClientIP(headersList);
+    const clientIP = obtenerIP(headersList);
 
     // ── 1. Verificar si la IP está bloqueada ─────────────────────────────
     let blockStatus = loginTracker.isBlocked(clientIP);

@@ -1,44 +1,6 @@
-// lib/email.ts
-// Usa Resend (resend.com) — plan gratis: 3,000 emails/mes
-// npm install resend
-
-// Si prefieres Nodemailer con Gmail, reemplaza el contenido de sendEmail()
-// pero mantén las mismas funciones exportadas
-
-// ── Instalar: npm install resend ─────────────────────────────────────────────
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY!;
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@jan-ku.com";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://jan-ku.com";
-
-async function sendEmail({
-  to,
-  subject,
-  html,
-}: {
-  to: string;
-  subject: string;
-  html: string;
-}) {
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: FROM_EMAIL,
-      to,
-      subject,
-      html,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Error enviando email: ${error.message}`);
-  }
-}
+import "server-only";
+// server/email/auth-emails.ts
+import { sendEmail, SITE_URL } from "./send";
 
 // ── Email de verificación ─────────────────────────────────────────────────────
 

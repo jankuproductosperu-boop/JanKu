@@ -1,3 +1,4 @@
+import "server-only";
 // lib/mongodb.ts
 import mongoose from "mongoose";
 

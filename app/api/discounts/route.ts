@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import DiscountTier from "@/models/DiscountTier";
 
 export async function GET() {

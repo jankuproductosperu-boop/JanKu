@@ -1,42 +1,5 @@
-import crypto from "crypto";
-
-// ── Validaciones ─────────────────────────────────────────────────────────────
-
-export function validarEmail(email: string): boolean {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email) && email.length <= 200;
-}
-
-export function validarPassword(password: string): {
-  valida: boolean;
-  mensaje?: string;
-} {
-  if (password.length < 8)
-    return { valida: false, mensaje: "La contraseña debe tener al menos 8 caracteres" };
-  if (password.length > 200)
-    return { valida: false, mensaje: "Contraseña demasiado larga" };
-  if (!/[A-Z]/.test(password))
-    return { valida: false, mensaje: "Debe tener al menos una mayúscula" };
-  if (!/[0-9]/.test(password))
-    return { valida: false, mensaje: "Debe tener al menos un número" };
-  return { valida: true };
-}
-
-export function validarNombre(nombre: string): boolean {
-  return nombre.trim().length >= 2 && nombre.trim().length <= 100;
-}
-
-// ── Tokens seguros ───────────────────────────────────────────────────────────
-
-/** Genera un token hexadecimal de 64 bytes — imposible de adivinar */
-export function generarToken(): string {
-  return crypto.randomBytes(64).toString("hex");
-}
-
-/** Hashea el token antes de guardarlo en MongoDB — así aunque hackeen la BD los tokens son inútiles */
-export function hashearToken(token: string): string {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
+import "server-only";
+// TEMPORAL: se elimina en la fase 07.
 
 // ── Rate limiting en memoria (capa rápida) ───────────────────────────────────
 
@@ -179,19 +142,89 @@ class ResendVerificationLimiter {
 
 export const resendVerificationLimiter = new ResendVerificationLimiter();
 
-// ── Headers de seguridad ─────────────────────────────────────────────────────
+// ── Login admin (traído de lib/loginAttempts.ts) ─────────────────────────────
 
-export const SECURITY_HEADERS = {
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Cache-Control": "no-store, no-cache, must-revalidate",
-};
-
-// ── Obtener IP del cliente ────────────────────────────────────────────────────
-
-export function obtenerIP(headers: Headers): string {
-  const forwarded = headers.get("x-forwarded-for");
-  const realIp = headers.get("x-real-ip");
-  const ip = forwarded?.split(",")[0]?.trim() || realIp || "unknown";
-  return ip.replace(/[^0-9a-fA-F.:]/g, "").slice(0, 45);
+interface LoginAttempt {
+  count: number;
+  lastAttempt: number;
+  blockedUntil?: number;
 }
+
+class LoginAttemptTracker {
+  private attempts: Map<string, LoginAttempt>;
+  private readonly MAX_ATTEMPTS = 3;
+  private readonly BLOCK_DURATION = 15 * 60 * 1000; // 15 minutos
+  private readonly RESET_TIME = 60 * 60 * 1000;     // 1 hora
+  private readonly CLEANUP_INTERVAL = 10 * 60 * 1000;
+
+  constructor() {
+    this.attempts = new Map();
+    if (typeof setInterval !== "undefined") {
+      setInterval(() => this.cleanup(), this.CLEANUP_INTERVAL);
+    }
+  }
+
+  recordAttempt(identifier: string): void {
+    const now = Date.now();
+    const attempt = this.attempts.get(identifier);
+
+    if (!attempt || now - attempt.lastAttempt > this.RESET_TIME) {
+      this.attempts.set(identifier, { count: 1, lastAttempt: now });
+      return;
+    }
+
+    const newCount = attempt.count + 1;
+    this.attempts.set(identifier, {
+      count: newCount,
+      lastAttempt: now,
+      blockedUntil: newCount >= this.MAX_ATTEMPTS ? now + this.BLOCK_DURATION : undefined,
+    });
+  }
+
+  isBlocked(identifier: string): { blocked: boolean; remainingTime?: number } {
+    const attempt = this.attempts.get(identifier);
+    if (!attempt?.blockedUntil) return { blocked: false };
+
+    const now = Date.now();
+    if (now < attempt.blockedUntil) {
+      const remainingTime = Math.ceil((attempt.blockedUntil - now) / 1000 / 60);
+      return { blocked: true, remainingTime };
+    }
+
+    this.attempts.delete(identifier);
+    return { blocked: false };
+  }
+
+  getRemainingAttempts(identifier: string): number {
+    const attempt = this.attempts.get(identifier);
+    if (!attempt) return this.MAX_ATTEMPTS;
+    return Math.max(0, this.MAX_ATTEMPTS - attempt.count);
+  }
+
+  reset(identifier: string): void {
+    this.attempts.delete(identifier);
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    for (const [key, attempt] of this.attempts.entries()) {
+      if (
+        now - attempt.lastAttempt > this.RESET_TIME ||
+        (attempt.blockedUntil && now > attempt.blockedUntil)
+      ) {
+        this.attempts.delete(key);
+      }
+    }
+  }
+
+  getStats() {
+    return {
+      tracked: this.attempts.size,
+      blocked: Array.from(this.attempts.values()).filter(
+        (a) => a.blockedUntil && Date.now() < a.blockedUntil
+      ).length,
+    };
+  }
+}
+
+export const loginTracker = new LoginAttemptTracker();

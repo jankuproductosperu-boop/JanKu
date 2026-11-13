@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import User from "@/models/User";
 import UserLoginBlock from "@/models/UserLoginBlock";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies, headers } from "next/headers";
-import {
-  validarEmail,
-  userRateLimiter,
-  SECURITY_HEADERS,
-  obtenerIP,
-} from "@/lib/authUtils";
+import { validarEmail } from "@/server/auth/validators";
+import { userRateLimiter } from "@/server/auth/legacyLimiters";
+import { SECURITY_HEADERS } from "@/server/http/respond";
+import { obtenerIP } from "@/server/auth/ip";
 
 // ── Config de bloqueo por CUENTA (independiente del bloqueo por IP) ──────────
 const MAX_INTENTOS_CUENTA = 5;

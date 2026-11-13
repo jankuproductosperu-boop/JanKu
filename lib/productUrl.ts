@@ -1,16 +1,4 @@
-/**
- * Genera un slug de texto simple, sin depender de lib/cloudinary.ts
- * (ese archivo importa el SDK de Cloudinary, que usa "fs" de Node y
- * no puede correr en el navegador — por eso esta copia local).
- */
-function textoASlug(texto: string): string {
-  return texto
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+import { slugify } from "@/lib/slug";
 
 /**
  * Arma el link "híbrido" del producto: texto legible (para SEO) + código
@@ -18,7 +6,7 @@ function textoASlug(texto: string): string {
  * el nombre del producto después — por eso el link no se rompe.
  */
 export function buildProductUrl(nombre: string, codigoUrl?: string): string {
-  const texto = textoASlug(nombre || "producto");
+  const texto = slugify(nombre || "producto");
   if (!codigoUrl) return texto; // producto viejo aún sin migrar — fallback
   return `${texto}-${codigoUrl}`;
 }

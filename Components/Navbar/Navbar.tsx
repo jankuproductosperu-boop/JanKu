@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, ShoppingCart, Heart, ChevronDown, Facebook, Instagram, Twitter, Youtube, Music2, Truck, Plane, BadgePercent, User, Menu, X, LogOut, UserCircle } from "lucide-react";
 import { fetchWithCache } from "@/lib/cache";
 import { useFavorites } from "@/context/FavoritesContext";
-import { useScrollDirection } from "@/lib/useScrollDirection";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useUser } from "@/context/UserContext";
 import type { Category } from "@/types";
 

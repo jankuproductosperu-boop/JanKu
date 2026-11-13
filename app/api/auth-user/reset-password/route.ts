@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import {
-  validarPassword,
-  hashearToken,
-  SECURITY_HEADERS,
-} from "@/lib/authUtils";
+import { validarPassword } from "@/server/auth/validators";
+import { hashearToken } from "@/server/auth/tokens";
+import { SECURITY_HEADERS } from "@/server/http/respond";
 
 export async function POST(request: NextRequest) {
   try {

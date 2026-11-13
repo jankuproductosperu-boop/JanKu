@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import {
-  validarEmail,
-  validarPassword,
-  validarNombre,
-  generarToken,
-  hashearToken,
-  registerRateLimiter,
-  resendVerificationLimiter,
-  SECURITY_HEADERS,
-  obtenerIP,
-} from "@/lib/authUtils";
-import { enviarEmailVerificacion } from "@/lib/email";
+import { validarEmail, validarPassword, validarNombre } from "@/server/auth/validators";
+import { generarToken, hashearToken } from "@/server/auth/tokens";
+import { registerRateLimiter, resendVerificationLimiter } from "@/server/auth/legacyLimiters";
+import { SECURITY_HEADERS } from "@/server/http/respond";
+import { obtenerIP } from "@/server/auth/ip";
+import { enviarEmailVerificacion } from "@/server/email/auth-emails";
 import { headers } from "next/headers";
 
 export async function POST(request: NextRequest) {

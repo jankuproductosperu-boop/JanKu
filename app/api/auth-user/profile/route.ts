@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import User from "@/models/User";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
-import { SECURITY_HEADERS } from "@/lib/authUtils";
+import { SECURITY_HEADERS } from "@/server/http/respond";
 
 async function getUserIdFromToken(): Promise<string | null> {
   try {

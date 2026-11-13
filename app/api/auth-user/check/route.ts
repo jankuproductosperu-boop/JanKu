@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
-import { SECURITY_HEADERS } from "@/lib/authUtils";
+import { SECURITY_HEADERS } from "@/server/http/respond";
 
 export async function GET() {
   try {

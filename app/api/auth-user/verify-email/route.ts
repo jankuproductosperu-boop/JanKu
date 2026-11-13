@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import User from "@/models/User";
-import { hashearToken, SECURITY_HEADERS } from "@/lib/authUtils";
-import { enviarEmailBienvenida } from "@/lib/email";
+import { hashearToken } from "@/server/auth/tokens";
+import { SECURITY_HEADERS } from "@/server/http/respond";
+import { enviarEmailBienvenida } from "@/server/email/auth-emails";
 
 // ── GET: solo COMPRUEBA que el token es válido, NO verifica la cuenta ───────
 // Esto evita que escáneres de seguridad de email (Outlook Safe Links, Gmail,

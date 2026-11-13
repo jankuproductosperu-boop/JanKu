@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import Promotion from "@/models/Promotion";
 import PromocionPageClient from "./PromocionPageClient";
 

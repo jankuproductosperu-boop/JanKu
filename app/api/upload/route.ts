@@ -5,7 +5,7 @@
     generateBannerPublicId,
     generatePromocionPublicId,
     generateSlug,
-    } from "@/lib/cloudinary";
+    } from "@/server/cloudinary";
 
     export const runtime = "nodejs";
     export const dynamic = "force-dynamic";

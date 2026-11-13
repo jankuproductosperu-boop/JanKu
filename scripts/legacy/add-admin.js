@@ -1,3 +1,4 @@
+// LEGACY: script ya aplicado. No ejecutar sin revisar. Ver docs/plan/02-datos.md
 require('dotenv').config({ path: '.env.local' });
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');

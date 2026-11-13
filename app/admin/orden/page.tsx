@@ -13,7 +13,7 @@ import {
   AlertCircle,
   ListOrdered,
 } from "lucide-react";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { invalidateCachePattern } from "@/lib/cache";
 import type { Product, Category } from "@/types";
 

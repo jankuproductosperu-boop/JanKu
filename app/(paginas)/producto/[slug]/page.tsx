@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { connectDB } from "@/lib/mongodb";
+import { connectDB } from "@/server/db";
 import Product from "@/models/Product";
 import ProductPageClient from "./ProductPageClient";
 import { extractCodigoUrl } from "@/lib/productUrl";

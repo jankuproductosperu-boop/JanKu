@@ -17,7 +17,7 @@ import {
   ListOrdered,
   Tag
 } from "lucide-react";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import type { ProductAdmin, Banner, BannerPosicion, Category, Promotion } from "@/types";
 
 type BannerConPosicion = Banner & { posicion: BannerPosicion };
