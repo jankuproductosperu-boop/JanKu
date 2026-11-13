@@ -1,26 +1,20 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-type UserData = {
-  id: string;
-  nombre: string;
-  email: string;
-  emailVerificado: boolean;
-};
+import type { SessionUser } from "@/types";
 
 type UserContextType = {
-  user: UserData | null;
+  user: SessionUser | null;
   isAuthenticated: boolean;
   isChecking: boolean;
-  setUser: (user: UserData | null) => void;
+  setUser: (user: SessionUser | null) => void;
   logout: () => Promise<void>;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {

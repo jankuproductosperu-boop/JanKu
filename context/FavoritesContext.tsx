@@ -1,15 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import type { Product } from "@/types";
 
-export type FavoriteProduct = {
-  _id: string;
-  nombre: string;
-  precio: number;
-  imagenUrl?: string;
-  slug?: string;
-  codigoUrl?: string;
-};
+export type FavoriteProduct = Pick<Product, "_id" | "nombre" | "precio" | "imagenUrl" | "slug" | "codigoUrl">;
 
 type FavoritesContextType = {
   favorites: FavoriteProduct[];

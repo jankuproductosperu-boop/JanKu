@@ -15,19 +15,11 @@ import {
   Tag,
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
+import type { DiscountTier } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
 // ─────────────────────────────────────────────────────────────────────────────
-
-type DiscountTier = {
-  _id: string;
-  nombre: string;
-  montoMinimo: number;
-  tipoDescuento: "porcentaje" | "monto_fijo";
-  valorDescuento: number;
-  activo: boolean;
-};
 
 type FormState = {
   nombre: string;

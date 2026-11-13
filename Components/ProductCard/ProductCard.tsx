@@ -7,6 +7,7 @@
   import { useCart } from "@/context/CartContext";
   import { useFavorites } from "@/context/FavoritesContext";
   import { buildProductUrl } from "@/lib/productUrl";
+  import type { Product } from "@/types";
 
   // Función inline para no depender de la lib en el cliente directamente
   function getCloudinaryUrl(
@@ -32,27 +33,6 @@
 
     return `https://res.cloudinary.com/${cloudName}/image/upload/${transformations.join(",")}/${publicIdOrUrl}`;
   }
-
-  type Product = {
-    _id: string;
-    nombre: string;
-    precio: number;
-    descripcion?: string;
-    categoria?: string;
-    categoriaSlug?: string;
-    stock?: "Disponible" | "Limitado" | "Agotado";
-
-    // Nuevo sistema Cloudinary
-    imagenes?: string[];          // public_ids
-    imagenPrincipal?: string;     // public_id principal
-
-    // Legacy (compatibilidad)
-    imagenUrl?: string;
-    imagenesAdicionales?: string[];
-    slug?: string;
-    codigoUrl?: string;
-    deliveryHuancayo?: boolean;
-  };
 
   type ProductCardProps = {
     product: Product;

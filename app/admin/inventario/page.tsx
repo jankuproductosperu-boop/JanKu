@@ -16,31 +16,13 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { invalidateCachePattern } from "@/lib/cache";
+import type { ProductAdmin, Category, StockEstado } from "@/types";
+
+type ProductoInventario = ProductAdmin & { stock: StockEstado };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
 // ─────────────────────────────────────────────────────────────────────────────
-
-type Product = {
-  _id: string;
-  nombre: string;
-  codigo?: string;
-  categorias?: string[];
-  categoriaSlugs?: string[];
-  stock: "Disponible" | "Limitado" | "Agotado";
-  stockCantidad: number;
-  stockMinimo: number;
-  precio: number;
-  precioCosto?: number;
-  proveedor?: string;
-  activo?: boolean;
-};
-
-type Category = {
-  _id: string;
-  nombre: string;
-  slug: string;
-};
 
 type SortKey = "nombre" | "stockCantidad" | "precio" | "margen" | "codigo";
 type SortDir = "asc" | "desc";
@@ -78,7 +60,7 @@ function calcularMargen(precio: number, costo?: number): { monto: number; porcen
   return { monto, porcentaje };
 }
 
-function exportarCSV(products: Product[], categories: Category[]) {
+function exportarCSV(products: ProductoInventario[], categories: Category[]) {
   const catNombre = (slugs?: string[]) =>
     (slugs || [])
       .map((s) => categories.find((c) => c.slug === s)?.nombre || s)
@@ -130,7 +112,7 @@ function exportarCSV(products: Product[], categories: Category[]) {
 export default function InventarioPage() {
   const { isAuthenticated, isChecking } = useAuth();
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductoInventario[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -230,7 +212,7 @@ export default function InventarioPage() {
     }
   };
 
-  const empezarEdicion = (p: Product) => {
+  const empezarEdicion = (p: ProductoInventario) => {
     setEditandoId(p._id);
     setErrorGuardar("");
     setEditForm({

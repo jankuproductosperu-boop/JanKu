@@ -6,24 +6,7 @@ import { useState } from "react";
 import { ShoppingCart, Minus, Plus, ArrowLeft, Sparkles } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-
-type Promotion = {
-  _id: string;
-  titulo: string;
-  descripcion?: string;
-  descripcionCompleta?: string;
-  precio: number;
-  precioAnterior?: number;
-  imagenUrl: string;
-  imagenesAdicionales?: string[];
-  tipoEtiqueta: "Combo" | "2x1" | "Descuento" | "Oferta" | "Nuevo";
-  stock: "Disponible" | "Limitado" | "Agotado";
-  caracteristicas?: string[];
-  whatsappNumero?: string;
-  metaTitulo?: string;
-  metaDescripcion?: string;
-  metaImagen?: string;
-};
+import type { Promotion } from "@/types";
 
 // ✅ Ahora recibe la promoción ya cargada desde el servidor (page.tsx),
 // y el índice ya calculado (para el "Promoción N" que se usa en el carrito)

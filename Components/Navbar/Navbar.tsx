@@ -7,21 +7,16 @@ import { fetchWithCache } from "@/lib/cache";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useScrollDirection } from "@/lib/useScrollDirection";
 import { useUser } from "@/context/UserContext";
+import type { Category } from "@/types";
 
-type Category = {
-  _id: string;
-  nombre: string;
-  slug: string;
-  activo: boolean;
-  orden: number;
-};
+type CategoriaConOrden = Category & { orden: number };
 
 export default function Navbar() {
   const { scrollDirection, isAtTop } = useScrollDirection();
   const router = useRouter();
   const { user, isAuthenticated, logout } = useUser();
   const [openMobile, setOpenMobile] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<CategoriaConOrden[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -54,10 +49,10 @@ export default function Navbar() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const data = await fetchWithCache<Category[]>("/api/categories");
+        const data = await fetchWithCache<CategoriaConOrden[]>("/api/categories");
         const activeCategories = (Array.isArray(data) ? data : [])
-          .filter((c: Category) => c.activo)
-          .sort((a: Category, b: Category) => a.orden - b.orden);
+          .filter((c: CategoriaConOrden) => c.activo)
+          .sort((a: CategoriaConOrden, b: CategoriaConOrden) => a.orden - b.orden);
         setCategories(activeCategories);
       } catch (err) {
         console.error("💥 Error cargando categorías:", err);

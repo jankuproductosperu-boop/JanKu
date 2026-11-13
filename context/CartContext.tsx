@@ -1,25 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
-
-type CartItem = {
-  _id: string;
-  nombre: string;
-  precio: number;
-  imagenUrl?: string;
-  slug?: string;
-  codigoUrl?: string;
-  cantidad: number;
-};
-
-type DiscountTier = {
-  _id: string;
-  nombre: string;
-  montoMinimo: number;
-  tipoDescuento: "porcentaje" | "monto_fijo";
-  valorDescuento: number;
-  activo: boolean;
-};
+import type { CartItem, DiscountTier } from "@/types";
 
 type CartContextType = {
   cart: CartItem[];

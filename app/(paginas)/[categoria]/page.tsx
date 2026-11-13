@@ -6,39 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import ProductCard from "@/Components/ProductCard/ProductCard";
 import { fetchWithCache } from "@/lib/cache";
-
-type Product = {
-  _id: string;
-  nombre: string;
-  precio: number;
-  descripcion?: string;
-  categorias?: string[];           
-  categoriaSlugs?: string[]; 
-  stock?: "Disponible" | "Limitado" | "Agotado";
-  imagenUrl?: string;
-  slug?: string;
-  deliveryHuancayo?: boolean;
-  imagenesAdicionales?: string[];
-  ordenPorCategoria?: Record<string, number>;
-};
-
-type Banner = {
-  _id: string;
-  titulo: string;
-  imagenUrl: string;
-  enlace?: string;
-  ubicaciones?: string[];
-  activo: boolean;
-};
-
-type Category = {
-  _id: string;
-  nombre: string;
-  slug: string;
-  descripcion?: string;
-  imagenUrl?: string;
-  activo: boolean;
-};
+import type { Product, Banner, Category } from "@/types";
 
 type SortOption = "default" | "price-asc" | "price-desc" | "name-asc" | "name-desc";
 type StockFilter = "all" | "Disponible" | "Limitado";

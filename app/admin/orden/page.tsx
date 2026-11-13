@@ -15,27 +15,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { invalidateCachePattern } from "@/lib/cache";
+import type { Product, Category } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
 // ─────────────────────────────────────────────────────────────────────────────
-
-type Product = {
-  _id: string;
-  nombre: string;
-  imagenUrl?: string;
-  categoriaSlugs?: string[];
-  mostrarEnHome?: boolean;
-  ordenHome?: number;
-  ordenPorCategoria?: Record<string, number>;
-};
-
-type Category = {
-  _id: string;
-  nombre: string;
-  slug: string;
-  activo?: boolean;
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LISTA ORDENABLE

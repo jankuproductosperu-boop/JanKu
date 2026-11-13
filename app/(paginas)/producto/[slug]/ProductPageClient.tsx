@@ -10,28 +10,7 @@ import Accordion from "@/Components/Accordion/Accordion";
 import ProductCard from "@/Components/ProductCard/ProductCard";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { buildProductUrl } from "@/lib/productUrl";
-
-type Product = {
-  _id: string;
-  nombre: string;
-  precio: number;
-  descripcion?: string;
-  descripcionCompleta?: string;
-  categoria?: string;
-  categoriaSlug?: string;
-  stock?: "Disponible" | "Limitado" | "Agotado";
-  imagenUrl?: string;
-  imagenesAdicionales?: string[];
-  videoUrl?: string;
-  slug?: string;
-  deliveryHuancayo?: boolean;
-  caracteristicas?: string[];
-  whatsappNumero?: string;
-  codigoUrl?: string;
-  metaTitulo?: string;
-  metaDescripcion?: string;
-  metaImagen?: string;
-};
+import type { Product } from "@/types";
 
 // ✅ Ahora recibe el producto ya cargado desde el servidor (page.tsx)
 export default function ProductPageClient({ product }: { product: Product }) {

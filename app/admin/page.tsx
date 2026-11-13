@@ -18,79 +18,13 @@ import {
   Tag
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
+import type { ProductAdmin, Banner, BannerPosicion, Category, Promotion } from "@/types";
+
+type BannerConPosicion = Banner & { posicion: BannerPosicion };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
 // ─────────────────────────────────────────────────────────────────────────────
-
-type Product = {
-  _id: string;
-  nombre: string;
-  precio: number;
-  descripcion?: string;
-  categorias?: string[];
-  categoriaSlugs?: string[];
-  stock?: "Disponible" | "Limitado" | "Agotado";
-  // ── Cloudinary (nuevo) ──
-  imagenes?: string[];          // array de public_ids
-  imagenPrincipal?: string;     // public_id de la portada
-  // ── Legacy (se siguen guardando para compatibilidad con el resto del sitio) ──
-  imagenUrl?: string;
-  imagenesAdicionales?: string[];
-  slug?: string;
-  deliveryHuancayo?: boolean;
-  mostrarEnHome?: boolean;
-  descripcionCompleta?: string;
-  caracteristicas?: string[];
-  metaTitulo?: string;
-  metaDescripcion?: string;
-  metaImagen?: string;
-  whatsappLink?: string;
-  whatsappNumero?: string;
-  videoUrl?: string;
-  tags?: string[];              // nuevo
-};
-
-type Banner = {
-  _id: string;
-  titulo: string;
-  imagenUrl: string;
-  enlace?: string;
-  posicion: "top-left" | "top-right" | "middle-full" | "bottom-left" | "bottom-right";
-  ubicaciones?: string[];
-  activo: boolean;
-};
-
-type Category = {
-  _id: string;
-  nombre: string;
-  slug: string;
-  descripcion?: string;
-  imagenUrl?: string;
-  activo: boolean;
-  orden: number;
-};
-
-type Promotion = {
-  _id: string;
-  titulo: string;
-  descripcion?: string;
-  descripcionCompleta?: string;
-  precio: number;
-  precioAnterior?: number;
-  imagenUrl: string;
-  imagenesAdicionales?: string[];
-  tipoEtiqueta: "Combo" | "2x1" | "Descuento" | "Oferta" | "Nuevo";
-  stock: "Disponible" | "Limitado" | "Agotado";
-  activo: boolean;
-  orden: number;
-  whatsappLink?: string;
-  whatsappNumero?: string;
-  caracteristicas?: string[];
-  metaTitulo?: string;
-  metaDescripcion?: string;
-  metaImagen?: string;
-};
 
 // Tipo compartido para el uploader de imágenes
 export type UploadedImage = {
@@ -515,18 +449,18 @@ export default function AdminPage() {
     metaTitulo: "", metaDescripcion: "", mostrarEnHome: false,
     whatsappNumero: "", videoUrl: "", tags: "",
   });
-  const [products, setProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<ProductAdmin[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<ProductAdmin | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   // ── BANNERS ──
   const [bannerForm, setBannerForm] = useState({
     titulo: "", imagenUrl: "", enlace: "",
-    posicion: "top-left" as Banner["posicion"],
+    posicion: "top-left" as BannerPosicion,
     ubicaciones: [""] as string[], activo: true,
   });
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
+  const [banners, setBanners] = useState<BannerConPosicion[]>([]);
+  const [selectedBanner, setSelectedBanner] = useState<BannerConPosicion | null>(null);
   const [isEditingBanner, setIsEditingBanner] = useState(false);
 
   // ── CATEGORÍAS ──
@@ -665,7 +599,7 @@ export default function AdminPage() {
     } catch (err) { console.error(err); alert("Error al guardar el producto. Revisa la consola."); }
   };
 
-  const handleSelect = (product: Product) => {
+  const handleSelect = (product: ProductAdmin) => {
     setSelectedProduct(product);
     setForm({
       nombre: product.nombre, precio: product.precio.toString(),
@@ -777,7 +711,7 @@ export default function AdminPage() {
     } catch { alert("Error de conexión al guardar el banner"); }
   };
 
-  const handleBannerSelect = (banner: Banner) => {
+  const handleBannerSelect = (banner: BannerConPosicion) => {
     setSelectedBanner(banner);
     setBannerForm({ titulo: banner.titulo, imagenUrl: banner.imagenUrl, enlace: banner.enlace || "", posicion: banner.posicion, ubicaciones: banner.ubicaciones || [""], activo: banner.activo });
     setBannerImageFile(null); setBannerImagePreview("");

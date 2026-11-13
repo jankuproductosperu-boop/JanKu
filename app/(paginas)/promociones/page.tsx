@@ -5,20 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ShoppingCart, Sparkles } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-
-type Promotion = {
-  _id: string;
-  titulo: string;
-  descripcion?: string;
-  precio: number;
-  precioAnterior?: number;
-  imagenUrl: string;
-  imagenesAdicionales?: string[];
-  tipoEtiqueta: "Combo" | "2x1" | "Descuento" | "Oferta" | "Nuevo";
-  stock: "Disponible" | "Limitado" | "Agotado";
-  activo: boolean;
-  orden: number;
-};
+import type { Promotion } from "@/types";
 
 export default function PromocionesPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);

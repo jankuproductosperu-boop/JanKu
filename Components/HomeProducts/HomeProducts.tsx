@@ -5,32 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchWithCache } from "@/lib/cache";
 import ProductCard from "../ProductCard/ProductCard";
-
-type Product = {
-  _id: string;
-  nombre: string;
-  precio: number;
-  descripcion?: string;
-  categoria?: string;
-  categoriaSlug?: string;
-  stock?: "Disponible" | "Limitado" | "Agotado";
-  imagenUrl?: string;
-  slug?: string;
-  deliveryHuancayo?: boolean;
-  mostrarEnHome?: boolean;
-  imagenesAdicionales?: string[];
-  ordenHome?: number;
-};
-
-type Banner = {
-  _id: string;
-  titulo: string;
-  imagenUrl: string;
-  enlace?: string;
-  posicion: "top-left" | "top-right" | "middle-full" | "bottom-left" | "bottom-right";
-  ubicaciones?: string[];
-  activo: boolean;
-};
+import type { Product, Banner } from "@/types";
 
 function BannerBox({ banner, placeholder }: { banner?: Banner; placeholder?: string }) {
   if (!banner) {

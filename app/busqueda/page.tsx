@@ -7,27 +7,7 @@ import Link from "next/link";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import ProductCard from "@/Components/ProductCard/ProductCard";
 import { fetchWithCache } from "@/lib/cache";
-
-type Product = {
-  _id: string;
-  nombre: string;
-  precio: number;
-  descripcion?: string;
-  categoria?: string;
-  categoriaSlug?: string;
-  stock?: "Disponible" | "Limitado" | "Agotado";
-  imagenUrl?: string;
-  slug?: string;
-  deliveryHuancayo?: boolean;
-  imagenesAdicionales?: string[];
-};
-
-type Category = {
-  _id: string;
-  nombre: string;
-  slug: string;
-  activo: boolean;
-};
+import type { Product, Category } from "@/types";
 
 type SortOption = "default" | "price-asc" | "price-desc" | "name-asc";
 
