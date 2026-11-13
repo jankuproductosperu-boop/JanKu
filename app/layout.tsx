@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "../Components/Navbar/Navbar";
-import Footer from "@/Components/Footer/Footer";
 import { CartProvider } from "@/context/CartContext";
-import CardSidebar from "@/Components/Cart/CartSidebar"
-import FloatingCartButton from "@/Components/Cart/FloatingCartButton";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import ErrorBoundary from "@/Components/ErrorBoundary/ErrorBoundary";
 import GoogleAnalytics from "@/Components/GoogleAnalytics/GoogleAnalytics";
-import FloatingWhatsApp from "@/Components/FloatingWhatsApp/FloatingWhatsApp";
 import { UserProvider } from "@/context/UserContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -89,20 +84,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <GoogleAnalytics />
         <ErrorBoundary>
-        <UserProvider>
-        <CartProvider>
-          <FavoritesProvider> 
-            <Navbar /> 
-            <div className="pt-[150px]">
-            {children}
-            </div>
-          </FavoritesProvider>
-          <FloatingWhatsApp />  
-          <FloatingCartButton />
-          <CardSidebar />
-        </CartProvider>
-        </UserProvider>
-        <Footer />
+          <UserProvider>
+            <CartProvider>
+              <FavoritesProvider>{children}</FavoritesProvider>
+            </CartProvider>
+          </UserProvider>
         </ErrorBoundary>
       </body>
     </html>
