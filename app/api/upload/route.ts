@@ -6,6 +6,8 @@
     generatePromocionPublicId,
     generateSlug,
     } from "@/server/cloudinary";
+    import { handle } from "@/server/http/respond";
+    import { requireAdmin } from "@/server/auth/guards";
 
     export const runtime = "nodejs";
     export const dynamic = "force-dynamic";
@@ -15,7 +17,9 @@
     type BannerSubcarpeta = "home" | "categorias" | "campanas";
     type PromocionSubcarpeta = "ofertas" | "combos" | "publicidad";
 
-    export async function POST(request: NextRequest) {
+    // requireAdmin() va fuera del try: su 401/403 lo responde handle().
+    export const POST = handle(async (request: NextRequest) => {
+    await requireAdmin("catalogo.editar");
     try {
         const formData = await request.formData();
 
@@ -99,4 +103,4 @@
         error instanceof Error ? error.message : "Error al subir imágenes";
         return NextResponse.json({ error: message }, { status: 500 });
     }
-    }
+    });

@@ -1,4 +1,5 @@
 import { handle, json } from "@/server/http/respond";
+import { requireAdmin } from "@/server/auth/guards";
 import { AppError } from "@/server/http/errors";
 import { promocionActualizarSchema } from "@/server/validation/promotion.schema";
 import {
@@ -15,12 +16,14 @@ export const GET = handle(async (_req, ctx) => {
 });
 
 export const PUT = handle(async (req, ctx) => {
+  await requireAdmin("catalogo.editar");
   const { id } = await ctx.params;
   const datos = promocionActualizarSchema.parse(await req.json());
   return json(await actualizarPromocion(id, datos));
 });
 
 export const DELETE = handle(async (_req, ctx) => {
+  await requireAdmin("catalogo.editar");
   const { id } = await ctx.params;
   await eliminarPromocion(id);
   return json({ message: "Promoción eliminada correctamente", success: true });

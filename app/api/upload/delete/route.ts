@@ -1,9 +1,13 @@
     import { NextRequest, NextResponse } from "next/server";
     import { deleteFromCloudinary } from "@/server/cloudinary";
+    import { handle } from "@/server/http/respond";
+    import { requireAdmin } from "@/server/auth/guards";
 
     export const runtime = "nodejs";
 
-    export async function DELETE(request: NextRequest) {
+    // requireAdmin() va fuera del try: su 401/403 lo responde handle().
+    export const DELETE = handle(async (request: NextRequest) => {
+    await requireAdmin("catalogo.editar");
     try {
         const { publicId } = await request.json();
 
@@ -34,4 +38,4 @@
         error instanceof Error ? error.message : "Error al eliminar imagen";
         return NextResponse.json({ error: message }, { status: 500 });
     }
-    }
+    });
