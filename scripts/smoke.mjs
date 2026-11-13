@@ -63,6 +63,8 @@ const CHECKS = [
   },
   { nombre: "POST /api/products/reorder (sin cookie)", metodo: "POST", ruta: "/api/products/reorder", cuerpo: {}, espera: estado(401) },
   { nombre: "GET /api/auth-user/profile (sin cookie)", metodo: "GET", ruta: "/api/auth-user/profile", espera: estado(401) },
+  // Fase 09
+  { nombre: "GET /api/admin/users (sin cookie)", metodo: "GET", ruta: "/api/admin/users", espera: estado(401) },
 ];
 
 async function main() {
