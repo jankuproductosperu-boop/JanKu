@@ -12,13 +12,18 @@ const PROTECTED_API_ROUTES = [
   "/api/discounts",
 ];
 
+// Rutas API solo para ADMIN en TODOS los métodos (también GET)
+const ADMIN_ONLY_API_ROUTES = ["/api/admin"];
+
 // Rutas del panel admin que requieren autenticación de ADMIN para ver
 const PROTECTED_PAGE_ROUTES = ["/admin"];
 
 // Rutas de usuario que requieren sesión de usuario
 const PROTECTED_USER_ROUTES = ["/auth/perfil"];
 
-export async function middleware(request: NextRequest) {
+// Primer filtro barato: solo verifica la firma del token (sin base de datos).
+// La autoridad es el guard dentro de cada handler (requireAdmin / requireUser).
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestMethod = request.method;
 
@@ -58,11 +63,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Proteger APIs de escritura del admin ────────────────────────────────
+  // ── Proteger APIs de escritura del admin y APIs solo-admin ──────────────
   const isProtectedApi = PROTECTED_API_ROUTES.some((r) => pathname.startsWith(r));
   const isWriteMethod = ["POST", "PUT", "DELETE", "PATCH"].includes(requestMethod);
+  const isAdminOnlyApi = ADMIN_ONLY_API_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
 
-  if (isProtectedApi && isWriteMethod) {
+  if ((isProtectedApi && isWriteMethod) || isAdminOnlyApi) {
     const token = request.cookies.get("admin-token")?.value;
 
     if (!token) {
