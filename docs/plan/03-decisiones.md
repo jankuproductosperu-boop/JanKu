@@ -1,0 +1,194 @@
+# 03 · Decisiones de arquitectura
+
+Cada decisión está **tomada**. El ejecutor no la reabre: si cree que es incorrecta, se detiene y lo reporta. Las que dependen de una respuesta del dueño indican la pregunta (`P#`, lista en `README.md`) y el **valor por defecto** con el que se implementa mientras tanto.
+
+---
+
+## Reglas de Nivel 1 (innegociables)
+
+> El encargo menciona "reglas de Nivel 1" pero el repositorio no las define en ningún archivo. Esta es la **propuesta** del arquitecto; queda pendiente de aprobación (pregunta P0). Una vez aprobadas se copian tal cual a `CLAUDE.md`.
+
+| Id | Regla |
+|---|---|
+| **N1-1** | **El sitio público no cambia sin que la fase lo pida.** Mismas URLs, mismo aspecto, mismo flujo de WhatsApp. Toda fase termina con la verificación visual de `fases/fase-00-verificacion-visual.md`. |
+| **N1-2** | **Secretos fuera del repo y de la salida.** Nunca leer en voz alta, imprimir, registrar ni confirmar valores de `.env*`. Solo nombres de variables. |
+| **N1-3** | **Base de datos solo aditiva.** No se borran ni renombran colecciones, campos o índices. Los scripts de migración simulan por defecto y solo escriben con `--apply`, que **solo ejecuta el dueño**. Prohibido `syncIndexes()`, `dropIndex`, `deleteMany` y `drop`. |
+| **N1-4** | **La seguridad no retrocede.** No se relajan CSP, opciones de cookies, límites de intentos, comprobaciones de sesión ni los mensajes genéricos que evitan enumerar usuarios. |
+| **N1-5** | **El servidor es la única fuente de verdad** de precios, descuentos, cupones, totales y stock. Lo que envía el navegador en esos campos se ignora y se recalcula. |
+| **N1-6** | **Contratos existentes compatibles.** Los endpoints que ya existen conservan ruta, método y forma de respuesta. Se pueden añadir campos opcionales; no quitar ni renombrar. |
+| **N1-7** | **Una fase por sesión, dentro de su lista de archivos.** No se tocan archivos fuera de la sección "Archivos" de la fase ni se instalan dependencias que la fase no nombre. Si hace falta, se detiene y se pregunta. |
+| **N1-8** | **Nada sale de la máquina sin permiso.** Sin `git push`, sin despliegues, sin ejecutar scripts contra la base, sin llamadas a Cloudinary/Resend reales, salvo orden explícita del dueño en esa sesión. |
+| **N1-9** | **No cambiar mayúsculas/minúsculas de rutas.** `Components/` se queda con C mayúscula; `Infosection.tsx` conserva su nombre. |
+| **N1-10** | **Cerrar en verde.** `npm run typecheck`, `npm run lint` (sin errores nuevos respecto a la línea base), `npm test` y `npm run build` pasan antes de dar una fase por terminada. Si algo falla, se reporta con la salida; no se oculta. |
+
+---
+
+## Estructura y convenciones
+
+**D-01 · Sin carpeta `src/`; el alias `@/*` sigue apuntando a la raíz.** Mover todo a `src/` son ~100 movimientos sin beneficio funcional.
+
+**D-02 · Tres zonas de código según dónde corre.**
+- `server/` — solo servidor. Todo archivo empieza con `import "server-only";`.
+- `lib/` — funciones puras, seguras en navegador y servidor. Sin React, sin Mongoose, sin `process.env` privado.
+- `hooks/`, `context/`, `Components/` — React de cliente.
+
+Las reglas de negocio que deben coincidir en ambos lados (precios, cupones, estados de pedido, permisos) viven en `lib/` y llevan pruebas unitarias.
+
+**D-03 · `models/` y `Components/` no se mueven ni se renombran.** `models/` ya está bien ubicado. `Components/` no se pasa a minúscula por el riesgo R6.
+
+**D-04 · Capa de servicios.** Un `route.ts` solo hace: (1) comprobar sesión/permiso, (2) validar entrada con Zod, (3) llamar a un servicio, (4) responder. Toda consulta a Mongoose vive en `server/services/*.service.ts`. Las páginas de servidor también llaman a servicios, nunca a modelos.
+
+**D-05 · `Product` conserva `strict: false`.** Endurecerlo puede descartar campos heredados al guardar. La protección contra campos arbitrarios se hace en la validación de entrada (lista blanca Zod). Los campos que hoy viven "de contrabando" (`imagenes`, `imagenPrincipal`, `tags`) se declaran en el esquema.
+
+**D-06 · Validación con Zod 4** (`zod` como dependencia directa). Un esquema por entidad en `server/validation/`. Los esquemas usan `.strict()` solo en endpoints **nuevos**; en los existentes se usa `.strip()` (descarta lo desconocido sin fallar) para no romper al admin actual, que envía campos extra.
+
+**D-07 · Forma de las respuestas de la API.**
+- Éxito: el recurso directamente (objeto o arreglo), como hoy. Listas paginadas nuevas: `{ items, total, page, pageSize }`.
+- Error: `{ "error": "mensaje para mostrar", "code": "CODIGO_ESTABLE", "fields": { "campo": "motivo" } }`. `error` ya existe hoy; `code` y `fields` son nuevos y opcionales.
+- No se introduce un sobre `{ ok, data }`: obligaría a reescribir todos los clientes y viola N1-6.
+
+**D-08 · Tipos compartidos en `types/`.** Un archivo por entidad. Cada entidad tiene su tipo público (lo que ve el navegador) y, si aplica, su tipo admin (`ProductAdmin extends Product` con costo y proveedor). Los archivos dejan de declarar copias locales.
+
+**D-09 · Pruebas con Vitest**, solo unitarias, solo sobre `lib/`. No se prueban rutas ni componentes en este plan.
+
+**D-10 · Dinero como `Number` en soles con 2 decimales.** Toda operación pasa por `redondear2()` de `lib/money.ts`. No se migra a céntimos: sería una migración destructiva de todos los precios.
+
+**D-11 · Registro (logs).** `server/logger.ts` con `log.info / warn / error`. Prohibido registrar cuerpos de petición, contraseñas, tokens o correos completos. `console.log` de depuración se elimina al tocar cada archivo.
+
+**D-12 · Transacciones de MongoDB** (`session.withTransaction`) para toda operación que toque stock y pedido, o cupón y pedido, a la vez. Requiere replica set (Atlas lo es).
+
+---
+
+## Autenticación, roles y permisos
+
+**D-13 · Se mantienen dos sistemas de sesión separados** (admin y cliente), con sus cookies (`admin-token`, `user-token`), secretos y duraciones actuales. Unificarlos no aporta y arriesga dejar fuera al administrador.
+
+**D-14 · Una sola librería JWT: `jose`.** Se elimina `jsonwebtoken`. Algoritmo HS256, igual que hoy, así que **los tokens ya emitidos siguen siendo válidos**.
+
+**D-15 · Sesión revocable con `tokenVersion`.** `AdminUser` y `User` ganan `tokenVersion` (entero, por defecto 0). El token lleva `tv`. Los guards de servidor cargan el usuario y rechazan si `activo` es falso o `tv` no coincide. Se incrementa al cambiar/restablecer contraseña y al desactivar. Un token antiguo sin `tv` se lee como `tv = 0`.
+
+**D-16 · Defensa en dos capas.** `proxy.ts` (antes `middleware.ts`) sigue filtrando por prefijo como primera barrera barata. **Además**, cada handler protegido llama a `requireAdmin(permiso)` o `requireUser()`. El guard es la autoridad; el proxy es un atajo.
+
+**D-17 · Tres roles de administrador, fijos en código.**
+
+| Permiso | `superadmin` | `gestor` | `ventas` |
+|---|:-:|:-:|:-:|
+| `catalogo.editar` (productos, categorías, banners, promociones, orden, imágenes) | ✔ | ✔ | — |
+| `inventario.ver` | ✔ | ✔ | ✔ |
+| `inventario.editar` | ✔ | ✔ | — |
+| `costos.ver` (precio de costo, proveedor, margen) | ✔ | ✔ | — |
+| `pedidos.ver` | ✔ | ✔ | ✔ |
+| `pedidos.gestionar` | ✔ | ✔ | ✔ |
+| `descuentos.gestionar` | ✔ | ✔ | — |
+| `cupones.gestionar` | ✔ | ✔ | — |
+| `admins.gestionar` | ✔ | — | — |
+
+El rol se lee **de la base en cada petición**, nunca del token. Los administradores existentes pasan a `superadmin` (migración 001). Un documento sin `rol` se trata como `superadmin` (equivale a su acceso actual) y se registra un aviso. Los altos nuevos nacen como `gestor`. No hay roles configurables desde la interfaz.
+
+**D-18 · Límite de intentos solo en MongoDB**, colección nueva `RateLimit` con TTL real sobre un campo `Date`. Se eliminan los limitadores en memoria. `LoginBlock` y `UserLoginBlock` dejan de usarse pero **no se borran** (N1-3).
+
+| Clave | Máximo | Ventana | Bloqueo |
+|---|---|---|---|
+| `login-admin:ip:<ip>` (solo fallos) | 3 | 1 h | 15 min |
+| `login-user:ip:<ip>` (solo fallos) | 5 | 1 h | 15 min |
+| `register:ip:<ip>` | 3 | 1 h | — |
+| `resend-verif:email:<email>` | 3 | 1 h | — |
+| `forgot:email:<email>` | 3 | 1 h | — |
+| `forgot:ip:<ip>` | 10 | 1 h | — |
+| `order:ip:<ip>` | 5 | 1 h | — |
+| `coupon:ip:<ip>` | 10 | 10 min | — |
+
+El bloqueo por cuenta del cliente (`User.intentosFallidos`, `bloqueadoHasta`) se conserva tal cual.
+
+**D-19 · IP del cliente:** `cf-connecting-ip` → `x-real-ip` → primer valor de `x-forwarded-for` → `"unknown"`. *Depende de P3.* Por defecto se implementa este orden.
+
+---
+
+## Catálogo e inventario
+
+**D-20 · API pública y API de administración separadas.** Los `GET` públicos existentes devuelven una **proyección pública**: sin `precioCosto` ni `proveedor`, y solo productos con `activo` distinto de `false`. El panel pasa a leer de `/api/admin/*`, que exige sesión y devuelve todo (los campos de costo solo con `costos.ver`). *Ocultar inactivos depende de P4;* por defecto se ocultan.
+
+**D-21 · `stock` (texto) es siempre derivado** de `stockCantidad` y `stockMinimo` por una única función `estadoDeStock()` en `lib/stock.ts`. Nadie lo escribe a mano. El formulario de producto cambia el selector de estado por los campos de cantidad y mínimo.
+
+**D-22 · Todo cambio de stock deja rastro** en la colección nueva `StockMovement` (quién, cuánto, antes, después, por qué). Los cambios pasan por `inventory.service`, nunca por un `update` directo.
+
+**D-23 · Las promociones no llevan stock numérico.** Conservan su etiqueta manual. Un pedido con promociones no descuenta inventario por ellas. *Depende de P7.*
+
+---
+
+## Subida de imágenes a Cloudinary
+
+**D-24 · La subida sigue pasando por el servidor** (`POST /api/upload`, multipart). Se descarta la subida directa firmada desde el navegador: solo suben administradores, el volumen es bajo, y pasar por el servidor permite inspeccionar el archivo. Contrato de petición y respuesta sin cambios.
+
+Endurecimiento:
+1. `requireAdmin("catalogo.editar")` dentro del handler.
+2. El contenido se inspecciona con `sharp` (ya instalada): se aceptan solo JPEG, PNG, WebP y AVIF reales; se rechaza lo demás aunque diga `image/*`.
+3. Se redimensiona a un máximo de 2 000 px por lado antes de subir. Límite de 5 MB por archivo y 10 archivos se mantiene.
+4. Banners y promociones reciben sufijo de tiempo en el `public_id` (como ya hacen los productos) y `overwrite: false`.
+5. `upload/delete` acepta los prefijos `productos/`, `banners/`, `promociones/`.
+6. **No** se borran imágenes de Cloudinary automáticamente al eliminar un producto (un borrado accidental sería irrecuperable). Queda como mejora futura.
+
+**D-25 · No se unifican los generadores de URL de imagen existentes** en `ProductCard` y páginas públicas: generan transformaciones ligeramente distintas y unificarlos cambiaría lo que se ve (N1-1). Se crea `lib/cloudinaryUrl.ts` para el código nuevo.
+
+---
+
+## Pedidos
+
+**D-26 · Pedido = registro guardado + confirmación por WhatsApp. Sin pasarela de pago en este plan.** El cliente llena `/checkout`, el servidor guarda el pedido y lo lleva a `/pedido/[codigo]`, donde un botón abre WhatsApp con el código del pedido. El pago se acuerda por chat y el administrador lo marca a mano. *Depende de P5.*
+
+**D-27 · Interruptor `NEXT_PUBLIC_CHECKOUT_ENABLED`.** Apagado: los botones del carrito abren WhatsApp como hoy. Encendido: llevan a `/checkout`. Es el plan de reversa de todo el bloque de pedidos.
+
+**D-28 · Se puede comprar sin cuenta.** Si hay sesión de cliente, el pedido se asocia a su `userId` y aparece en "Mis pedidos". No se obliga a registrarse.
+
+**D-29 · El servidor reconstruye el pedido.** El navegador envía solo `{ id, cantidad }` por ítem. El servidor busca cada id primero en `Product` y, si no está, en `Promotion`; toma nombre y precio de la base; recalcula subtotal, descuento por monto, cupón y total. El pedido guarda una **copia** de nombre, precio e imagen de cada ítem (los cambios posteriores del catálogo no lo alteran).
+
+**D-30 · Estados y transiciones.**
+
+```
+pendiente ──► confirmado ──► enviado ──► entregado
+    │              │            │
+    └──────────────┴────────────┴──► cancelado
+```
+`confirmado → entregado` también es válido (recojo en tienda). `entregado` y `cancelado` son finales.
+
+**D-31 · El stock se descuenta al CONFIRMAR, no al crear.** Como no hay pago y cualquiera puede crear un pedido, descontar al crear permitiría vaciar el inventario con pedidos falsos. Al crear solo se comprueba que haya stock. Al confirmar, en una transacción, se descuenta cada producto con condición `stockCantidad >= cantidad`; si alguno no alcanza, no se confirma nada y se responde 409 con la lista. Al cancelar un pedido con stock ya descontado, se devuelve. No existe "forzar". *Depende de P21.*
+
+**D-32 · Código de pedido** `JK-AAMMDD-XXXX` (4 caracteres de `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`), único, con reintento ante colisión. **Token de acceso** aleatorio de 32 bytes: va en la URL (`/pedido/JK-…?t=…`), en la base se guarda su hash SHA-256. Sin token válido (y sin ser el dueño con sesión) la página responde 404: el pedido contiene datos personales.
+
+**D-33 · Envío.** `costoEnvio` existe en el modelo. En esta versión: Huancayo y recojo = 0; provincia = 0 con `envioPorCoordinar: true` y aviso "el costo de envío se coordina por WhatsApp". *Depende de P6.*
+
+**D-34 · Teléfono solo Perú**: 9 dígitos que empiezan en 9, guardado como `51` + 9 dígitos. *Depende de P8.*
+
+**D-35 · Pedidos pendientes caducan a las 72 h.** Sin cron: se cancelan de forma perezosa cuando un administrador abre la lista de pedidos (y por un endpoint manual). La cancelación libera el cupón. *El plazo depende de P15.*
+
+**D-36 · Correos de pedido** (confirmación al cliente si dejó email, aviso al negocio). Un fallo de envío nunca hace fallar el pedido.
+
+---
+
+## Cupones y descuentos
+
+**D-37 · El descuento por monto existente se conserva** con sus reglas (gana el nivel de mayor `montoMinimo` alcanzado; no se suman). Pasa a calcularse con la misma función en navegador y servidor (`lib/pricing.ts`).
+
+**D-38 · Un cupón por pedido.**
+
+**D-39 · Cupón y descuento por monto NO se acumulan por defecto: se aplica el mayor de los dos** (empate: el de monto). Cada cupón tiene un interruptor `acumulable`; si está activo, se aplica primero el descuento por monto y el cupón sobre lo que queda. *Depende de P10.*
+
+**D-40 · Tipos de cupón:** porcentaje (con tope opcional en soles) o monto fijo. Condiciones: vigencia, compra mínima, usos totales, usos por cliente. No hay cupones por producto o categoría en este plan.
+
+**D-41 · El cupón se consume al CREAR el pedido y se libera al cancelarlo.** El incremento de `usosActuales` es atómico y condicional (no puede pasar del máximo ni con peticiones simultáneas). El cliente ve el total real desde el primer momento. El riesgo de agotarlo con pedidos falsos se cubre con el límite por IP, el límite por cliente y la caducidad de D-35.
+
+**D-42 · "Cliente" para el límite de usos** = `userId` si hay sesión; si no, teléfono normalizado. No se exige cuenta para usar un cupón. *Depende de P11.*
+
+**D-43 · Validar un cupón nunca revela por qué falla** más allá de un motivo genérico por categoría (`no_valido`, `no_alcanza_minimo`, `ya_usado`), con límite de 10 intentos cada 10 minutos por IP, para que no se puedan adivinar códigos.
+
+**D-44 · Códigos** en mayúsculas, 4–20 caracteres `A-Z 0-9 -`, únicos. La entrada del cliente se normaliza (trim + mayúsculas).
+
+---
+
+## Proceso de trabajo
+
+**D-45 · Una rama por fase** (`fase-NN-nombre`), creada desde `main` actualizado. Commits pequeños en español, como el historial actual. El ejecutor no hace `push` ni fusiona (N1-8).
+
+**D-46 · Migraciones numeradas** en `scripts/migrations/NNN-nombre.mjs`, con un ejecutor común: simulan por defecto, `--apply` para escribir, idempotentes, y antes de escribir guardan copia de los documentos afectados en `backups/` (ignorada por git). Detalle en `02-datos.md`.
+
+**D-47 · Los scripts antiguos de `scripts/` no se borran**; se mueven a `scripts/legacy/` y se excluyen de ESLint.
