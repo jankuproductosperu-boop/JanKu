@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     // ── 4. Verificar si la CUENTA está bloqueada (independiente de la IP) ──
     if (user.bloqueadoHasta && user.bloqueadoHasta.getTime() > Date.now()) {
       const tiempoRestante = Math.ceil((user.bloqueadoHasta.getTime() - Date.now()) / 1000 / 60);
-      console.warn(`🚫 Cuenta bloqueada intentó acceder: ${user.email} desde IP: ${clientIP}`);
+      log.warn("login_user.cuenta_bloqueada", { id: user._id.toString(), ip: clientIP });
       return NextResponse.json(
         {
           error: `Esta cuenta está bloqueada temporalmente. Intenta en ${tiempoRestante} minutos.`,
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       const actualizacion: Record<string, unknown> = { intentosFallidos: nuevosIntentos };
       if (nuevosIntentos >= MAX_INTENTOS_CUENTA) {
         actualizacion.bloqueadoHasta = new Date(Date.now() + BLOQUEO_CUENTA_MS);
-        console.warn(`🔒 Cuenta bloqueada por intentos fallidos: ${user.email}`);
+        log.warn("login_user.cuenta_bloqueada_ahora", { id: user._id.toString() });
       }
       await User.findByIdAndUpdate(user._id, actualizacion);
 
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       { headers: SECURITY_HEADERS }
     );
   } catch (error) {
-    console.error("❌ Error en login de usuario:", error);
+    log.error("login_user.error", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }

@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { SECURITY_HEADERS, handle } from "@/server/http/respond";
 import { requireUser } from "@/server/auth/guards";
 import { borrarCookieUser } from "@/server/auth/session";
+import { log } from "@/server/logger";
 
 // requireUser() va fuera del try: su 401 lo responde handle().
 
@@ -23,7 +24,7 @@ export const GET = handle(async () => {
 
     return NextResponse.json({ user }, { headers: SECURITY_HEADERS });
   } catch (error) {
-    console.error("❌ Error en GET perfil:", error);
+    log.error("perfil.get.error", error);
     return NextResponse.json({ error: "Error en el servidor" }, { status: 500 });
   }
 });
@@ -82,7 +83,7 @@ export const PUT = handle(async (request: NextRequest) => {
 
     return NextResponse.json({ user: updated }, { headers: SECURITY_HEADERS });
   } catch (error) {
-    console.error("❌ Error en PUT perfil:", error);
+    log.error("perfil.put.error", error);
     return NextResponse.json({ error: "Error en el servidor" }, { status: 500 });
   }
 });
@@ -130,7 +131,7 @@ export const DELETE = handle(async (request: NextRequest) => {
 
     await User.findByIdAndDelete(userId);
 
-    console.log(`🗑️ Cuenta eliminada por el propio usuario: ${user.email}`);
+    log.info("perfil.cuenta_eliminada", { id: userId });
 
     // Limpiar la cookie de sesión — ya no hay cuenta a la que pertenezca
     await borrarCookieUser();
@@ -145,7 +146,7 @@ export const DELETE = handle(async (request: NextRequest) => {
       }
     );
   } catch (error) {
-    console.error("❌ Error eliminando cuenta:", error);
+    log.error("perfil.delete.error", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }

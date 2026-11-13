@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { validarPassword } from "@/server/auth/validators";
 import { hashearToken } from "@/server/auth/tokens";
 import { SECURITY_HEADERS } from "@/server/http/respond";
+import { log } from "@/server/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,14 +73,14 @@ export async function POST(request: NextRequest) {
       $inc: { tokenVersion: 1 },
     });
 
-    console.log(`✅ Contraseña restablecida: ${user.email}`);
+    log.info("reset_password.ok", { id: user._id.toString() });
 
     return NextResponse.json(
       { message: "Contraseña actualizada correctamente. Ya puedes iniciar sesión." },
       { status: 200, headers: SECURITY_HEADERS }
     );
   } catch (error) {
-    console.error("❌ Error en reset-password:", error);
+    log.error("reset_password.error", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }

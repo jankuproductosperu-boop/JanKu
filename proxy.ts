@@ -36,7 +36,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     try {
-      await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET!));
+      await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET!), { algorithms: ["HS256"] });
     } catch {
       const loginUrl = new URL("/login-admin", request.url);
       const response = NextResponse.redirect(loginUrl);
@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     try {
-      await jwtVerify(token, new TextEncoder().encode(process.env.USER_JWT_SECRET!));
+      await jwtVerify(token, new TextEncoder().encode(process.env.USER_JWT_SECRET!), { algorithms: ["HS256"] });
     } catch {
       const loginUrl = new URL("/auth/login", request.url);
       const response = NextResponse.redirect(loginUrl);
@@ -79,7 +79,7 @@ export async function proxy(request: NextRequest) {
     }
 
     try {
-      await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET!));
+      await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET!), { algorithms: ["HS256"] });
     } catch {
       return NextResponse.json(
         { error: "Token inválido o expirado" },
