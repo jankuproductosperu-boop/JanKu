@@ -125,7 +125,7 @@ Sin `try/catch` genérico (lo cubre `handle`), sin `connectDB()`, sin importar m
 
 **Migraciones.** `scripts/migrations/NNN-nombre.mjs` sobre `_runner.mjs`: simulan por defecto, son idempotentes, hacen copia en `backups/` antes de escribir. El modelo ejecutor nunca pasa `--apply`.
 
-**Git.** Una rama por fase, commits pequeños en español. Sin `push` ni fusiones por cuenta propia.
+**Git.** Una rama por fase, commits pequeños en español. Sin `push`. **Fusión a `main`:** al cerrar una fase en verde, pregunta al dueño si ya puedes fusionar; solo si responde que sí, haz `git checkout main` y `git merge <rama>` (sin `--force`). Nunca fusiones sin esa aprobación explícita en la sesión.
 
 ## Qué NO hacer
 
