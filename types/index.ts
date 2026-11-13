@@ -5,4 +5,5 @@ export * from "./promotion";
 export * from "./discount";
 export * from "./cart";
 export * from "./user";
+export * from "./admin";
 export * from "./api";
