@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { obtenerProductoPorSlug } from "@/server/services/product.service";
+import { obtenerProductoPublicoPorSlug } from "@/server/services/product.service";
 import ProductPageClient from "./ProductPageClient";
 
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = await obtenerProductoPorSlug(slug);
+  const product = await obtenerProductoPublicoPorSlug(slug);
 
   if (!product) {
     return { title: "Producto no encontrado | Janku" };
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const product = await obtenerProductoPorSlug(slug);
+  const product = await obtenerProductoPublicoPorSlug(slug);
 
   if (!product) {
     notFound();

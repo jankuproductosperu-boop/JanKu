@@ -65,6 +65,19 @@ const CHECKS = [
   { nombre: "GET /api/auth-user/profile (sin cookie)", metodo: "GET", ruta: "/api/auth-user/profile", espera: estado(401) },
   // Fase 09
   { nombre: "GET /api/admin/users (sin cookie)", metodo: "GET", ruta: "/api/admin/users", espera: estado(401) },
+  // Fase 10
+  ...["products", "banners", "promotions"].map((n) => ({
+    nombre: `GET /api/admin/${n} (sin cookie)`, metodo: "GET", ruta: `/api/admin/${n}`, espera: estado(401),
+  })),
+  {
+    nombre: "GET /api/products sin precioCosto ni proveedor", metodo: "GET", ruta: "/api/products",
+    espera: (res, texto) => {
+      const base = esArregloJson(res, texto);
+      if (base !== true) return base;
+      const fugas = ["\"precioCosto\"", "\"proveedor\""].filter((c) => texto.includes(c));
+      return fugas.length ? `el cuerpo contiene ${fugas.join(", ")}` : true;
+    },
+  },
 ];
 
 async function main() {

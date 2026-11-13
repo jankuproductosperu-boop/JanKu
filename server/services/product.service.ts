@@ -55,12 +55,6 @@ export async function listarProductosAdmin(opts: { incluirCostos: boolean }): Pr
   return plano<ProductAdmin[]>(Array.isArray(productos) ? productos : []);
 }
 
-export async function listarProductos(): Promise<ProductAdmin[]> {
-  await connectDB();
-  const productos = await Product.find().lean().exec();
-  return plano<ProductAdmin[]>(Array.isArray(productos) ? productos : []);
-}
-
 export async function obtenerProductoPorId(id: string): Promise<ProductAdmin> {
   await connectDB();
   const producto = await Product.findById(id).lean();

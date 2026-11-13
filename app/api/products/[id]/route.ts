@@ -4,12 +4,12 @@ import { productoActualizarSchema } from "@/server/validation/product.schema";
 import {
   actualizarProducto,
   eliminarProducto,
-  obtenerProductoPorId,
+  obtenerProductoPublicoPorId,
 } from "@/server/services/product.service";
 
 export const GET = handle(async (_req, ctx) => {
   const { id } = await ctx.params;
-  return json(await obtenerProductoPorId(id));
+  return json(await obtenerProductoPublicoPorId(id));
 });
 
 export const PUT = handle(async (req, ctx) => {
