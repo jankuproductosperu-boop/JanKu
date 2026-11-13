@@ -15,6 +15,9 @@ export interface IUser extends Document {
   bloqueadoHasta?: Date;
   activo: boolean;
   ultimoAcceso?: Date;
+  /** Se incrementa para invalidar todas las sesiones abiertas (D-15). */
+  tokenVersion: number;
+  telefono: string;
   direccion?: {
     calle?: string;
     ciudad?: string;
@@ -48,6 +51,8 @@ const UserSchema = new Schema<IUser>(
     bloqueadoHasta: { type: Date, default: null },
     activo: { type: Boolean, default: true },
     ultimoAcceso: { type: Date, default: null },
+    tokenVersion: { type: Number, default: 0 },
+    telefono: { type: String, default: "" },
     direccion: {
       calle: { type: String, default: "" },
       ciudad: { type: String, default: "" },
@@ -61,7 +66,9 @@ const UserSchema = new Schema<IUser>(
 // Índices
 UserSchema.index({ tokenVerificacion: 1 });
 UserSchema.index({ tokenResetPassword: 1 });
-// TTL: eliminar tokens de verificación expirados automáticamente
+// TTL: MongoDB borra el DOCUMENTO COMPLETO del usuario (no solo el token) cuando
+// vence tokenVerificacionExpira y la cuenta sigue sin verificar (emailVerificado: false).
+// Las cuentas verificadas quedan fuera del filtro parcial y nunca se borran por aquí.
 UserSchema.index(
   { tokenVerificacionExpira: 1 },
   { expireAfterSeconds: 0, partialFilterExpression: { emailVerificado: false } }
