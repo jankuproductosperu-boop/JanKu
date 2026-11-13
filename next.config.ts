@@ -50,10 +50,6 @@ const nextConfig: NextConfig = {
 
   // ── Headers de seguridad HTTP ──────────────────────────────────────────
   async headers() {
-    // Content-Security-Policy — por ahora en modo "Report-Only": el navegador
-    // SOLO AVISA en la consola qué bloquearía, pero no bloquea nada todavía.
-    // Esto nos deja confirmar que la lista de dominios está completa antes
-    // de activarlo de verdad (ver nota más abajo para el siguiente paso).
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
