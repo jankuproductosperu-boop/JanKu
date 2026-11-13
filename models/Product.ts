@@ -1,7 +1,8 @@
-import mongoose, { Schema, model, models, Document } from "mongoose";
+import mongoose, { Schema, model, models, Document, type Model } from "mongoose";
+import { estadoDeStock } from "@/lib/stock";
 
 // ✅ Definir interfaz para el producto
-interface IProduct extends Document {
+export interface IProduct extends Document {
   _id: mongoose.Types.ObjectId;
   nombre: string;
   slug?: string;
@@ -12,8 +13,11 @@ interface IProduct extends Document {
   categorias?: string[];
   categoriaSlugs?: string[];
   stock: "Disponible" | "Limitado" | "Agotado";
+  imagenes?: string[];
+  imagenPrincipal?: string;
   imagenUrl?: string;
   imagenesAdicionales?: string[];
+  tags?: string[];
   videoUrl?: string;
   deliveryHuancayo: boolean;
   mostrarEnHome: boolean;
@@ -59,6 +63,8 @@ const ProductSchema = new Schema<IProduct>(
       enum: ["Disponible", "Limitado", "Agotado"],
       default: "Disponible"
     },
+    imagenes: [{ type: String }],
+    imagenPrincipal: { type: String, default: "" },
     imagenUrl: { type: String, default: "" },
     imagenesAdicionales: [{ type: String }],
     videoUrl: { type: String, default: "" },
@@ -70,6 +76,7 @@ const ProductSchema = new Schema<IProduct>(
     metaDescripcion: { type: String, default: "" },
     metaImagen: { type: String, default: "" },
     caracteristicas: [{ type: String }],
+    tags: [{ type: String }],
     garantia: { type: String, default: "" },
     envioGratis: { type: Boolean, default: true },
 
@@ -98,7 +105,8 @@ ProductSchema.index({ mostrarEnHome: 1 });
 ProductSchema.index({ nombre: 'text', descripcion: 'text' });
 ProductSchema.index({ precio: 1 });
 ProductSchema.index({ createdAt: -1 });
-ProductSchema.index({ categoriaSlug: 1, stock: 1, precio: 1 });
+ProductSchema.index({ categoriaSlugs: 1, stock: 1, precio: 1 });
+ProductSchema.index({ activo: 1, mostrarEnHome: 1 });
 ProductSchema.index({ stockCantidad: 1 });
 ProductSchema.index({ ordenHome: 1 });
 
@@ -114,7 +122,7 @@ ProductSchema.pre('validate', async function () {
 
     let slug = baseSlug;
     let counter = 1;
-    const Product = models.Product || model<IProduct>("Product", ProductSchema);
+    const Product = this.constructor as Model<IProduct>;
 
     let exists = await Product.findOne({ slug, _id: { $ne: this._id } }).exec();
     while (exists) {
@@ -132,13 +140,7 @@ ProductSchema.pre('validate', async function () {
   // ── Calcular automáticamente el estado de stock ──────────────────────────
   if (typeof this.stockCantidad === "number") {
     const minimo = typeof this.stockMinimo === "number" ? this.stockMinimo : 5;
-    if (this.stockCantidad <= 0) {
-      this.stock = "Agotado";
-    } else if (this.stockCantidad <= minimo) {
-      this.stock = "Limitado";
-    } else {
-      this.stock = "Disponible";
-    }
+    this.stock = estadoDeStock(this.stockCantidad, minimo);
   }
 
   // Normalizar código vacío a undefined para no romper el índice único+sparse
@@ -147,7 +149,5 @@ ProductSchema.pre('validate', async function () {
   }
 });
 
-// Eliminar el modelo en caché
-delete mongoose.models.Product;
-
-export default mongoose.model<IProduct>("Product", ProductSchema);
+const Product = (models.Product as Model<IProduct>) || model<IProduct>("Product", ProductSchema);
+export default Product;

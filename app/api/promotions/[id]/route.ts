@@ -1,64 +1,27 @@
-import { NextResponse } from "next/server";
-import { connectDB } from "@/server/db";
-import Promotion from "@/models/Promotion";
+import { handle, json } from "@/server/http/respond";
+import { AppError } from "@/server/http/errors";
+import { promocionActualizarSchema } from "@/server/validation/promotion.schema";
+import {
+  actualizarPromocion,
+  eliminarPromocion,
+  obtenerPromocion,
+} from "@/server/services/promotion.service";
 
-type Params = {
-  params: Promise<{
-    id: string;
-  }>;
-};
+export const GET = handle(async (_req, ctx) => {
+  const { id } = await ctx.params;
+  const promocion = await obtenerPromocion(id);
+  if (!promocion) throw new AppError(404, "Promoción no encontrada", "NO_ENCONTRADO");
+  return json(promocion);
+});
 
-export async function GET(req: Request, context: Params) {
-  const { id } = await context.params;
-  await connectDB();
-  const promotion = await Promotion.findById(id).lean();
-  if (!promotion) {
-    return NextResponse.json(
-      { error: "Promoción no encontrada" },
-      { status: 404 }
-    );
-  }
-  return NextResponse.json(promotion);
-}
+export const PUT = handle(async (req, ctx) => {
+  const { id } = await ctx.params;
+  const datos = promocionActualizarSchema.parse(await req.json());
+  return json(await actualizarPromocion(id, datos));
+});
 
-export async function PUT(req: Request, context: Params) {
-  const { id } = await context.params;
-  await connectDB();
-  const body = await req.json();
-  const updated = await Promotion.findByIdAndUpdate(id, body, { new: true }).lean();
-  if (!updated) {
-    return NextResponse.json(
-      { error: "Promoción no encontrada" },
-      { status: 404 }
-    );
-  }
-  return NextResponse.json(updated);
-}
-
-export async function DELETE(req: Request, context: Params) {
-  const { id } = await context.params;
-  
-  try {
-    await connectDB();
-    const deleted = await Promotion.findByIdAndDelete(id).lean();
-    
-    if (!deleted) {
-      return NextResponse.json(
-        { error: "Promoción no encontrada" },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json({ 
-      message: "Promoción eliminada correctamente",
-      success: true 
-    });
-    
-  } catch (error) {
-    console.error("Error en DELETE promotion:", error);
-    return NextResponse.json(
-      { error: "Error al eliminar promoción" },
-      { status: 500 }
-    );
-  }
-}
+export const DELETE = handle(async (_req, ctx) => {
+  const { id } = await ctx.params;
+  await eliminarPromocion(id);
+  return json({ message: "Promoción eliminada correctamente", success: true });
+});

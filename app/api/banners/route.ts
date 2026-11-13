@@ -1,32 +1,10 @@
-import { NextResponse } from "next/server";
-import { connectDB } from "@/server/db";
-import Banner from "@/models/Banner";
+import { handle, json } from "@/server/http/respond";
+import { bannerCrearSchema } from "@/server/validation/banner.schema";
+import { crearBanner, listarBannersActivos } from "@/server/services/banner.service";
 
-export async function GET() {
-  try {
-    await connectDB();
-    const banners = await Banner.find({ activo: true }).lean();
-    return NextResponse.json(banners);
-  } catch (error) {
-    console.error("Error en GET banners:", error);
-    return NextResponse.json(
-      { error: "Error al obtener banners" },
-      { status: 500 }
-    );
-  }
-}
+export const GET = handle(async () => json(await listarBannersActivos()));
 
-export async function POST(req: Request) {
-  try {
-    await connectDB();
-    const body = await req.json();
-    const banner = await Banner.create(body);
-    return NextResponse.json(banner);
-  } catch (error) {
-    console.error("Error en POST banner:", error);
-    return NextResponse.json(
-      { error: "Error al crear banner" },
-      { status: 500 }
-    );
-  }
-}
+export const POST = handle(async (req) => {
+  const datos = bannerCrearSchema.parse(await req.json());
+  return json(await crearBanner(datos));
+});
