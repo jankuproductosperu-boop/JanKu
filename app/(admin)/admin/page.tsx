@@ -487,11 +487,11 @@ export default function AdminPage() {
   // ─── LOADERS ────────────────────────────────────────────────────────────────
 
   const loadProducts = async () => {
-    try { const res = await fetch("/api/products"); const d = await res.json(); setProducts(Array.isArray(d) ? d : []); }
+    try { const res = await fetch("/api/admin/products"); const d = await res.json(); setProducts(Array.isArray(d) ? d : []); }
     catch { setProducts([]); }
   };
   const loadBanners = async () => {
-    try { const res = await fetch("/api/banners"); const d = await res.json(); setBanners(Array.isArray(d) ? d : []); }
+    try { const res = await fetch("/api/admin/banners"); const d = await res.json(); setBanners(Array.isArray(d) ? d : []); }
     catch { setBanners([]); }
   };
   const loadCategories = async () => {
@@ -499,7 +499,7 @@ export default function AdminPage() {
     catch { setCategories([]); }
   };
   const loadPromotions = async () => {
-    try { const res = await fetch("/api/promotions"); const d = await res.json(); setPromotions(Array.isArray(d) ? d : []); }
+    try { const res = await fetch("/api/admin/promotions"); const d = await res.json(); setPromotions(Array.isArray(d) ? d : []); }
     catch { setPromotions([]); }
   };
     useEffect(() => {

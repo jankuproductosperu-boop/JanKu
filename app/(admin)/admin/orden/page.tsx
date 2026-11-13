@@ -258,7 +258,7 @@ export default function OrdenProductosPage() {
     const cargar = async () => {
       try {
         const [prodRes, catRes] = await Promise.all([
-          fetch("/api/products"),
+          fetch("/api/admin/products"),
           fetch("/api/categories"),
         ]);
         const prodData = await prodRes.json();

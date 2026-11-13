@@ -16,6 +16,12 @@ export async function listarPromocionesActivas(): Promise<PromotionTipo[]> {
   return plano<PromotionTipo[]>(promociones);
 }
 
+export async function listarPromociones(): Promise<PromotionTipo[]> {
+  await connectDB();
+  const promociones = await Promotion.find().sort({ orden: 1 }).lean();
+  return plano<PromotionTipo[]>(promociones);
+}
+
 export async function obtenerPromocion(id: string): Promise<PromotionTipo | null> {
   if (!/^[0-9a-fA-F]{24}$/.test(id)) return null;
   await connectDB();

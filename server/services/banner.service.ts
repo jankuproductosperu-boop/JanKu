@@ -14,6 +14,12 @@ export async function listarBannersActivos(): Promise<BannerTipo[]> {
   return plano<BannerTipo[]>(banners);
 }
 
+export async function listarBanners(): Promise<BannerTipo[]> {
+  await connectDB();
+  const banners = await Banner.find().lean();
+  return plano<BannerTipo[]>(banners);
+}
+
 export async function obtenerBanner(id: string): Promise<BannerTipo> {
   await connectDB();
   const banner = await Banner.findById(id).lean();

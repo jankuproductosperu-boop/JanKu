@@ -4,10 +4,55 @@ import { conflicto, noEncontrado } from "@/server/http/errors";
 import { extractCodigoUrl } from "@/lib/productUrl";
 import { estadoDeStock } from "@/lib/stock";
 import Product from "@/models/Product";
-import type { ProductAdmin, ProductInput } from "@/types";
+import type { Product as ProductTipo, ProductAdmin, ProductInput } from "@/types";
 
 function plano<T>(doc: unknown): T {
   return JSON.parse(JSON.stringify(doc)) as T;
+}
+
+// Lo que nunca sale por una ruta pública (S1, S2)
+const CAMPOS_PRIVADOS = "-precioCosto -proveedor";
+// $ne: false incluye documentos antiguos que no tienen el campo
+const FILTRO_PUBLICO = { activo: { $ne: false } };
+
+export async function listarProductosPublicos(): Promise<ProductTipo[]> {
+  await connectDB();
+  const productos = await Product.find(FILTRO_PUBLICO).select(CAMPOS_PRIVADOS).lean().exec();
+  return plano<ProductTipo[]>(Array.isArray(productos) ? productos : []);
+}
+
+export async function obtenerProductoPublicoPorId(id: string): Promise<ProductTipo> {
+  await connectDB();
+  const producto = await Product.findOne({ _id: id, ...FILTRO_PUBLICO }).select(CAMPOS_PRIVADOS).lean();
+  if (!producto) throw noEncontrado("Producto");
+  return plano<ProductTipo>(producto);
+}
+
+export async function obtenerProductoPublicoPorSlug(slugParam: string): Promise<ProductTipo | null> {
+  await connectDB();
+
+  // Misma búsqueda que obtenerProductoPorSlug, con filtro y proyección públicos
+  const codigoUrl = extractCodigoUrl(slugParam);
+  const porCodigo = await Product.findOne({ codigoUrl, ...FILTRO_PUBLICO }).select(CAMPOS_PRIVADOS).lean();
+  if (porCodigo) return plano<ProductTipo>(porCodigo);
+
+  const esObjectId = /^[0-9a-fA-F]{24}$/.test(slugParam);
+  const producto = await Product.findOne({
+    ...(esObjectId ? { $or: [{ slug: slugParam }, { _id: slugParam }] } : { slug: slugParam }),
+    ...FILTRO_PUBLICO,
+  })
+    .select(CAMPOS_PRIVADOS)
+    .lean();
+
+  return producto ? plano<ProductTipo>(producto) : null;
+}
+
+export async function listarProductosAdmin(opts: { incluirCostos: boolean }): Promise<ProductAdmin[]> {
+  await connectDB();
+  const consulta = Product.find();
+  if (!opts.incluirCostos) consulta.select(CAMPOS_PRIVADOS);
+  const productos = await consulta.lean().exec();
+  return plano<ProductAdmin[]>(Array.isArray(productos) ? productos : []);
 }
 
 export async function listarProductos(): Promise<ProductAdmin[]> {
