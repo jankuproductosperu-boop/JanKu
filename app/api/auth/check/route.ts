@@ -1,23 +1,16 @@
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
+import { handle, json } from "@/server/http/respond";
+import { AppError } from "@/server/http/errors";
+import { requireAdmin } from "@/server/auth/guards";
 
-export async function GET() {
+export const GET = handle(async () => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('admin-token')?.value;
-
-    if (!token) {
-      return NextResponse.json({ authenticated: false }, { status: 401 });
+    const { username, nombre, rol, permisos } = await requireAdmin();
+    return json({ authenticated: true, admin: { username, nombre, rol, permisos } });
+  } catch (err) {
+    // Misma respuesta que antes de la fase 08 cuando no hay sesión válida.
+    if (err instanceof AppError && err.status === 401) {
+      return json({ authenticated: false }, { status: 401 });
     }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-
-    return NextResponse.json({ 
-      authenticated: true,
-    });
-
-  } catch (error) {
-    return NextResponse.json({ authenticated: false }, { status: 401 });
+    throw err;
   }
-}
+});

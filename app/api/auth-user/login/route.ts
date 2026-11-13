@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/server/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
+import { firmarUser, ponerCookieUser } from "@/server/auth/session";
 import { validarEmail } from "@/server/auth/validators";
 import { consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit";
 import { SECURITY_HEADERS } from "@/server/http/respond";
@@ -131,24 +131,13 @@ export async function POST(request: NextRequest) {
     });
 
     // JWT separado del admin — usa una secret diferente
-    const token = jwt.sign(
-      {
-        userId: user._id.toString(),
-        nombre: user.nombre,
-        email: user.email,
-      },
-      process.env.USER_JWT_SECRET!,
-      { expiresIn: "7d" }
-    );
-
-    const cookieStore = await cookies();
-    cookieStore.set("user-token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 24 * 7, // 7 días
-      path: "/",
+    const token = await firmarUser({
+      id: user._id.toString(),
+      nombre: user.nombre,
+      email: user.email,
+      tokenVersion: user.tokenVersion ?? 0,
     });
+    await ponerCookieUser(token);
 
     log.info("login_user.ok", { ip: clientIP });
 

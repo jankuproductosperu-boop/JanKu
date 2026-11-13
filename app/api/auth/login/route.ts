@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { connectDB } from "@/server/db";
 import AdminUser from "@/models/AdminUser";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { firmarAdmin, ponerCookieAdmin } from "@/server/auth/session";
 import { obtenerIP } from "@/server/auth/ip";
 import { consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit";
 import { SECURITY_HEADERS } from "@/server/http/respond";
@@ -81,26 +81,13 @@ export async function POST(request: Request) {
     await reiniciar("login-admin", "ip", clientIP);
     await AdminUser.findByIdAndUpdate(user._id, { ultimoAcceso: new Date() });
 
-    const token = jwt.sign(
-      {
-        userId: user._id.toString(),
-        username: user.username,
-        email: user.email,
-        // Incluir versión para poder invalidar tokens viejos si es necesario
-        v: 1,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: "8h" } // Reducido de 24h a 8h por seguridad
-    );
-
-    const cookieStore = await cookies();
-    cookieStore.set("admin-token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60 * 8, // 8 horas
-      path: "/",
+    const token = await firmarAdmin({
+      id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      tokenVersion: user.tokenVersion ?? 0,
     });
+    await ponerCookieAdmin(token);
 
     log.info("login_admin.ok", { ip: clientIP });
 

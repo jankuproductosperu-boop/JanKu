@@ -1,12 +1,9 @@
   import { NextResponse } from "next/server";
-  import { cookies } from "next/headers";
+  import { borrarCookieAdmin } from "@/server/auth/session";
 
   export async function POST() {
     try {
-      const cookieStore = await cookies();
-
-      // Borrar la cookie correcta (antes borraba "admin-auth" que no existe)
-      cookieStore.delete("admin-token");
+      await borrarCookieAdmin();
 
       return NextResponse.json(
         { success: true },

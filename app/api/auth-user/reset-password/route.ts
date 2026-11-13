@@ -58,15 +58,18 @@ export async function POST(request: NextRequest) {
     // Hashear nueva contraseña
     const passwordHash = await bcrypt.hash(password!, 12);
 
-    // Actualizar contraseña y marcar token como usado
+    // Actualizar contraseña, marcar token como usado y cerrar todas las sesiones abiertas
     await User.findByIdAndUpdate(user._id, {
-      password: passwordHash,
-      tokenResetPassword: null,
-      tokenResetPasswordExpira: null,
-      tokenResetPasswordUsado: true,
-      // Resetear intentos fallidos de login
-      intentosFallidos: 0,
-      bloqueadoHasta: null,
+      $set: {
+        password: passwordHash,
+        tokenResetPassword: null,
+        tokenResetPasswordExpira: null,
+        tokenResetPasswordUsado: true,
+        // Resetear intentos fallidos de login
+        intentosFallidos: 0,
+        bloqueadoHasta: null,
+      },
+      $inc: { tokenVersion: 1 },
     });
 
     console.log(`✅ Contraseña restablecida: ${user.email}`);

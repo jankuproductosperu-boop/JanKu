@@ -1,34 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/server/db";
 import User from "@/models/User";
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
-import { SECURITY_HEADERS } from "@/server/http/respond";
+import { SECURITY_HEADERS, handle } from "@/server/http/respond";
+import { requireUser } from "@/server/auth/guards";
+import { borrarCookieUser } from "@/server/auth/session";
 
-async function getUserIdFromToken(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("user-token")?.value;
-    if (!token) return null;
-    const { payload } = await jwtVerify(
-      token,
-      new TextEncoder().encode(process.env.USER_JWT_SECRET!)
-    );
-    return payload.userId as string;
-  } catch {
-    return null;
-  }
-}
+// requireUser() va fuera del try: su 401 lo responde handle().
 
 // ── GET — ver perfil ──────────────────────────────────────────────────────────
-export async function GET() {
+export const GET = handle(async () => {
+  const { id: userId } = await requireUser();
   try {
-    const userId = await getUserIdFromToken();
-    if (!userId) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
     await connectDB();
     const user = await User.findById(userId).select(
       "nombre email emailVerificado direccion createdAt ultimoAcceso"
@@ -43,16 +26,12 @@ export async function GET() {
     console.error("❌ Error en GET perfil:", error);
     return NextResponse.json({ error: "Error en el servidor" }, { status: 500 });
   }
-}
+});
 
 // ── PUT — editar perfil ───────────────────────────────────────────────────────
-export async function PUT(request: NextRequest) {
+export const PUT = handle(async (request: NextRequest) => {
+  const { id: userId } = await requireUser();
   try {
-    const userId = await getUserIdFromToken();
-    if (!userId) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
     let body: {
       nombre?: string;
       direccion?: {
@@ -106,18 +85,14 @@ export async function PUT(request: NextRequest) {
     console.error("❌ Error en PUT perfil:", error);
     return NextResponse.json({ error: "Error en el servidor" }, { status: 500 });
   }
-}
+});
 
 // ── DELETE — el usuario elimina su propia cuenta ────────────────────────────
 // Requiere confirmar la contraseña actual como medida de seguridad —
 // evita borrados accidentales o por terceros con acceso momentáneo a la sesión.
-export async function DELETE(request: NextRequest) {
+export const DELETE = handle(async (request: NextRequest) => {
+  const { id: userId } = await requireUser();
   try {
-    const userId = await getUserIdFromToken();
-    if (!userId) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
-
     let body: { password?: string };
     try {
       body = await request.json();
@@ -158,8 +133,7 @@ export async function DELETE(request: NextRequest) {
     console.log(`🗑️ Cuenta eliminada por el propio usuario: ${user.email}`);
 
     // Limpiar la cookie de sesión — ya no hay cuenta a la que pertenezca
-    const cookieStore = await cookies();
-    cookieStore.delete("user-token");
+    await borrarCookieUser();
 
     return NextResponse.json(
       { success: true, message: "Tu cuenta fue eliminada correctamente." },
@@ -177,4 +151,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500, headers: SECURITY_HEADERS }
     );
   }
-}
+});
