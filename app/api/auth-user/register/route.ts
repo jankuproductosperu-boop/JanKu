@@ -4,7 +4,8 @@ import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import { validarEmail, validarPassword, validarNombre } from "@/server/auth/validators";
 import { generarToken, hashearToken } from "@/server/auth/tokens";
-import { registerRateLimiter, resendVerificationLimiter } from "@/server/auth/legacyLimiters";
+import { registrarIntento } from "@/server/auth/rateLimit";
+import { log } from "@/server/logger";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { obtenerIP } from "@/server/auth/ip";
 import { enviarEmailVerificacion } from "@/server/email/auth-emails";
@@ -16,7 +17,8 @@ export async function POST(request: NextRequest) {
     const clientIP = obtenerIP(headersList);
 
     // ── 1. Rate limiting para registro — máx 3 cuentas por IP por hora ───
-    if (!registerRateLimiter.puedeRegistrar(clientIP)) {
+    const limite = await registrarIntento("register", "ip", clientIP);
+    if (!limite.permitido) {
       return NextResponse.json(
         { error: "Demasiados registros desde esta IP. Intenta en 1 hora." },
         { status: 429, headers: SECURITY_HEADERS }
@@ -77,12 +79,12 @@ export async function POST(request: NextRequest) {
       // Si ya existe pero no verificó el email, reenviar verificación
       if (!usuarioExistente.emailVerificado) {
         // ── Límite de reenvío por EMAIL — evita "email bombing" a una víctima ──
-        const { permitido, tiempoRestante } = resendVerificationLimiter.puedeReenviar(emailNormalizado);
+        const reenvio = await registrarIntento("resend-verif", "email", emailNormalizado);
 
-        if (!permitido) {
+        if (!reenvio.permitido) {
           // Respondemos igual que siempre para no revelar que el límite se activó
           // por este email específico (evita enumeración), pero no reenviamos nada.
-          console.warn(`⚠️ Límite de reenvío alcanzado para: ${emailNormalizado} (${tiempoRestante} min restantes)`);
+          log.warn("register.limite_reenvio", { ip: clientIP });
           return NextResponse.json(
             { message: "Te enviamos un email de verificación. Revisa tu bandeja." },
             { status: 200, headers: SECURITY_HEADERS }

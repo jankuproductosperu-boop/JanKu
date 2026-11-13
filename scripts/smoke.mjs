@@ -53,6 +53,8 @@ const CHECKS = [
   { nombre: "GET /api/auth/check (sin cookie)", metodo: "GET", ruta: "/api/auth/check", espera: estado(401) },
   { nombre: "GET /api/auth-user/check (sin cookie)", metodo: "GET", ruta: "/api/auth-user/check", espera: estado(401) },
   { nombre: "Cabeceras de seguridad en GET /", metodo: "GET", ruta: "/", espera: cabeceras },
+  // Campos vacíos se rechazan antes de registrarIntento: no consume intentos.
+  { nombre: "POST /api/auth/login con {}", metodo: "POST", ruta: "/api/auth/login", cuerpo: {}, espera: estado(400) },
 ];
 
 async function main() {

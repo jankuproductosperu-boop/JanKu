@@ -5,6 +5,10 @@ import { validarEmail } from "@/server/auth/validators";
 import { generarToken, hashearToken } from "@/server/auth/tokens";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { enviarEmailResetPassword } from "@/server/email/auth-emails";
+import { obtenerIP } from "@/server/auth/ip";
+import { registrarIntento } from "@/server/auth/rateLimit";
+import { log } from "@/server/logger";
+import { headers } from "next/headers";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,9 +29,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const emailNormalizado = email.toLowerCase().trim();
+    const clientIP = obtenerIP(await headers());
+
+    // ── Límite por IP y por email — evita email bombing a una víctima ─────
+    // Si se supera, misma respuesta genérica y sin enviar ni tocar usuarios.
+    const porIP = await registrarIntento("forgot", "ip", clientIP);
+    const porEmail = await registrarIntento("forgot", "email", emailNormalizado);
+    if (!porIP.permitido || !porEmail.permitido) {
+      log.warn("forgot.limite", { ip: clientIP });
+      return NextResponse.json(
+        { message: "Si ese email existe, recibirás un enlace en tu bandeja." },
+        { status: 200, headers: SECURITY_HEADERS }
+      );
+    }
+
     await connectDB();
     const user = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email: emailNormalizado,
       activo: true,
       emailVerificado: true,
     });
@@ -52,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     await enviarEmailResetPassword(user.email, user.nombre, token);
 
-    console.log(`🔑 Reset de contraseña solicitado: ${user.email}`);
+    log.info("forgot.enviado", { ip: clientIP });
 
     return NextResponse.json(
       { message: "Si ese email existe, recibirás un enlace en tu bandeja." },

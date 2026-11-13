@@ -1,45 +1,28 @@
-// Mejoras:
-// 1. Rate limiting más robusto con tiempo de bloqueo en la respuesta
-// 2. Headers de seguridad en la respuesta
-// 3. Logs de seguridad más detallados
-// 4. Validación de inputs antes de consultar la BD
-
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
-import { loginTracker } from "@/server/auth/legacyLimiters";
 import { connectDB } from "@/server/db";
 import AdminUser from "@/models/AdminUser";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import LoginBlock from "@/models/LoginBlock";
 import { obtenerIP } from "@/server/auth/ip";
+import { consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit";
 import { SECURITY_HEADERS } from "@/server/http/respond";
+import { log } from "@/server/logger";
 
 export async function POST(request: Request) {
   try {
     const headersList = await headers();
     const clientIP = obtenerIP(headersList);
 
-    // ── 1. Verificar si la IP está bloqueada ─────────────────────────────
-    let blockStatus = loginTracker.isBlocked(clientIP);
-
-  // Si no está en memoria (servidor reiniciado), verificar MongoDB
-  if (!blockStatus.blocked) {
-    await connectDB();
-    const dbBlock = await LoginBlock.findOne({ ip: clientIP });
-    if (dbBlock?.blockedUntil && Date.now() < dbBlock.blockedUntil) {
-      const remainingTime = Math.ceil((dbBlock.blockedUntil - Date.now()) / 1000 / 60);
-      blockStatus = { blocked: true, remainingTime };
-    }
-  }
-
-  if (blockStatus.blocked) {
-      console.warn(`🚫 IP bloqueada intentó acceder: ${clientIP}`);
+    // ── 1. Verificar si la IP está bloqueada (persistente en MongoDB) ─────
+    const estado = await consultar("login-admin", "ip", clientIP);
+    if (estado.bloqueado) {
+      log.warn("login_admin.bloqueado", { ip: clientIP });
       return NextResponse.json(
         {
-          error: `Demasiados intentos fallidos. Bloqueado por ${blockStatus.remainingTime} minutos.`,
+          error: `Demasiados intentos fallidos. Bloqueado por ${estado.minutosRestantes} minutos.`,
           blocked: true,
-          remainingTime: blockStatus.remainingTime,
+          remainingTime: estado.minutosRestantes,
         },
         { status: 429, headers: SECURITY_HEADERS }
       );
@@ -58,7 +41,7 @@ export async function POST(request: Request) {
 
     const { username, password } = body;
 
-    // Validación básica de inputs
+    // Validación básica de inputs (no consume intentos)
     if (!username || !password) {
       return NextResponse.json(
         { error: "Usuario y contraseña son obligatorios" },
@@ -66,26 +49,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Limitar longitud para prevenir ataques
-    if (username.length > 50 || password.length > 200) {
-      loginTracker.recordAttempt(clientIP);
-      await LoginBlock.findOneAndUpdate(
-      { ip: clientIP },
-      {
-        $inc: { count: 1 },
-        $set: {
-          lastAttempt: Date.now(),
-          blockedUntil: loginTracker.isBlocked(clientIP).blocked
-            ? Date.now() + 15 * 60 * 1000
-            : null,
-        },
-      },
-      { upsert: true }
-    );
+    // Cada fallo de credenciales cuenta un intento y responde igual
+    const fallo = async (motivo: string) => {
+      const r = await registrarIntento("login-admin", "ip", clientIP);
+      log.warn("login_admin.fallo", { motivo, ip: clientIP, restantes: r.restantes });
       return NextResponse.json(
-        { error: "Usuario o contraseña incorrectos" },
+        { error: "Usuario o contraseña incorrectos", remainingAttempts: r.restantes },
         { status: 401, headers: SECURITY_HEADERS }
       );
+    };
+
+    // Limitar longitud para prevenir ataques
+    if (typeof username !== "string" || typeof password !== "string" || username.length > 50 || password.length > 200) {
+      return fallo("entrada_larga");
     }
 
     // ── 3. Buscar usuario en BD ──────────────────────────────────────────
@@ -95,63 +71,14 @@ export async function POST(request: Request) {
       activo: true,
     });
 
-    if (!user) {
-      loginTracker.recordAttempt(clientIP);
-      await LoginBlock.findOneAndUpdate(
-        { ip: clientIP },
-        {
-          $inc: { count: 1 },
-          $set: {
-            lastAttempt: Date.now(),
-            blockedUntil: loginTracker.isBlocked(clientIP).blocked
-              ? Date.now() + 15 * 60 * 1000
-              : null,
-          },
-        },
-        { upsert: true }
-      );
-      const remaining = loginTracker.getRemainingAttempts(clientIP);
-      console.warn(`❌ Usuario no encontrado: "${username}" desde IP: ${clientIP}`);
-      return NextResponse.json(
-        {
-          error: "Usuario o contraseña incorrectos",
-          remainingAttempts: remaining,
-        },
-        { status: 401, headers: SECURITY_HEADERS }
-      );
-    }
+    if (!user) return fallo("usuario");
 
     // ── 4. Verificar contraseña ──────────────────────────────────────────
     const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      loginTracker.recordAttempt(clientIP);
-      await LoginBlock.findOneAndUpdate(
-        { ip: clientIP },
-        {
-          $inc: { count: 1 },
-          $set: {
-            lastAttempt: Date.now(),
-            blockedUntil: loginTracker.isBlocked(clientIP).blocked
-              ? Date.now() + 15 * 60 * 1000
-              : null,
-          },
-        },
-        { upsert: true }
-      );
-      const remaining = loginTracker.getRemainingAttempts(clientIP);
-      console.warn(`❌ Contraseña incorrecta para "${username}" desde IP: ${clientIP}`);
-      return NextResponse.json(
-        {
-          error: "Usuario o contraseña incorrectos",
-          remainingAttempts: remaining,
-        },
-        { status: 401, headers: SECURITY_HEADERS }
-      );
-    }
+    if (!isValidPassword) return fallo("password");
 
     // ── 5. Login exitoso ─────────────────────────────────────────────────
-    loginTracker.reset(clientIP);
-    await LoginBlock.deleteOne({ ip: clientIP });
+    await reiniciar("login-admin", "ip", clientIP);
     await AdminUser.findByIdAndUpdate(user._id, { ultimoAcceso: new Date() });
 
     const token = jwt.sign(
@@ -175,14 +102,14 @@ export async function POST(request: Request) {
       path: "/",
     });
 
-    console.log(`✅ Login exitoso: ${user.username} desde IP: ${clientIP}`);
+    log.info("login_admin.ok", { ip: clientIP });
 
     return NextResponse.json(
       { success: true, username: user.username },
       { headers: SECURITY_HEADERS }
     );
   } catch (error) {
-    console.error("❌ Error en login:", error);
+    log.error("login_admin.error", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }
