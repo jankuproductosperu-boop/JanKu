@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Fase 01: fuera del alcance del lint
+    "scripts/legacy/**",
+    "backups/**",
+    "docs/**",
   ]),
 ]);
 
