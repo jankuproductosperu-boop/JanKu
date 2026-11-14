@@ -63,6 +63,20 @@ export async function requireAdmin(permiso?: Permiso): Promise<AdminSession> {
   return { id: claims.id, username: doc.username, nombre: doc.nombre, rol, permisos: permisosDe(rol) };
 }
 
+/**
+ * Un producto lleva campos de otros permisos (D-17): la cantidad es inventario y el costo/proveedor
+ * son costos. Si el cuerpo los trae, la sesión debe tener también ese permiso. Lanza prohibido().
+ */
+export function exigirPermisosDeCampos(
+  admin: AdminSession,
+  datos: { stockCantidad?: unknown; precioCosto?: unknown; proveedor?: unknown },
+): void {
+  if (datos.stockCantidad !== undefined && !admin.permisos.includes("inventario.editar")) throw prohibido();
+  if ((datos.precioCosto !== undefined || datos.proveedor !== undefined) && !admin.permisos.includes("costos.ver")) {
+    throw prohibido();
+  }
+}
+
 async function cargarUsuario(): Promise<SessionUser | null> {
   const token = await leerCookie(COOKIE_USER);
   if (!token) return null;
