@@ -11,7 +11,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const { tema, alternar } = useTema();
 
   return (
-    <div data-theme={tema === "oscuro" ? "dark" : "light"} suppressHydrationWarning className="panel min-h-screen min-[861px]:grid min-[861px]:grid-cols-[252px_1fr]">
+    <div data-theme={tema === "oscuro" ? "dark" : "light"} className="panel min-h-screen min-[861px]:grid min-[861px]:grid-cols-[252px_1fr]">
       <AdminSidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
       <div className="min-w-0">
         <AdminTopbar onMenu={() => setMenuAbierto(true)} tema={tema} onTema={alternar} />
