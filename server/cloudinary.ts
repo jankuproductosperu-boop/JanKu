@@ -1,6 +1,7 @@
 import "server-only";
     import { v2 as cloudinary } from "cloudinary";
     import { slugify } from "@/lib/slug";
+    import { log } from "@/server/logger";
 
     cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -35,7 +36,7 @@ import "server-only";
     nombre: string
     ): string {
     const nombreSlug = generateSlug(nombre || "banner");
-    return `banners/${subcarpeta}/${nombreSlug}`;
+    return `banners/${subcarpeta}/${nombreSlug}-${Date.now()}`;
     }
 
     export function generatePromocionPublicId(
@@ -43,18 +44,18 @@ import "server-only";
     nombre: string
     ): string {
     const nombreSlug = generateSlug(nombre || "promocion");
-    return `promociones/${subcarpeta}/${nombreSlug}`;
+    return `promociones/${subcarpeta}/${nombreSlug}-${Date.now()}`;
     }
 
     export async function uploadToCloudinary(
     buffer: Buffer,
     publicId: string,
-    options: { folder?: string; tags?: string[] } = {}
+    options: { folder?: string; tags?: string[]; overwrite?: boolean } = {}
     ): Promise<CloudinaryUploadResult> {
     return new Promise((resolve, reject) => {
         const uploadOptions: Record<string, unknown> = {
         public_id: publicId,
-        overwrite: true,
+        overwrite: options.overwrite ?? false,
         resource_type: "image",
         transformation: [{ quality: "auto", fetch_format: "auto" }],
         tags: options.tags || [],
@@ -68,7 +69,7 @@ import "server-only";
         uploadOptions,
         (error, result) => {
             if (error) {
-            console.error("❌ Error Cloudinary upload:", error);
+            log.error("cloudinary_subida_fallida", error);
             reject(error);
             return;
             }
@@ -94,9 +95,9 @@ import "server-only";
     export async function deleteFromCloudinary(publicId: string): Promise<void> {
     try {
         await cloudinary.uploader.destroy(publicId);
-        console.log(`✅ Imagen eliminada: ${publicId}`);
+        log.info("imagen_eliminada", { publicId });
     } catch (error) {
-        console.error(`❌ Error eliminando imagen ${publicId}:`, error);
+        log.error("cloudinary_eliminar_fallido", error, { publicId });
         throw error;
     }
     }
