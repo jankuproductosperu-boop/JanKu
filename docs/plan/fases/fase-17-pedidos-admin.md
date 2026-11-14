@@ -1,5 +1,7 @@
 # Fase 17 · Gestión de pedidos en el panel y descuento de stock
 
+> **Aviso de la fase 13b (variantes):** `descontarPorPedido` y `reponerPorPedido` deben llamar a `ajustarStock` con `variantId` cuando el ítem del pedido lo trae; el total del producto lo recalcula el servicio. Ver `fase-13b-variantes.md` §10.
+
 > ⚠️ **ALTO RIESGO — inventario.** Confirmar o cancelar un pedido mueve stock real. Revisión del dueño obligatoria.
 
 ## 1. Objetivo y por qué va en este orden

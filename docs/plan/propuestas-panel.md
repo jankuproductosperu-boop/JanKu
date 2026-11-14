@@ -11,6 +11,8 @@ Alcance y decisiones ya acordadas con el dueño. **Aún no son fases ejecutables
 
 ## 13b · Variantes y categorías escalables
 
+> **Ya tiene su archivo de fase:** [fase-13b-variantes.md](fases/fase-13b-variantes.md). Lo de abajo es el borrador original.
+
 - **Variantes** (D-56): opcionales y de ejes libres (color, talla, material…). Un producto sin variantes funciona exactamente como hoy. Con variantes: cada combinación tiene su stock, y opcionalmente precio e imagen. El stock total del producto es la suma. El inventario muestra una fila por variante; carrito, pedido y mensaje de WhatsApp llevan la variante elegida («Mochila – Negro»).
 - **Toca**: modelo `Product` (campo opcional `variantes`), `inventory.service` (el stock de una variante pasa por el mismo servicio y deja `StockMovement`), `lib/pricing.ts`, carrito, pedidos (fase 15), ficha de producto de la tienda. Por eso es alto riesgo y se hace con modelo superior.
 - **Orden**: justo después de la 13 y **antes de la 14/15**, para no rehacer pedidos.

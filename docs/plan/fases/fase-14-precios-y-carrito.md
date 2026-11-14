@@ -1,5 +1,7 @@
 # Fase 14 · Reglas de precio compartidas y carrito robusto
 
+> **Aviso de la fase 13b (variantes):** el carrito ya identifica cada línea por `lineaId` (`productoId` o `productoId:varianteId`) y el `CartItem` trae `varianteId?` y `varianteEtiqueta?`. `calcularTotales` y `construirMensajeCarrito` deben usar `lineaId`, `precioDeVariante` (de `lib/variantes.ts`) y mostrar la etiqueta de la variante en el mensaje. Ver `fase-13b-variantes.md` §5 y §10.
+
 ## 1. Objetivo y por qué va en este orden
 
 Mover el cálculo de subtotal, descuento por monto y total a una función pura (`lib/pricing.ts`) con pruebas, que usan **igual** el carrito del navegador y, desde la fase 15, el servidor. También: un solo generador del mensaje de WhatsApp, un solo lugar para el número de teléfono, el carrito aprende a distinguir productos de promociones y deja de romperse si `localStorage` está corrupto.

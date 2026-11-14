@@ -1,5 +1,7 @@
 # Fase 15 · Pedidos: modelo y creación (backend)
 
+> **Aviso de la fase 13b (variantes):** cada ítem del pedido guarda `varianteId` y `varianteEtiqueta`. El servidor **vuelve a leer** el precio de la variante y valida su stock (N1-5); si el producto tiene variantes y el ítem no trae `varianteId`, responde 400. Ver `fase-13b-variantes.md` §10.
+
 > ⚠️ **ALTO RIESGO — dinero y datos personales.** Es el primer endpoint público que **escribe** en la base. Revisión del dueño obligatoria.
 
 ## 1. Objetivo y por qué va en este orden

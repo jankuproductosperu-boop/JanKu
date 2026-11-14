@@ -222,3 +222,25 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-58 · Novedades por fecha.** `nuevoHasta` opcional en `Product`; «novedad» = fecha futura, calculado al consultar, sin tareas programadas. El producto conserva su categoría. *Propuesta 12e.*
 
 **D-59 · Popup de oferta configurable desde el panel:** imagen, texto de botón, destino (producto, categoría, promoción o enlace validado), interruptor activo y fechas opcionales. Se muestra una vez cada 24 h. *Propuesta 12f; cambia lo que ve el público, requiere aprobación explícita (N1-1).*
+
+---
+
+## Variantes de producto (fase 13b)
+
+*Acordadas con el dueño el 2026-11-13. Detalle en `fases/fase-13b-variantes.md`.*
+
+**D-60 · Modelo de variantes.** Dentro de `Product`: `opciones` (ejes libres: máx. 3, 20 valores cada uno) y `variantes` (máx. 100), cada una con `_id` propio, `combinacion`, `stockCantidad`, `precio?`, `imagen?`, `sku?` y `activo`. «Tiene variantes» = `variantes` no vacío. Sin colección nueva.
+
+**D-61 · Stock por variante, por la misma puerta.** El stock de una variante solo cambia con `ajustarStock({ variantId })` y deja un movimiento con la etiqueta de la variante. El `stockCantidad` del producto pasa a ser la **suma de las variantes activas** (derivado por el servidor) y su etiqueta (Disponible/Limitado/Agotado) se calcula de ese total. Un producto con variantes rechaza ajustes sin `variantId`.
+
+**D-62 · Precio.** La variante puede tener precio propio; si no, hereda el del producto. Las tarjetas muestran «Desde S/ …» cuando los precios difieren.
+
+**D-63 · Línea del carrito.** Se identifica por `lineaId` = `productoId` o `productoId:varianteId`. Los carritos ya guardados en los navegadores (sin variante) siguen funcionando sin migrar.
+
+**D-64 · Las variantes no se eliminan: se desactivan.** Así el historial de movimientos y pedidos conserva sentido (N1-3). Quitar todas las variantes de un producto queda fuera de esta fase.
+
+**D-65 · La tarjeta de un producto con variantes no agrega directo al carrito:** lleva a la ficha, donde se eligen las opciones. Productos sin variantes: sin cambios.
+
+**D-66 · Pedidos y WhatsApp llevan la variante.** El mensaje de WhatsApp y cada ítem de pedido incluyen la etiqueta de la variante; el servidor revalida variante, precio y stock (N1-5). Las fases 14, 15 y 17 se ajustan a esto.
+
+**D-67 · Subcategorías: solo la base (D-57).** `Category.padre` opcional (slug de la categoría madre), sin interfaz ni uso público.
