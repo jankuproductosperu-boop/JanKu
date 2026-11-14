@@ -45,3 +45,16 @@
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* Campos de formulario con los tokens del panel (especificidad cero: las clases de Tailwind siguen mandando). */
+:where(.panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), .panel select, .panel textarea) {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+:where(.panel ::placeholder) {
+  color: var(--muted);
+  opacity: 0.8;
+}
+.panel[data-theme="dark"] {
+  color-scheme: dark;
+}

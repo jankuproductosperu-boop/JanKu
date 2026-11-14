@@ -47,7 +47,7 @@ function getStockBadge(stock: string) {
     case "Agotado":
       return "bg-red-100 text-red-700 border-red-200";
     default:
-      return "bg-gray-100 text-gray-700 border-gray-200";
+      return "bg-[var(--line)] text-[var(--ink)] border-[var(--line)]";
   }
 }
 
@@ -273,10 +273,10 @@ export default function InventarioPage() {
 
   if (isChecking || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-orange-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-gray-600 font-medium">Cargando inventario...</p>
+          <p className="text-[var(--muted)] font-medium">Cargando inventario...</p>
         </div>
       </div>
     );
@@ -290,26 +290,26 @@ export default function InventarioPage() {
   const SortHeader = ({ label, sortk }: { label: string; sortk: SortKey }) => (
     <button
       onClick={() => toggleSort(sortk)}
-      className="flex items-center gap-1 font-semibold text-gray-700 hover:text-indigo-600 transition"
+      className="flex items-center gap-1 font-semibold text-[var(--ink)] hover:text-indigo-600 transition"
     >
       {label}
-      <ArrowUpDown className={`w-3.5 h-3.5 ${sortKey === sortk ? "text-indigo-600" : "text-gray-300"}`} />
+      <ArrowUpDown className={`w-3.5 h-3.5 ${sortKey === sortk ? "text-indigo-600" : "text-[var(--muted)]"}`} />
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-orange-50 p-4 md:p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-3 rounded-xl text-white">
               <Package className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Inventario</h1>
-              <p className="text-gray-600 text-sm">Stock, costos y márgenes de todos tus productos</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-[var(--ink)]">Inventario</h1>
+              <p className="text-[var(--muted)] text-sm">Stock, costos y márgenes de todos tus productos</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -341,28 +341,28 @@ export default function InventarioPage() {
         )}
 
         {/* Filtros */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 flex flex-col md:flex-row gap-3">
+        <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" />
             <input
               type="text"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por nombre o código..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              className="w-full pl-10 pr-4 py-2.5 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
             />
           </div>
           <select
             value={categoriaFiltro}
             onChange={(e) => setCategoriaFiltro(e.target.value)}
-            className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="px-3 py-2.5 border border-[var(--line)] rounded-lg text-sm bg-[var(--surface)] focus:ring-2 focus:ring-indigo-500 outline-none"
           >
             <option value="">Todas las categorías</option>
             {categories.map((c) => (
               <option key={c._id} value={c.slug}>{c.nombre}</option>
             ))}
           </select>
-          <label className="flex items-center gap-2 px-3 py-2.5 border border-gray-300 rounded-lg text-sm cursor-pointer bg-white hover:bg-gray-50">
+          <label className="flex items-center gap-2 px-3 py-2.5 border border-[var(--line)] rounded-lg text-sm cursor-pointer bg-[var(--surface)] hover:bg-[var(--bg)]">
             <input
               type="checkbox"
               checked={soloBajoStock}
@@ -374,10 +374,10 @@ export default function InventarioPage() {
         </div>
 
         {/* Tabla */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-[var(--surface)] rounded-2xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[var(--bg)] border-b border-[var(--line)]">
                 <tr>
                   <th className="px-4 py-3 text-left"><SortHeader label="Código" sortk="codigo" /></th>
                   <th className="px-4 py-3 text-left"><SortHeader label="Producto" sortk="nombre" /></th>
@@ -393,10 +393,10 @@ export default function InventarioPage() {
                   <th className="px-4 py-3 text-center">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--line)]">
                 {productosFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-12 text-gray-400">
+                    <td colSpan={12} className="text-center py-12 text-[var(--muted)]">
                       No hay productos que coincidan con los filtros
                     </td>
                   </tr>
@@ -409,7 +409,7 @@ export default function InventarioPage() {
                     return (
                       <Fragment key={p._id}>
                       <tr
-                        className={`transition ${savedFlashId === p._id ? "bg-green-50" : bajoStock ? "bg-red-50/40" : "hover:bg-gray-50"}`}
+                        className={`transition ${savedFlashId === p._id ? "bg-green-50" : bajoStock ? "bg-red-50/40" : "hover:bg-[var(--bg)]"}`}
                       >
                         {/* Código */}
                         <td className="px-4 py-3">
@@ -418,20 +418,20 @@ export default function InventarioPage() {
                               value={editForm?.codigo || ""}
                               onChange={(e) => setEditForm((f) => f && { ...f, codigo: e.target.value })}
                               placeholder="SKU-001"
-                              className="w-24 px-2 py-1 border border-gray-300 rounded text-xs uppercase"
+                              className="w-24 px-2 py-1 border border-[var(--line)] rounded text-xs uppercase"
                             />
                           ) : (
-                            <span className="font-mono text-xs text-gray-500">{p.codigo || "—"}</span>
+                            <span className="font-mono text-xs text-[var(--muted)]">{p.codigo || "—"}</span>
                           )}
                         </td>
 
                         {/* Nombre */}
-                        <td className="px-4 py-3 font-medium text-gray-800 max-w-[220px] truncate" title={p.nombre}>
+                        <td className="px-4 py-3 font-medium text-[var(--ink)] max-w-[220px] truncate" title={p.nombre}>
                           {p.nombre}
                         </td>
 
                         {/* Categoría */}
-                        <td className="px-4 py-3 text-gray-500 text-xs max-w-[140px] truncate">
+                        <td className="px-4 py-3 text-[var(--muted)] text-xs max-w-[140px] truncate">
                           {catNombrePorSlug(p.categoriaSlugs) || "—"}
                         </td>
 
@@ -443,10 +443,10 @@ export default function InventarioPage() {
                               min={0}
                               value={editForm?.stockCantidad || ""}
                               onChange={(e) => setEditForm((f) => f && { ...f, stockCantidad: e.target.value })}
-                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                              className="w-16 px-2 py-1 border border-[var(--line)] rounded text-center text-xs"
                             />
                           ) : (
-                            <span className={`font-bold ${bajoStock ? "text-red-600" : "text-gray-800"}`}>
+                            <span className={`font-bold ${bajoStock ? "text-red-600" : "text-[var(--ink)]"}`}>
                               {p.stockCantidad ?? 0}
                             </span>
                           )}
@@ -460,10 +460,10 @@ export default function InventarioPage() {
                               min={0}
                               value={editForm?.stockMinimo || ""}
                               onChange={(e) => setEditForm((f) => f && { ...f, stockMinimo: e.target.value })}
-                              className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-xs"
+                              className="w-16 px-2 py-1 border border-[var(--line)] rounded text-center text-xs"
                             />
                           ) : (
-                            <span className="text-gray-500 text-xs">{p.stockMinimo ?? 5}</span>
+                            <span className="text-[var(--muted)] text-xs">{p.stockMinimo ?? 5}</span>
                           )}
                         </td>
 
@@ -483,15 +483,15 @@ export default function InventarioPage() {
                               step="0.01"
                               value={editForm?.precioCosto || ""}
                               onChange={(e) => setEditForm((f) => f && { ...f, precioCosto: e.target.value })}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-right text-xs"
+                              className="w-20 px-2 py-1 border border-[var(--line)] rounded text-right text-xs"
                             />
                           ) : (
-                            <span className="text-gray-500">S/ {(p.precioCosto || 0).toFixed(2)}</span>
+                            <span className="text-[var(--muted)]">S/ {(p.precioCosto || 0).toFixed(2)}</span>
                           )}
                         </td>
 
                         {/* Venta */}
-                        <td className="px-4 py-3 text-right font-semibold text-gray-800">
+                        <td className="px-4 py-3 text-right font-semibold text-[var(--ink)]">
                           S/ {p.precio.toFixed(2)}
                         </td>
 
@@ -501,7 +501,7 @@ export default function InventarioPage() {
                             S/ {margenMonto.toFixed(2)}
                           </span>
                           {margenPct !== null && (
-                            <span className="block text-[10px] text-gray-400">
+                            <span className="block text-[10px] text-[var(--muted)]">
                               {margenPct.toFixed(0)}%
                             </span>
                           )}
@@ -514,10 +514,10 @@ export default function InventarioPage() {
                               value={editForm?.proveedor || ""}
                               onChange={(e) => setEditForm((f) => f && { ...f, proveedor: e.target.value })}
                               placeholder="Opcional"
-                              className="w-28 px-2 py-1 border border-gray-300 rounded text-xs"
+                              className="w-28 px-2 py-1 border border-[var(--line)] rounded text-xs"
                             />
                           ) : (
-                            <span className="text-gray-500 text-xs">{p.proveedor || "—"}</span>
+                            <span className="text-[var(--muted)] text-xs">{p.proveedor || "—"}</span>
                           )}
                         </td>
 
@@ -531,7 +531,7 @@ export default function InventarioPage() {
                               className="w-4 h-4 text-indigo-600 rounded"
                             />
                           ) : p.activo === false ? (
-                            <span className="text-gray-400 text-xs">Inactivo</span>
+                            <span className="text-[var(--muted)] text-xs">Inactivo</span>
                           ) : (
                             <CheckCircle className="w-4 h-4 text-green-500 mx-auto" />
                           )}
@@ -553,7 +553,7 @@ export default function InventarioPage() {
                                 <button
                                   onClick={cancelarEdicion}
                                   disabled={guardando}
-                                  className="p-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+                                  className="p-1.5 bg-[var(--line)] text-[var(--ink)] rounded hover:bg-[var(--line)] transition"
                                   title="Cancelar"
                                 >
                                   <X className="w-3.5 h-3.5" />
@@ -592,7 +592,7 @@ export default function InventarioPage() {
 
 
           {/* Footer con conteo */}
-          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
+          <div className="px-4 py-3 bg-[var(--bg)] border-t border-[var(--line)] text-xs text-[var(--muted)]">
             Mostrando {productosFiltrados.length} de {products.length} productos
           </div>
         </div>

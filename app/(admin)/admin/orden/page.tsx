@@ -124,10 +124,10 @@ function ListaOrdenable({
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
+      <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-gray-800">
-            {contextoLabel} <span className="text-gray-400 font-normal">({lista.length} productos)</span>
+          <h2 className="font-bold text-[var(--ink)]">
+            {contextoLabel} <span className="text-[var(--muted)] font-normal">({lista.length} productos)</span>
           </h2>
           <button
             onClick={guardarOrden}
@@ -140,7 +140,7 @@ function ListaOrdenable({
         </div>
 
         {lista.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
+          <div className="text-center py-12 text-[var(--muted)]">
             <p className="text-lg">No hay productos aquí todavía</p>
             <p className="text-sm mt-2">
               {contexto === "home"
@@ -153,7 +153,7 @@ function ListaOrdenable({
             {lista.map((p, index) => (
               <div
                 key={p._id}
-                className="flex items-center gap-2 md:gap-3 p-3 rounded-xl border-2 border-gray-200 bg-gradient-to-r from-white to-gray-50"
+                className="flex items-center gap-2 md:gap-3 p-3 rounded-xl border-2 border-[var(--line)] bg-[var(--surface)]"
               >
                 {/* Posición actual + campo para saltar directo */}
                 <input
@@ -168,17 +168,17 @@ function ListaOrdenable({
                       e.currentTarget.blur();
                     }
                   }}
-                  className="w-12 flex-shrink-0 text-center text-xs font-bold border border-gray-300 rounded-lg py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-12 flex-shrink-0 text-center text-xs font-bold border border-[var(--line)] rounded-lg py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
                   title="Escribe una posición y presiona Enter para saltar ahí"
                 />
 
-                <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                <div className="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-[var(--line)] border border-[var(--line)]">
                   {p.imagenUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.imagenUrl} alt={p.nombre} className="w-full h-full object-cover" />
                   )}
                 </div>
-                <span className="flex-1 text-sm font-medium text-gray-800 truncate min-w-0">{p.nombre}</span>
+                <span className="flex-1 text-sm font-medium text-[var(--ink)] truncate min-w-0">{p.nombre}</span>
 
                 {/* Saltos grandes: al inicio / al final */}
                 <div className="flex gap-1 flex-shrink-0">
@@ -205,7 +205,7 @@ function ListaOrdenable({
                   <button
                     onClick={() => moverArriba(index)}
                     disabled={index === 0}
-                    className="p-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1 bg-[var(--line)] hover:bg-[var(--line)] text-[var(--muted)] rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Mover una posición arriba"
                   >
                     <ChevronUp className="w-4 h-4" />
@@ -213,7 +213,7 @@ function ListaOrdenable({
                   <button
                     onClick={() => moverAbajo(index)}
                     disabled={index === lista.length - 1}
-                    className="p-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1 bg-[var(--line)] hover:bg-[var(--line)] text-[var(--muted)] rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Mover una posición abajo"
                   >
                     <ChevronDown className="w-4 h-4" />
@@ -225,12 +225,12 @@ function ListaOrdenable({
         )}
 
         {lista.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-100 space-y-1">
-            <p className="text-xs text-gray-500 text-center">
+          <div className="mt-4 pt-4 border-t border-[var(--line)] space-y-1">
+            <p className="text-xs text-[var(--muted)] text-center">
               💡 Escribe un número en el casillero para saltar directo a esa posición, o usa
               <strong> ⏫/⏬ para inicio/final</strong> y <strong>⬆️/⬇️ para un paso</strong>.
             </p>
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-[var(--muted)] text-center">
               No olvides hacer clic en <strong>&quot;Guardar orden&quot;</strong> arriba cuando termines de acomodar.
             </p>
           </div>
@@ -307,10 +307,10 @@ export default function OrdenProductosPage() {
 
   if (isChecking || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-orange-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-gray-600 font-medium">Cargando productos...</p>
+          <p className="text-[var(--muted)] font-medium">Cargando productos...</p>
         </div>
       </div>
     );
@@ -319,38 +319,38 @@ export default function OrdenProductosPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-orange-50 p-4 md:p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-600 p-3 rounded-xl text-white">
               <ListOrdered className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Orden de Productos</h1>
-              <p className="text-gray-600 text-sm">Elige qué producto se muestra primero</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-[var(--ink)]">Orden de Productos</h1>
+              <p className="text-[var(--muted)] text-sm">Elige qué producto se muestra primero</p>
             </div>
           </div>
         </div>
 
         {/* Selector de contexto */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 md:p-6">
+          <label className="block text-sm font-semibold text-[var(--ink)] mb-2">
             ¿Dónde quieres ordenar los productos?
           </label>
           <select
             value={contexto}
             onChange={(e) => setContexto(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-sm font-medium"
+            className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-[var(--surface)] text-sm font-medium"
           >
             <option value="home">🏠 Página de Inicio (Home)</option>
             {categories.map((c) => (
               <option key={c._id} value={c.slug}>📁 {c.nombre}</option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[var(--muted)] mt-2">
             El orden que definas aquí es <strong>independiente</strong>: cambiar el orden en Home no afecta el
             orden de este mismo producto dentro de sus categorías, y viceversa.
           </p>

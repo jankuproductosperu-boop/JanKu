@@ -24,16 +24,16 @@ export function PromocionImageField({ currentImageUrl, preview, onFileSelect, ti
   const display = preview || currentImageUrl;
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">Imagen de la Promoción *</label>
+      <label className="block text-sm font-medium text-[var(--ink)]">Imagen de la Promoción *</label>
       <div className="flex gap-3 items-start">
-        {display && <img src={display} alt="preview" className="w-24 h-24 object-cover rounded-xl border border-gray-200 flex-shrink-0" />}
+        {display && <img src={display} alt="preview" className="w-24 h-24 object-cover rounded-xl border border-[var(--line)] flex-shrink-0" />}
         <div className="flex-1">
-          <label className="cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-pink-400 hover:bg-pink-50/30 transition text-sm text-gray-600">
+          <label className="cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-[var(--line)] rounded-lg hover:border-indigo-400 hover:bg-indigo-50/30 transition text-sm text-[var(--muted)]">
             <Upload className="w-4 h-4" />
             <span>{display ? "Cambiar imagen" : "Seleccionar imagen"}</span>
             <input type="file" accept="image/*" className="hidden" onChange={handleChange} />
           </label>
-          <p className="text-xs text-gray-500 mt-1">Se subirá a <code>promociones/{subcarpeta}/</code> · máx 5MB · la misma imagen se usará como meta image</p>
+          <p className="text-xs text-[var(--muted)] mt-1">Se subirá a <code>promociones/{subcarpeta}/</code> · máx 5MB · la misma imagen se usará como meta image</p>
         </div>
       </div>
     </div>

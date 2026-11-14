@@ -2,9 +2,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, Search } from "lucide-react";
+import { Menu, Search, Moon, Sun } from "lucide-react";
+import type { Tema } from "@/app/(admin)/admin/_components/useTema";
 
-export default function AdminTopbar({ onMenu }: { onMenu: () => void }) {
+export default function AdminTopbar({ onMenu, tema, onTema }: { onMenu: () => void; tema: Tema; onTema: () => void }) {
   const router = useRouter();
   const [q, setQ] = useState("");
 
@@ -30,6 +31,9 @@ export default function AdminTopbar({ onMenu }: { onMenu: () => void }) {
         />
       </form>
       <span className="flex-1" />
+      <button onClick={onTema} aria-label="Cambiar tema" title={tema === "oscuro" ? "Tema claro" : "Tema oscuro"} className="flex-none w-[38px] h-[38px] grid place-items-center rounded-[10px] border border-[var(--line)] hover:bg-[var(--bg)] transition">
+        {tema === "oscuro" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
       <Link href="/" target="_blank" rel="noopener noreferrer" className="hidden sm:block flex-none rounded-[10px] border border-[var(--line)] px-3.5 py-2 text-sm font-semibold hover:bg-[var(--bg)] transition">
         Ver tienda ↗
       </Link>

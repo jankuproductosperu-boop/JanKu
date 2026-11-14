@@ -198,10 +198,10 @@ export default function DescuentosPage() {
 
   if (isChecking || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-orange-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-gray-600 font-medium">Cargando descuentos...</p>
+          <p className="text-[var(--muted)] font-medium">Cargando descuentos...</p>
         </div>
       </div>
     );
@@ -210,18 +210,18 @@ export default function DescuentosPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-orange-50 p-4 md:p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="bg-pink-600 p-3 rounded-xl text-white">
+            <div className="bg-indigo-600 p-3 rounded-xl text-white">
               <Tag className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Descuentos por Monto</h1>
-              <p className="text-gray-600 text-sm">Se aplican solos al superar cierto total en el carrito</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-[var(--ink)]">Descuentos por Monto</h1>
+              <p className="text-[var(--muted)] text-sm">Se aplican solos al superar cierto total en el carrito</p>
             </div>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function DescuentosPage() {
         {!showForm && (
           <button
             onClick={abrirNuevo}
-            className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-pink-600 to-pink-700 text-white hover:from-pink-700 hover:to-pink-800 shadow-lg transition-all flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 shadow-lg transition-all flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Agregar Nuevo Descuento
@@ -256,32 +256,32 @@ export default function DescuentosPage() {
 
         {/* Formulario */}
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
+          <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 md:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-[var(--ink)]">
                 {editandoId ? "Editar Descuento" : "Nuevo Descuento"}
               </h2>
-              <button onClick={cerrarForm} className="text-gray-400 hover:text-gray-600">
+              <button onClick={cerrarForm} className="text-[var(--muted)] hover:text-[var(--muted)]">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre interno <span className="text-gray-400 font-normal">(solo para identificarlo tú)</span>
+                <label className="block text-sm font-medium text-[var(--ink)] mb-1">
+                  Nombre interno <span className="text-[var(--muted)] font-normal">(solo para identificarlo tú)</span>
                 </label>
                 <input
                   type="text"
                   value={form.nombre}
                   onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                   placeholder="Ej: Descuento fin de semana"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-sm"
+                  className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--ink)] mb-1">
                   Monto mínimo de compra (S/)
                 </label>
                 <input
@@ -291,20 +291,20 @@ export default function DescuentosPage() {
                   value={form.montoMinimo}
                   onChange={(e) => setForm({ ...form, montoMinimo: e.target.value })}
                   placeholder="100"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-sm"
+                  className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de descuento</label>
+                <label className="block text-sm font-medium text-[var(--ink)] mb-2">Tipo de descuento</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, tipoDescuento: "porcentaje" })}
                     className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 font-medium text-sm transition ${
                       form.tipoDescuento === "porcentaje"
-                        ? "border-pink-600 bg-pink-50 text-pink-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                        : "border-[var(--line)] text-[var(--muted)] hover:border-[var(--line)]"
                     }`}
                   >
                     <Percent className="w-4 h-4" />
@@ -315,8 +315,8 @@ export default function DescuentosPage() {
                     onClick={() => setForm({ ...form, tipoDescuento: "monto_fijo" })}
                     className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 font-medium text-sm transition ${
                       form.tipoDescuento === "monto_fijo"
-                        ? "border-pink-600 bg-pink-50 text-pink-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                        : "border-[var(--line)] text-[var(--muted)] hover:border-[var(--line)]"
                     }`}
                   >
                     <DollarSign className="w-4 h-4" />
@@ -326,7 +326,7 @@ export default function DescuentosPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--ink)] mb-1">
                   Valor del descuento {form.tipoDescuento === "porcentaje" ? "(%)" : "(S/)"}
                 </label>
                 <input
@@ -336,7 +336,7 @@ export default function DescuentosPage() {
                   value={form.valorDescuento}
                   onChange={(e) => setForm({ ...form, valorDescuento: e.target.value })}
                   placeholder={form.tipoDescuento === "porcentaje" ? "10" : "15"}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none text-sm"
+                  className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                 />
               </div>
 
@@ -345,9 +345,9 @@ export default function DescuentosPage() {
                   type="checkbox"
                   checked={form.activo}
                   onChange={(e) => setForm({ ...form, activo: e.target.checked })}
-                  className="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-2 focus:ring-pink-500"
+                  className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500"
                 />
-                <span className="ml-3 text-sm font-medium text-gray-700">Descuento activo</span>
+                <span className="ml-3 text-sm font-medium text-[var(--ink)]">Descuento activo</span>
               </label>
 
               {error && (
@@ -361,14 +361,14 @@ export default function DescuentosPage() {
                 <button
                   type="submit"
                   disabled={guardando}
-                  className="flex-1 bg-gradient-to-r from-pink-600 to-pink-700 text-white py-3 rounded-lg font-semibold hover:from-pink-700 hover:to-pink-800 transition disabled:opacity-50"
+                  className="flex-1 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-lg font-semibold hover:from-indigo-700 hover:to-indigo-800 transition disabled:opacity-50"
                 >
                   {guardando ? "Guardando..." : editandoId ? "Guardar Cambios" : "Crear Descuento"}
                 </button>
                 <button
                   type="button"
                   onClick={cerrarForm}
-                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  className="px-6 py-3 border-2 border-[var(--line)] text-[var(--ink)] rounded-lg font-semibold hover:bg-[var(--bg)] transition"
                 >
                   Cancelar
                 </button>
@@ -378,14 +378,14 @@ export default function DescuentosPage() {
         )}
 
         {/* Lista de niveles */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">
-            Niveles configurados <span className="text-gray-400 font-normal">({tiers.length})</span>
+        <div className="bg-[var(--surface)] rounded-2xl shadow-lg p-4 md:p-6">
+          <h2 className="text-lg font-bold text-[var(--ink)] mb-4">
+            Niveles configurados <span className="text-[var(--muted)] font-normal">({tiers.length})</span>
           </h2>
 
           {tiers.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <Tag className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-12 text-[var(--muted)]">
+              <Tag className="w-16 h-16 mx-auto mb-3 text-[var(--muted)]" />
               <p className="text-lg">No hay descuentos configurados</p>
               <p className="text-sm mt-1">Crea el primero con el botón de arriba</p>
             </div>
@@ -395,16 +395,16 @@ export default function DescuentosPage() {
                 <div
                   key={tier._id}
                   className={`flex items-center gap-3 p-4 rounded-xl border-2 transition ${
-                    tier.activo ? "border-gray-200 bg-white" : "border-gray-100 bg-gray-50 opacity-60"
+                    tier.activo ? "border-[var(--line)] bg-[var(--surface)]" : "border-[var(--line)] bg-[var(--bg)] opacity-60"
                   }`}
                 >
-                  <div className={`p-2.5 rounded-lg ${tier.tipoDescuento === "porcentaje" ? "bg-pink-100 text-pink-600" : "bg-indigo-100 text-indigo-600"}`}>
+                  <div className={`p-2.5 rounded-lg ${tier.tipoDescuento === "porcentaje" ? "bg-indigo-100 text-indigo-600" : "bg-indigo-100 text-indigo-600"}`}>
                     {tier.tipoDescuento === "porcentaje" ? <Percent className="w-5 h-5" /> : <DollarSign className="w-5 h-5" />}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-800 truncate">{tier.nombre}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-semibold text-[var(--ink)] truncate">{tier.nombre}</p>
+                    <p className="text-sm text-[var(--muted)]">
                       Desde <strong>S/ {tier.montoMinimo.toFixed(2)}</strong> → descuento de{" "}
                       <strong>
                         {tier.tipoDescuento === "porcentaje"
@@ -417,7 +417,7 @@ export default function DescuentosPage() {
                   <button
                     onClick={() => toggleActivo(tier)}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 transition ${
-                      tier.activo ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                      tier.activo ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-[var(--line)] text-[var(--muted)] hover:bg-[var(--line)]"
                     }`}
                   >
                     {tier.activo ? "Activo" : "Inactivo"}
