@@ -3,6 +3,7 @@ import Footer from "@/Components/Footer/Footer";
 import CartSidebar from "@/Components/Cart/CartSidebar";
 import FloatingCartButton from "@/Components/Cart/FloatingCartButton";
 import FloatingWhatsApp from "@/Components/FloatingWhatsApp/FloatingWhatsApp";
+import OfferPopup from "@/Components/OfferPopup/OfferPopup";
 
 export default function TiendaLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function TiendaLayout({ children }: { children: React.ReactNode }
       <FloatingWhatsApp />
       <FloatingCartButton />
       <CartSidebar />
+      <OfferPopup />
       <Footer />
     </>
   );
