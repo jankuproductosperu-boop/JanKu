@@ -70,7 +70,7 @@ export default function BannersTab({ banners, categories, onReload }: Props) {
       } else {
         res = await fetch("/api/banners", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bannerData) });
       }
-      if (!res.ok) { const err = await res.json(); alert(`Error: ${err.error}`); return; }
+      if (!res.ok) { const err = await res.json(); alert(`Error: ${err.fields?.enlace ?? err.error}`); return; }
       invalidateCachePattern("banners");
       alert(isEditingBanner ? "Banner actualizado" : "Banner agregado");
       setBannerForm({ titulo: "", imagenUrl: "", enlace: "", posicion: "top-left", ubicaciones: [""], activo: true });
@@ -160,7 +160,7 @@ export default function BannersTab({ banners, categories, onReload }: Props) {
   
               <div>
                 <label className="block text-sm font-medium text-[var(--ink)] mb-2">Enlace {bannerForm.posicion.startsWith("bottom") ? "(Obligatorio)" : bannerForm.posicion === "middle-full" ? "(No disponible)" : "(Opcional)"}</label>
-                <input name="enlace" value={bannerForm.enlace} onChange={handleBannerChange} placeholder={bannerForm.posicion === "middle-full" ? "No disponible" : "https://..."} disabled={bannerForm.posicion === "middle-full"} className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-[var(--line)]" />
+                <input name="enlace" value={bannerForm.enlace} onChange={handleBannerChange} placeholder={bannerForm.posicion === "middle-full" ? "No disponible" : "/ofertas o https://..."} disabled={bannerForm.posicion === "middle-full"} className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-[var(--line)]" />
               </div>
               <label className="flex items-center cursor-pointer"><input type="checkbox" name="activo" checked={bannerForm.activo} onChange={handleBannerChange} className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">Banner activo</span></label>
               <div className="flex flex-col md:flex-row gap-3 pt-2">

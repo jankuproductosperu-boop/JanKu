@@ -120,7 +120,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const montoDescuento = useMemo(() => {
     if (!nivelDescuentoAplicado) return 0;
     if (nivelDescuentoAplicado.tipoDescuento === "porcentaje") {
-      return totalPrice * (nivelDescuentoAplicado.valorDescuento / 100);
+      // Un porcentaje mal guardado (>100) nunca deja el total en negativo
+      return Math.min(totalPrice * (nivelDescuentoAplicado.valorDescuento / 100), totalPrice);
     }
     // Monto fijo — nunca descontar más de lo que hay en el carrito
     return Math.min(nivelDescuentoAplicado.valorDescuento, totalPrice);
