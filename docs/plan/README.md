@@ -48,6 +48,9 @@ Estado: **pendiente de aprobación del dueño.** Nada de este plan se ha impleme
 | 10 | [API admin y proyección pública](fases/fase-10-api-admin-y-proyeccion-publica.md) | ⚠️ Alto | Sonnet + revisión | 1 | 45 min | Inactivos ocultos en tienda |
 | 11 | [Subida a Cloudinary](fases/fase-11-subida-cloudinary.md) | Medio | Sonnet | 1 | 30 min | Panel rechaza no-imágenes |
 | 12 | [Dividir panel admin](fases/fase-12-dividir-panel-admin.md) | Medio | Sonnet | 1–2 | 45 min | Barra de navegación del panel |
+| 12b | [Panel: barra lateral derecha, estilo y Resumen](fases/fase-12b-panel-estructura.md) | Medio | Sonnet | 1 | 1 h | Panel rediseñado; catálogo en rutas propias |
+| 12c | [Panel: lista y formulario de productos](fases/fase-12c-panel-productos.md) | Medio | Sonnet | 1–2 | 1 h | Tabla con búsqueda y filtros; formulario en página propia |
+| 12d | [Panel: restilo del resto de pantallas](fases/fase-12d-panel-restilo.md) | Bajo | Sonnet | 1–2 | 45 min | Colores y tarjetas del panel |
 | 13 | [Inventario con movimientos](fases/fase-13-inventario-movimientos.md) | ⚠️ Alto · migración 002 | Superior + Sonnet | 2 | 1 h | Formulario de stock del panel |
 | 14 | [Precios y carrito](fases/fase-14-precios-y-carrito.md) | Medio | Sonnet + revisión de pruebas | 1 | 30 min | No |
 | 15 | [Pedidos: backend](fases/fase-15-pedidos-backend.md) | ⚠️ Alto · migración 003 | Superior + Sonnet | 2 | 45 min | No |
@@ -77,7 +80,7 @@ Se puede parar tras cualquier hito y el sitio queda coherente. **El hito B es el
 ## Dependencias entre fases
 
 ```
-01 ─► 02 ─► 03 ─► 04 ─► 05 ─► 06 ─► 07 ─► 08 ─► 09 ─► 10 ─► 11 ─► 12 ─► 13 ─► 14 ─► 15 ─► 16 ─► 17 ─► 18 ─► 19 ─► 20 ─► 21
+01 ─► 02 ─► 03 ─► 04 ─► 05 ─► 06 ─► 07 ─► 08 ─► 09 ─► 10 ─► 11 ─► 12 ─► 12b ─► 12c ─► 12d ─► 13 ─► 14 ─► 15 ─► 16 ─► 17 ─► 18 ─► 19 ─► 20 ─► 21
 ```
 
 El orden recomendado es lineal. Dependencias **estrictas** (por si hubiera que reordenar):
@@ -95,7 +98,10 @@ El orden recomendado es lineal. Dependencias **estrictas** (por si hubiera que r
 | 10 | 06, 09 |
 | 11 | 05, 08 |
 | 12 | 04, 10 (y conviene 11) |
-| 13 | 06, 09 (ejecutor de migraciones), 12 |
+| 12b | 12 |
+| 12c | 12b |
+| 12d | 12b (y conviene 12c) |
+| 13 | 06, 09 (ejecutor de migraciones), 12d |
 | 14 | 05 |
 | 15 | 07, 08, 14 |
 | 16 | 04, 15 |
@@ -106,6 +112,8 @@ El orden recomendado es lineal. Dependencias **estrictas** (por si hubiera que r
 | 21 | 09, 12 y todas las demás para el cierre |
 
 Único adelanto razonable: la **fase 14** puede hacerse en cualquier momento después de la 05.
+
+> **Propuestas posteriores** (13b variantes, 16b novedades, 16c popup, 21b visitas): ver [propuestas-panel.md](propuestas-panel.md). Aún sin archivo de fase.
 
 ### Migraciones y pasos manuales del dueño
 

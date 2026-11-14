@@ -192,3 +192,33 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-46 · Migraciones numeradas** en `scripts/migrations/NNN-nombre.mjs`, con un ejecutor común: simulan por defecto, `--apply` para escribir, idempotentes, y antes de escribir guardan copia de los documentos afectados en `backups/` (ignorada por git). Detalle en `02-datos.md`.
 
 **D-47 · Los scripts antiguos de `scripts/` no se borran**; se mueven a `scripts/legacy/` y se excluyen de ESLint.
+
+---
+
+## Rediseño del panel (fases 12b–12d y propuestas posteriores)
+
+*Acordadas con el dueño el 2026-11-13. Detalle de las propuestas en `propuestas-panel.md`.*
+
+**D-48 · Navegación del panel: barra lateral a la derecha**, con una URL por sección (`/admin/productos`, `/admin/categorias`…). En móvil es un cajón que entra desde la derecha. Sustituye a la barra superior de la fase 12.
+
+**D-49 · Estilo del panel derivado de la tienda.** Tokens de color bajo la clase `.panel` (azul `#2C2C6C` de navbar/footer, acento `indigo-600`); no se toca `app/globals.css`. La referencia visual vive en `referencia-panel/`.
+
+**D-50 · Modo oscuro opcional.** Sigue la preferencia del sistema; la elección manual se guarda en `localStorage` dentro de `try/catch`.
+
+**D-51 · Secciones del diseño de referencia que NO se construyen:** *Proveedores* (no es una entidad: es un campo de texto del producto), *Biblioteca de medios* (Cloudinary ya gestiona las imágenes y la limpieza de huérfanas está fuera de alcance), *Configuración de la tienda* (exigiría un modelo de ajustes sin necesidad hoy) y *campana de alertas* (no hay sistema de notificaciones; el stock crítico ya sale en el Resumen).
+
+**D-52 · El Resumen solo muestra datos reales.** Las tarjetas de pedidos, clientes, cupones y visitas se añaden en la fase que crea esos datos. Nada de cifras de ejemplo en producción.
+
+**D-53 · Fuente del panel: la que ya carga el layout raíz** (`--font-geist-sans`). Sin fuentes externas: el CSP (`font-src 'self'`) no se relaja (N1-4).
+
+**D-54 · Los roles se mantienen** (`superadmin`, `gestor`, `ventas`, D-17). El menú solo enseña lo que el rol permite; ocultar un enlace no sustituye a `requireAdmin`.
+
+**D-55 · Visitas: contador propio simple** (un documento por producto y día) para «más vistos»; el resto de analítica se queda en Google Analytics. *Propuesta 21b.*
+
+**D-56 · Variantes de producto: opcionales y de ejes libres** (color, talla u otros), con stock propio por combinación y precio/imagen opcionales. Un producto sin variantes no cambia. *Propuesta 13b, modelo superior.*
+
+**D-57 · Subcategorías: solo la base.** Campo opcional `padre` en `Category`, sin interfaz hasta que el catálogo (hoy ~80–100 productos) lo justifique.
+
+**D-58 · Novedades por fecha.** `nuevoHasta` opcional en `Product`; «novedad» = fecha futura, calculado al consultar, sin tareas programadas. El producto conserva su categoría. *Propuesta 16b.*
+
+**D-59 · Popup de oferta configurable desde el panel:** imagen, texto de botón, destino (producto, categoría, promoción o enlace validado), interruptor activo y fechas opcionales. Se muestra una vez cada 24 h. *Propuesta 16c; cambia lo que ve el público, requiere aprobación explícita (N1-1).*
