@@ -230,11 +230,11 @@ export default function ProductosLista({ products, categories, onReload, busqued
         ) : vista === "iconos" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
             {visibles.map((p) => (
-              <div key={p._id} className={`relative rounded-2xl border bg-[var(--surface)] overflow-hidden hover:shadow-lg transition ${seleccion.has(p._id) ? "border-[var(--accent)] ring-2 ring-[var(--accent-soft)]" : "border-[var(--line)]"} ${p.activo === false ? "opacity-70" : ""}`}>
-                <label className="absolute top-2 left-2 z-10 rounded-md bg-white/90 p-1 shadow">
+              <div key={p._id} className={`relative rounded-none border bg-[var(--surface)] overflow-hidden hover:shadow-lg transition ${seleccion.has(p._id) ? "border-[var(--accent)] ring-2 ring-[var(--accent-soft)]" : "border-[var(--line)]"} ${p.activo === false ? "opacity-70" : ""}`}>
+                <label className="absolute top-2 left-2 z-10 rounded-none bg-[var(--surface)]/90 p-1 shadow">
                   <input type="checkbox" aria-label={`Seleccionar ${p.nombre}`} checked={seleccion.has(p._id)} onChange={() => alternarUno(p._id)} />
                 </label>
-                {p.activo === false && <span className="absolute top-2 right-2 z-10 rounded-full bg-gray-800/80 px-2 py-0.5 text-[11px] font-semibold text-white">Inactivo</span>}
+                {p.activo === false && <span className="absolute top-2 right-2 z-10 rounded-none bg-gray-800/80 px-2 py-0.5 text-[11px] font-semibold text-white">Inactivo</span>}
                 <Link href={`/admin/productos/${p._id}`} className="block aspect-square bg-[var(--accent-soft)]">
                   {(p.imagenUrl || p.imagenPrincipal) && (
                     <img src={p.imagenUrl || getCloudinaryUrl(p.imagenPrincipal || "", 300)} alt={p.nombre} className="w-full h-full object-cover" />
