@@ -69,6 +69,8 @@ const CHECKS = [
   ...["products", "banners", "promotions"].map((n) => ({
     nombre: `GET /api/admin/${n} (sin cookie)`, metodo: "GET", ruta: `/api/admin/${n}`, espera: estado(401),
   })),
+  // Fase 11
+  { nombre: "POST /api/upload (sin cookie)", metodo: "POST", ruta: "/api/upload", cuerpo: {}, espera: estado(401) },
   {
     nombre: "GET /api/products sin precioCosto ni proveedor", metodo: "GET", ruta: "/api/products",
     espera: (res, texto) => {
