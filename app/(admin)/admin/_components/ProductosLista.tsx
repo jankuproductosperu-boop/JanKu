@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, Plus, Download, Pencil, LayoutGrid, List } from "lucide-react";
 import { invalidateCachePattern } from "@/lib/cache";
 import type { ProductAdmin, Category } from "@/types";
+import { Chip, Switch } from "@/app/(admin)/admin/_components/ui";
 import { getCloudinaryUrl } from "@/app/(admin)/admin/_components/imageTypes";
 
 type Props = {
@@ -229,11 +230,11 @@ export default function ProductosLista({ products, categories, onReload, busqued
         ) : vista === "iconos" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
             {visibles.map((p) => (
-              <div key={p._id} className={`relative rounded-2xl border bg-[var(--surface)] overflow-hidden hover:shadow-lg transition ${seleccion.has(p._id) ? "border-[var(--accent)] ring-2 ring-[var(--accent-soft)]" : "border-[var(--line)]"} ${p.activo === false ? "opacity-70" : ""}`}>
-                <label className="absolute top-2 left-2 z-10 rounded-md bg-white/90 p-1 shadow">
+              <div key={p._id} className={`relative rounded-none border bg-[var(--surface)] overflow-hidden hover:shadow-lg transition ${seleccion.has(p._id) ? "border-[var(--accent)] ring-2 ring-[var(--accent-soft)]" : "border-[var(--line)]"} ${p.activo === false ? "opacity-70" : ""}`}>
+                <label className="absolute top-2 left-2 z-10 rounded-none bg-[var(--surface)]/90 p-1 shadow">
                   <input type="checkbox" aria-label={`Seleccionar ${p.nombre}`} checked={seleccion.has(p._id)} onChange={() => alternarUno(p._id)} />
                 </label>
-                {p.activo === false && <span className="absolute top-2 right-2 z-10 rounded-full bg-gray-800/80 px-2 py-0.5 text-[11px] font-semibold text-white">Inactivo</span>}
+                {p.activo === false && <span className="absolute top-2 right-2 z-10 rounded-none bg-gray-800/80 px-2 py-0.5 text-[11px] font-semibold text-white">Inactivo</span>}
                 <Link href={`/admin/productos/${p._id}`} className="block aspect-square bg-[var(--accent-soft)]">
                   {(p.imagenUrl || p.imagenPrincipal) && (
                     <img src={p.imagenUrl || getCloudinaryUrl(p.imagenPrincipal || "", 300)} alt={p.nombre} className="w-full h-full object-cover" />
@@ -244,19 +245,11 @@ export default function ProductosLista({ products, categories, onReload, busqued
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold">S/ {p.precio.toFixed(2)}</span>
                     {p.stock && (
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.stock === "Disponible" ? "bg-emerald-100 text-emerald-700" : p.stock === "Limitado" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{p.stock}</span>
+                      <Chip tono={p.stock === "Disponible" ? "ok" : p.stock === "Limitado" ? "aviso" : "malo"}>{p.stock}</Chip>
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <button
-                      role="switch"
-                      aria-checked={p.activo !== false}
-                      aria-label={`Activo: ${p.nombre}`}
-                      onClick={() => alternarActivo(p)}
-                      className={`relative inline-block w-9 h-5 rounded-full transition ${p.activo !== false ? "bg-[var(--accent)]" : "bg-[var(--line)]"}`}
-                    >
-                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${p.activo !== false ? "left-[18px]" : "left-0.5"}`} />
-                    </button>
+                    <Switch activo={p.activo !== false} etiqueta={`Activo: ${p.nombre}`} onChange={() => alternarActivo(p)} />
                     <Link href={`/admin/productos/${p._id}`} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm font-semibold hover:bg-[var(--bg)] transition">
                       <Pencil className="w-3.5 h-3.5" /> Editar
                     </Link>
@@ -300,19 +293,11 @@ export default function ProductosLista({ products, categories, onReload, busqued
                     <td className="p-2 font-semibold whitespace-nowrap">S/ {p.precio.toFixed(2)}</td>
                     <td className="p-2">
                       {p.stock && (
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.stock === "Disponible" ? "bg-emerald-100 text-emerald-700" : p.stock === "Limitado" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{p.stock}</span>
+                        <Chip tono={p.stock === "Disponible" ? "ok" : p.stock === "Limitado" ? "aviso" : "malo"}>{p.stock}</Chip>
                       )}
                     </td>
                     <td className="p-2">
-                      <button
-                        role="switch"
-                        aria-checked={p.activo !== false}
-                        aria-label={`Activo: ${p.nombre}`}
-                        onClick={() => alternarActivo(p)}
-                        className={`relative inline-block w-9 h-5 rounded-full transition ${p.activo !== false ? "bg-[var(--accent)]" : "bg-[var(--line)]"}`}
-                      >
-                        <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${p.activo !== false ? "left-[18px]" : "left-0.5"}`} />
-                      </button>
+                      <Switch activo={p.activo !== false} etiqueta={`Activo: ${p.nombre}`} onChange={() => alternarActivo(p)} />
                     </td>
                     <td className="p-2 text-right">
                       <Link href={`/admin/productos/${p._id}`} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm font-semibold hover:bg-[var(--surface)] transition">

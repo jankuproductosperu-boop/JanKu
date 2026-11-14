@@ -21,16 +21,16 @@ export function BannerImageField({ currentImageUrl, preview, onFileSelect }: {
   const display = preview || currentImageUrl;
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">Imagen del Banner *</label>
+      <label className="block text-sm font-medium text-[var(--ink)]">Imagen del Banner *</label>
       <div className="flex gap-3 items-start">
-        {display && <img src={display} alt="preview" className="w-32 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0" />}
+        {display && <img src={display} alt="preview" className="w-32 h-16 object-cover rounded-lg border border-[var(--line)] flex-shrink-0" />}
         <div className="flex-1">
-          <label className="cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50/30 transition text-sm text-gray-600">
+          <label className="cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-[var(--line)] rounded-lg hover:border-indigo-400 hover:bg-indigo-50/30 transition text-sm text-[var(--muted)]">
             <Upload className="w-4 h-4" />
             <span>{display ? "Cambiar imagen" : "Seleccionar imagen"}</span>
             <input type="file" accept="image/*" className="hidden" onChange={handleChange} />
           </label>
-          <p className="text-xs text-gray-500 mt-1">Se subirá a <code>banners/home/</code> o <code>banners/categorias/</code> · máx 5MB</p>
+          <p className="text-xs text-[var(--muted)] mt-1">Se subirá a <code>banners/home/</code> o <code>banners/categorias/</code> · máx 5MB</p>
         </div>
       </div>
     </div>

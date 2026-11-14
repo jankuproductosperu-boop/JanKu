@@ -127,15 +127,15 @@ export function ImageUploader({
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onClick={() => canAddMore && fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${isDragging ? "border-indigo-500 bg-indigo-50 scale-[1.01]" : canAddMore ? "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/30" : "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60"}`}
+        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${isDragging ? "border-indigo-500 bg-indigo-50 scale-[1.01]" : canAddMore ? "border-[var(--line)] hover:border-indigo-400 hover:bg-indigo-50/30" : "border-[var(--line)] bg-[var(--bg)] cursor-not-allowed opacity-60"}`}
       >
         <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} disabled={!canAddMore} />
         <div className="flex flex-col items-center gap-2">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDragging ? "bg-indigo-100" : "bg-gray-100"}`}>
-            <Upload className={`w-6 h-6 ${isDragging ? "text-indigo-600" : "text-gray-400"}`} />
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDragging ? "bg-indigo-100" : "bg-[var(--line)]"}`}>
+            <Upload className={`w-6 h-6 ${isDragging ? "text-indigo-600" : "text-[var(--muted)]"}`} />
           </div>
-          <p className="text-sm font-semibold text-gray-700">{isDragging ? "¡Suelta aquí!" : "Arrastra imágenes o haz clic para seleccionar"}</p>
-          <p className="text-xs text-gray-500">JPG, PNG, WEBP · Máx 5MB · {images.length}/{maxImages} imágenes</p>
+          <p className="text-sm font-semibold text-[var(--ink)]">{isDragging ? "¡Suelta aquí!" : "Arrastra imágenes o haz clic para seleccionar"}</p>
+          <p className="text-xs text-[var(--muted)]">JPG, PNG, WEBP · Máx 5MB · {images.length}/{maxImages} imágenes</p>
         </div>
       </div>
 
@@ -148,7 +148,7 @@ export function ImageUploader({
 
       {images.length > 0 && (
         <>
-          <p className="text-xs text-gray-500">Arrastra para reordenar · ★ = portada (también se usa como meta image)</p>
+          <p className="text-xs text-[var(--muted)]">Arrastra para reordenar · ★ = portada (también se usa como meta image)</p>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
             {images.map((img, index) => (
               <div
@@ -159,12 +159,12 @@ export function ImageUploader({
                 onDrop={(e) => handleReorderDrop(e, index)}
                 onDragOver={(e) => e.preventDefault()}
                 onDragEnd={() => setDragOverIndex(null)}
-                className={`relative group aspect-square rounded-xl overflow-hidden border-2 transition-all ${img.isMain ? "border-indigo-500 ring-2 ring-indigo-200" : "border-gray-200"} ${dragOverIndex === index ? "scale-105 border-indigo-400 shadow-lg" : ""}`}
+                className={`relative group aspect-square rounded-xl overflow-hidden border-2 transition-all ${img.isMain ? "border-indigo-500 ring-2 ring-indigo-200" : "border-[var(--line)]"} ${dragOverIndex === index ? "scale-105 border-indigo-400 shadow-lg" : ""}`}
               >
                 {imgUrl(img) ? (
                   <img src={imgUrl(img)} alt={`Imagen ${index + 1}`} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center"><Loader2 className="w-6 h-6 text-gray-400 animate-spin" /></div>
+                  <div className="w-full h-full bg-[var(--line)] flex items-center justify-center"><Loader2 className="w-6 h-6 text-[var(--muted)] animate-spin" /></div>
                 )}
                 {img.isMain && (
                   <div className="absolute top-1 left-1 bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 z-10">
@@ -189,7 +189,7 @@ export function ImageUploader({
             ))}
             {canAddMore && (
               <button type="button" onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/30 flex flex-col items-center justify-center gap-1 transition-all text-gray-400 hover:text-indigo-500">
+                className="aspect-square rounded-xl border-2 border-dashed border-[var(--line)] hover:border-indigo-400 hover:bg-indigo-50/30 flex flex-col items-center justify-center gap-1 transition-all text-[var(--muted)] hover:text-indigo-500">
                 <Upload className="w-5 h-5" /><span className="text-[10px] font-medium">Agregar</span>
               </button>
             )}
@@ -201,13 +201,13 @@ export function ImageUploader({
             </div>
           )}
           {images.filter((i) => i.status === "done" && i.public_id).length > 0 && (
-            <details className="text-xs text-gray-500">
+            <details className="text-xs text-[var(--muted)]">
               <summary className="cursor-pointer select-none">Ver public_ids guardados en MongoDB</summary>
-              <div className="mt-2 space-y-1 font-mono bg-gray-50 p-2 rounded-lg border">
+              <div className="mt-2 space-y-1 font-mono bg-[var(--bg)] p-2 rounded-lg border">
                 {images.filter((i) => i.status === "done" && i.public_id).map((img, i) => (
                   <div key={i} className="flex items-center gap-2">
                     {img.isMain && <span className="text-indigo-600 font-bold">★</span>}
-                    <span className="text-gray-600">{img.public_id}</span>
+                    <span className="text-[var(--muted)]">{img.public_id}</span>
                   </div>
                 ))}
               </div>

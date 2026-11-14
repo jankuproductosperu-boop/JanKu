@@ -23,17 +23,19 @@ Va antes de la 13 porque ésta modifica la pantalla de Inventario: mejor que ya 
 | Modificar | `app/(admin)/admin/_components/BannersTab.tsx` | Solo clases CSS |
 | Modificar | `app/(admin)/admin/_components/PromocionesTab.tsx` | Solo clases CSS |
 | Modificar | `app/(admin)/admin/_components/BannerImageField.tsx`, `PromocionImageField.tsx`, `ImageUploader.tsx` | Solo clases CSS |
+| Modificar | `app/(admin)/admin/_components/ProductoForm.tsx` | Solo clases CSS (grises y blancos a tokens) para que el formulario también funcione en modo oscuro. Sin tocar campos ni lógica |
+| Modificar | `app/(admin)/admin/_components/Seccion.tsx`, `ProductosLista.tsx` | Usan `PageHeader`, `Switch` y `Chip` |
 | Modificar | `app/(admin)/admin/inventario/page.tsx`, `orden/page.tsx`, `descuentos/page.tsx` | Solo clases CSS |
 | Crear | `app/(admin)/admin/_components/useTema.ts` | Tema claro/oscuro: sigue el sistema; la elección se guarda en `localStorage` dentro de `try/catch`. Pone `data-theme` en `.panel` |
 | Modificar | `app/(admin)/admin/_components/AdminTopbar.tsx`, `AdminShell.tsx`, `panel.css` | Botón ◐ de tema; los tokens oscuros ya existen |
-| Crear | `app/(admin)/admin/_components/ui.tsx` | Piezas visuales repetidas: `Card`, `Chip`, `Switch`, `PageHeader`. Solo presentación, sin lógica |
+| Crear | `app/(admin)/admin/_components/ui.tsx` | Piezas visuales repetidas: `Chip`, `Switch`, `PageHeader`. Solo presentación, sin lógica. (`Card` se descartó: el aspecto de tarjeta se logra con las mismas clases de tokens) |
 
 ## 4. Pasos de implementación
 
-1. `ui.tsx` con los cuatro componentes (clases basadas en tokens de `panel.css`).
+1. `ui.tsx` con los tres componentes (clases basadas en tokens de `panel.css`).
 2. Pantalla por pantalla, en este orden, con commit y comprobación visual tras cada una: Categorías → Banners → Promociones → Inventario → Orden → Descuentos.
-3. En cada pantalla: sustituir contenedores por `Card`, cabecera por `PageHeader`, etiquetas de estado por `Chip` y casillas de activo por `Switch`. **No tocar** handlers, estado, `fetch`, textos de `alert`/`confirm` ni lógica de cálculo (márgenes, orden, tramos).
-4. Sustituir colores sueltos (`bg-purple-600`, `from-orange-500`, degradados por pestaña) por los tokens. Un solo acento (`--accent`); los semánticos solo para estados.
+3. En cada pantalla, mapeo **solo de clases**: `bg-white` → `bg-[var(--surface)]`, grises de texto → `--ink`/`--muted`, bordes grises → `--line`, fondos degradados de página fuera. `Chip`, `Switch` y `PageHeader` se usan donde el reemplazo es 1 a 1 (lista de productos y cabecera de sección). **No tocar** handlers, estado, `fetch`, textos de `alert`/`confirm` ni lógica de cálculo (márgenes, orden, tramos).
+4. Colores sueltos (naranja, rosa, morado y sus degradados por pestaña) pasan a `indigo`, el acento de la tienda; los semánticos (verde, ámbar, rojo) se conservan solo para estados.
 5. Añadir `useTema` y el botón ◐ **al final**, cuando las seis pantallas ya usan tokens. Revisar contraste en claro y oscuro (texto sobre fondo ≥ 4.5:1).
 6. typecheck, lint, test, build, smoke. Ejecutar la fase 00.
 
@@ -55,7 +57,7 @@ export function PageHeader(props: { titulo: string; subtitulo?: string; acciones
 
 ## 7. Criterios de aceptación verificables
 
-- `grep -rnE "(from|to|bg)-(orange|pink|purple|emerald)-[0-9]+" "app/(admin)"` → sin resultados (salvo `login-admin`).
+- `grep -rnE "(from|to|bg)-(orange|pink|purple)-[0-9]+" "app/(admin)/admin/inventario" "app/(admin)/admin/orden" "app/(admin)/admin/descuentos"` → sin resultados; en `_components/` solo los íconos de colores del Resumen (`page.tsx`), que son deliberados.
 - `git diff main -- app/api server models Components` → vacío.
 - typecheck, lint (sin errores nuevos), test, build, smoke en verde.
 
