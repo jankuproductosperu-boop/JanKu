@@ -99,6 +99,11 @@ const CHECKS = [
     nombre: "POST /api/admin/inventory/adjust con variantId (sin cookie)", metodo: "POST",
     ruta: "/api/admin/inventory/adjust", cuerpo: { variantId: "000000000000000000000000" }, espera: estado(401),
   },
+  // Fase 15: solo peticiones que deben ser rechazadas (no crea pedidos).
+  // Ojo: POST /api/orders cuenta 1 intento del límite de 5/h por IP aunque el cuerpo sea inválido.
+  { nombre: "POST /api/orders con {}", metodo: "POST", ruta: "/api/orders", cuerpo: {}, espera: estado(400) },
+  { nombre: "GET /api/orders/JK-000000-XXXX?t=x", metodo: "GET", ruta: "/api/orders/JK-000000-XXXX?t=x", espera: estado(404) },
+  { nombre: "GET /api/orders/mine (sin cookie)", metodo: "GET", ruta: "/api/orders/mine", espera: estado(401) },
 ];
 
 async function main() {

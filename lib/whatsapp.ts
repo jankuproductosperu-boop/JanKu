@@ -46,6 +46,12 @@ export function construirMensajeCarrito(args: { items: ItemMensaje[]; totales: T
   return mensaje;
 }
 
+/** Enlace de WhatsApp para coordinar un pedido ya guardado (fase 15). */
+export function enlaceWhatsAppPedido(args: { codigo: string; total: number; nombre: string }): string {
+  const mensaje = `¡Hola! 👋 Soy ${args.nombre}. Acabo de hacer el pedido *${args.codigo}* por *S/ ${args.total.toFixed(2)}*. Quiero coordinar el pago y la entrega. ¡Gracias!`;
+  return `https://wa.me/${SITE.whatsappPedidos}?text=${encodeURIComponent(mensaje)}`;
+}
+
 /** Enlace de WhatsApp con el pedido del carrito; «#» si el carrito está vacío. */
 export function enlaceWhatsAppCarrito(args: { items: ItemMensaje[]; totales: Totales }): string {
   if (args.items.length === 0) return "#";
