@@ -2,7 +2,7 @@
 
 | Archivo | Qué es |
 |---|---|
-| `panel-referencia-v2.html` | **La referencia vigente.** Ábrela en el navegador. Pantallas: Resumen, Productos (lista), Editar producto. Barra lateral a la derecha, modo oscuro (botón ◐), versión móvil (☰). |
+| `panel-referencia-v2.html` | **La referencia vigente.** Ábrela en el navegador. Pantallas: Resumen, Productos (lista), Editar producto. Barra lateral a la izquierda, modo oscuro (botón ◐), versión móvil (☰). |
 | `original-del-dueno.html` | El diseño original que hizo el dueño. Solo para consultar; **no es la referencia**. |
 
 Reglas de uso (válidas para el modelo que ejecute las fases 12b a 12d):

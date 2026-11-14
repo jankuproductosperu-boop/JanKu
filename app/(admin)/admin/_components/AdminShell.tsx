@@ -9,7 +9,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const { admin, cargando } = useAdminSession();
 
   return (
-    <div className="panel min-h-screen min-[861px]:grid min-[861px]:grid-cols-[1fr_252px]">
+    <div className="panel min-h-screen min-[861px]:grid min-[861px]:grid-cols-[252px_1fr]">
+      <AdminSidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
       <div className="min-w-0">
         <AdminTopbar onMenu={() => setMenuAbierto(true)} />
         <main>
@@ -23,7 +24,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           ) : admin ? children : null}
         </main>
       </div>
-      <AdminSidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
     </div>
   );
 }

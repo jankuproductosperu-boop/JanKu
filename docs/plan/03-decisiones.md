@@ -199,7 +199,7 @@ pendiente ──► confirmado ──► enviado ──► entregado
 
 *Acordadas con el dueño el 2026-11-13. Detalle de las propuestas en `propuestas-panel.md`.*
 
-**D-48 · Navegación del panel: barra lateral a la derecha**, con una URL por sección (`/admin/productos`, `/admin/categorias`…). En móvil es un cajón que entra desde la derecha. Sustituye a la barra superior de la fase 12.
+**D-48 · Navegación del panel: barra lateral a la izquierda** (el dueño la pidió a la derecha al principio y la cambió a la izquierda el 2026-11-13), con una URL por sección (`/admin/productos`, `/admin/categorias`…). En móvil es un cajón que entra desde la izquierda. Sustituye a la barra superior de la fase 12.
 
 **D-49 · Estilo del panel derivado de la tienda.** Tokens de color bajo la clase `.panel` (azul `#2C2C6C` de navbar/footer, acento `indigo-600`); no se toca `app/globals.css`. La referencia visual vive en `referencia-panel/`.
 

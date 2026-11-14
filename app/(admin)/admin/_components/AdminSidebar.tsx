@@ -48,7 +48,7 @@ export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; 
       {abierto && <div className="fixed inset-0 z-30 bg-black/40 min-[861px]:hidden" onClick={onCerrar} aria-hidden="true" />}
       <aside
         aria-label="Navegación del panel"
-        className={`fixed inset-y-0 right-0 z-40 w-[270px] overflow-y-auto bg-[var(--navy)] text-[var(--navy-ink)] p-3 pt-[18px] flex flex-col gap-0.5 transition-transform motion-reduce:transition-none ${abierto ? "translate-x-0" : "translate-x-full"} min-[861px]:static min-[861px]:z-auto min-[861px]:w-auto min-[861px]:translate-x-0 min-[861px]:sticky min-[861px]:top-0 min-[861px]:h-screen min-[861px]:self-start`}
+        className={`fixed inset-y-0 left-0 z-40 w-[270px] overflow-y-auto bg-gradient-to-b from-[var(--navy)] to-[#1c1c4d] text-[var(--navy-ink)] p-3 pt-[18px] flex flex-col gap-0.5 transition-transform motion-reduce:transition-none ${abierto ? "translate-x-0" : "-translate-x-full"} min-[861px]:static min-[861px]:z-auto min-[861px]:w-auto min-[861px]:translate-x-0 min-[861px]:sticky min-[861px]:top-0 min-[861px]:h-screen min-[861px]:self-start`}
       >
         <div className="flex items-center gap-2.5 px-2.5 pb-3.5 text-lg font-bold text-white">
           <span className="w-8 h-8 rounded-[9px] bg-white text-[var(--navy)] grid place-items-center">J</span> Janku
@@ -67,9 +67,9 @@ export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; 
                   href={i.href}
                   onClick={onCerrar}
                   aria-current={esActivo ? "page" : undefined}
-                  className={`flex items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-sm transition ${esActivo ? "bg-white text-[var(--navy)] font-semibold" : "hover:bg-white/10"}`}
+                  className={`flex items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-sm transition ${esActivo ? "bg-white text-[var(--navy)] font-semibold shadow-md" : "hover:bg-white/10"}`}
                 >
-                  <Icono className="w-[18px] h-[18px] flex-none" />
+                  <Icono className={`w-[18px] h-[18px] flex-none ${esActivo ? "text-[var(--accent)]" : ""}`} />
                   {i.etiqueta}
                 </Link>
               </div>
