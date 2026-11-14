@@ -5,11 +5,15 @@ import { useAdminData } from "@/app/(admin)/admin/_components/useAdminData";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
 
 const ACCESOS = [
-  { href: "/admin/productos", texto: "Productos", icono: Package, color: "bg-indigo-100 text-indigo-600" },
-  { href: "/admin/banners", texto: "Banners", icono: ImageIcon, color: "bg-orange-100 text-orange-600" },
-  { href: "/admin/promociones", texto: "Promociones", icono: Sparkles, color: "bg-pink-100 text-pink-600" },
-  { href: "/admin/descuentos", texto: "Descuentos", icono: Tag, color: "bg-emerald-100 text-emerald-600" },
+  { href: "/admin/productos", texto: "Productos", icono: Package },
+  { href: "/admin/banners", texto: "Banners", icono: ImageIcon },
+  { href: "/admin/promociones", texto: "Promociones", icono: Sparkles },
+  { href: "/admin/descuentos", texto: "Descuentos", icono: Tag },
 ];
+
+// Chips de icono con el azul de la tienda (D-70)
+const CHIP_AZUL = "bg-[var(--navy-soft)] text-[var(--navy-tint)]";
+const CHIP_ACENTO = "bg-[var(--accent-soft)] text-[var(--accent)]";
 
 function saludo() {
   const h = new Date().getHours();
@@ -36,10 +40,10 @@ export default function AdminResumenPage() {
   const maxCategoria = Math.max(1, ...porCategoria.map((c) => c.total));
 
   const tarjetas = [
-    { titulo: "Productos activos", valor: activos.length, detalle: `${products.length} en total`, icono: Package, color: "bg-indigo-100 text-indigo-600", href: "/admin/productos" },
-    { titulo: "Stock bajo o agotado", valor: criticos.length, detalle: criticos.length ? "Reponer pronto" : "Todo en orden", icono: AlertCircle, color: "bg-amber-100 text-amber-600", href: "/admin/inventario" },
-    { titulo: "Categorías activas", valor: categories.filter((c) => c.activo).length, detalle: `${categories.length} en total`, icono: FolderTree, color: "bg-purple-100 text-purple-600", href: "/admin/categorias" },
-    { titulo: "Banners y promociones", valor: banners.filter((b) => b.activo).length + promotions.filter((p) => p.activo).length, detalle: `${banners.length} banners · ${promotions.length} promos`, icono: Sparkles, color: "bg-pink-100 text-pink-600", href: "/admin/banners" },
+    { titulo: "Productos activos", valor: activos.length, detalle: `${products.length} en total`, icono: Package, color: CHIP_AZUL, href: "/admin/productos" },
+    { titulo: "Stock bajo o agotado", valor: criticos.length, detalle: criticos.length ? "Reponer pronto" : "Todo en orden", icono: AlertCircle, color: criticos.length ? "bg-[var(--warn-soft)] text-[var(--warn)]" : "bg-[var(--ok-soft)] text-[var(--ok)]", href: "/admin/inventario" },
+    { titulo: "Categorías activas", valor: categories.filter((c) => c.activo).length, detalle: `${categories.length} en total`, icono: FolderTree, color: CHIP_ACENTO, href: "/admin/categorias" },
+    { titulo: "Banners y promociones", valor: banners.filter((b) => b.activo).length + promotions.filter((p) => p.activo).length, detalle: `${banners.length} banners · ${promotions.length} promos`, icono: Sparkles, color: CHIP_AZUL, href: "/admin/banners" },
   ];
 
   const stock = [
@@ -73,7 +77,7 @@ export default function AdminResumenPage() {
         {tarjetas.map((t) => (
           <Link key={t.titulo} href={t.href} className="group rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition min-w-0">
             <div className="flex items-start justify-between">
-              <span className={`w-11 h-11 rounded-xl grid place-items-center ${t.color}`}><t.icono className="w-5 h-5" /></span>
+              <span className={`w-11 h-11 rounded-xl grid place-items-center transition group-hover:scale-105 ${t.color}`}><t.icono className="w-5 h-5" /></span>
               <ArrowRight className="w-4 h-4 text-[var(--muted)] opacity-0 group-hover:opacity-100 transition" />
             </div>
             <div className="mt-3 text-3xl font-bold leading-tight tracking-tight">{t.valor}</div>
@@ -113,7 +117,7 @@ export default function AdminResumenPage() {
                 <div key={c.nombre}>
                   <div className="flex justify-between text-sm mb-1"><span className="truncate pr-2">{c.nombre}</span><b>{c.total}</b></div>
                   <div className="h-2 rounded-full bg-[var(--line)] overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#4F46E5] to-[#8B85FF]" style={{ width: `${(c.total / maxCategoria) * 100}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-[#3B3A9A] to-[var(--accent)]" style={{ width: `${(c.total / maxCategoria) * 100}%` }} />
                   </div>
                 </div>
               ))}
@@ -158,9 +162,10 @@ export default function AdminResumenPage() {
       {/* Accesos rápidos */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {ACCESOS.map((a) => (
-          <Link key={a.href} href={a.href} className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition">
-            <span className={`w-10 h-10 rounded-xl grid place-items-center ${a.color}`}><a.icono className="w-5 h-5" /></span>
+          <Link key={a.href} href={a.href} className="group flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition">
+            <span className="w-10 h-10 rounded-xl grid place-items-center text-white bg-gradient-to-br from-[#2C2C6C] to-[#4F46E5] shadow-md transition group-hover:scale-105"><a.icono className="w-5 h-5" /></span>
             <span className="font-semibold text-sm">{a.texto}</span>
+            <ArrowRight className="w-4 h-4 ml-auto text-[var(--muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition" />
           </Link>
         ))}
       </section>

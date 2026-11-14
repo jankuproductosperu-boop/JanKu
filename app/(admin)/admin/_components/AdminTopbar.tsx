@@ -16,7 +16,7 @@ export default function AdminTopbar({ onMenu, tema, onTema }: { onMenu: () => vo
   };
 
   return (
-    <header className="sticky top-0 z-20 h-14 flex items-center gap-3 px-4 min-[861px]:px-6 bg-[var(--surface)] border-b border-[var(--line)]">
+    <header className="panel-topbar sticky top-0 z-20 h-14 flex items-center gap-3 px-4 min-[861px]:px-6 bg-[var(--surface)] border-b border-[var(--line)]">
       <button onClick={onMenu} aria-label="Abrir menú" className="min-[861px]:hidden w-[38px] h-[38px] grid place-items-center rounded-[10px] border border-[var(--line)] flex-none">
         <Menu className="w-5 h-5" />
       </button>
