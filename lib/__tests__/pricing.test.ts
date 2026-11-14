@@ -7,6 +7,7 @@ import {
   elegirNivel,
   proximoNivel,
 } from "@/lib/pricing";
+import { redondear2 } from "@/lib/money";
 import type { CuponAplicable, DiscountTier } from "@/types";
 
 const nivel = (montoMinimo: number, tipoDescuento: DiscountTier["tipoDescuento"], valorDescuento: number, activo = true): DiscountTier => ({
@@ -185,7 +186,8 @@ describe("calcularTotales · cupón acumulable", () => {
 describe("calcularTotales · límites y envío", () => {
   it("el total nunca es negativo (porcentaje mal guardado > 100)", () => {
     const t = calcularTotales({ lineas: [{ precio: 40, cantidad: 1 }], niveles: [nivel(0, "porcentaje", 150)] });
-    expect(t.descuentoTotal).toBeLessThanOrEqual(t.subtotal);
+    expect(t.descuentoNivel).toBe(40); // el descuento informado también se limita al subtotal
+    expect(t.descuentoTotal).toBe(40);
     expect(t.total).toBe(0);
   });
   it("acumulable: nivel + cupón nunca superan el subtotal", () => {
@@ -194,8 +196,10 @@ describe("calcularTotales · límites y envío", () => {
       niveles: [nivel(0, "monto_fijo", 80)],
       cupon: cupon({ tipo: "monto_fijo", valor: 80, acumulable: true }),
     });
-    expect(t.descuentoTotal).toBeLessThanOrEqual(100);
-    expect(t.total).toBeGreaterThanOrEqual(0);
+    expect(t.descuentoNivel).toBe(80);
+    expect(t.descuentoCupon).toBe(20); // el cupón solo puede descontar lo que queda (100 − 80)
+    expect(t.descuentoTotal).toBe(100);
+    expect(t.total).toBe(0);
   });
   it("costoEnvio 12 se suma al final", () => {
     const t = calcularTotales({ lineas: [{ precio: 100, cantidad: 1 }], niveles: NIVELES, costoEnvio: 12 });
@@ -209,11 +213,105 @@ describe("calcularTotales · límites y envío", () => {
   });
   it("todas las salidas salen redondeadas a 2 decimales", () => {
     const t = calcularTotales({ lineas: [{ precio: 10.1, cantidad: 3 }, { precio: 0.2, cantidad: 1 }], niveles: [nivel(0, "porcentaje", 10)] });
-    for (const v of [t.subtotal, t.descuentoNivel, t.descuentoTotal, t.total]) {
-      expect(Math.round(v * 100)).toBeCloseTo(v * 100, 6);
+    for (const v of [t.subtotal, t.descuentoNivel, t.descuentoCupon, t.descuentoTotal, t.costoEnvio, t.total]) {
+      expect(Number(v.toFixed(2))).toBe(v);
     }
     expect(t.subtotal).toBe(30.5);
     expect(t.descuentoNivel).toBe(3.05); // 30.5 × 10 / 100
     expect(t.total).toBe(27.45);
+  });
+});
+
+// ── Casos añadidos tras la revisión (decisiones del dueño) ──────────────────────────────
+
+describe("descuentoDeNivel · límites", () => {
+  it("porcentaje > 100 se limita al subtotal también en descuentoDeNivel", () => {
+    expect(descuentoDeNivel(nivel(0, "porcentaje", 150), 40)).toBe(40);
+  });
+});
+
+describe("elegirNivel · casos límite", () => {
+  it("dos niveles con el mismo montoMinimo: gana el primero de la lista (como hoy)", () => {
+    const a = nivel(100, "porcentaje", 10);
+    const b = nivel(100, "porcentaje", 20);
+    expect(elegirNivel([a, b], 150)).toBe(a);
+    expect(elegirNivel([b, a], 150)).toBe(b);
+  });
+  it("subtotal que sale 30.499999999999996 de sumar decimales alcanza un nivel de 30.50", () => {
+    // Hoy ese carrito NO recibía el descuento aunque la pantalla dijera «S/ 30.50»; se corrige.
+    const lineas = [{ precio: 10.1, cantidad: 3 }, { precio: 0.2, cantidad: 1 }];
+    const t = calcularTotales({ lineas, niveles: [nivel(30.5, "monto_fijo", 5)] });
+    expect(t.subtotal).toBe(30.5);
+    expect(t.aplicado).toBe("nivel");
+    expect(t.total).toBe(25.5);
+  });
+});
+
+describe("redondeo · medio centavo (D-10: redondear2; +0.01 respecto a toFixed en estos empates)", () => {
+  it("10 % de 10.35 → descuento 1.04, total 9.31", () => {
+    const t = calcularTotales({ lineas: [{ precio: 10.35, cantidad: 1 }], niveles: [nivel(0, "porcentaje", 10)] });
+    expect(t.descuentoNivel).toBe(1.04);
+    expect(t.total).toBe(9.31);
+  });
+  it("10 % de 10.75 → descuento 1.08, total 9.67 (descuento + total = subtotal)", () => {
+    const t = calcularTotales({ lineas: [{ precio: 10.75, cantidad: 1 }], niveles: [nivel(0, "porcentaje", 10)] });
+    expect(t.descuentoNivel).toBe(1.08);
+    expect(t.total).toBe(9.67);
+    expect(redondear2(t.descuentoTotal + t.total)).toBe(t.subtotal);
+  });
+});
+
+describe("proximoNivel · redondeo y subtotal 0", () => {
+  it("falta redondeado a 2 decimales", () => {
+    expect(proximoNivel([nivel(100, "porcentaje", 10)], 99.9)?.falta).toBe(0.1);
+  });
+  it("subtotal 0 → el primer nivel, falta = su monto mínimo", () => {
+    expect(proximoNivel(NIVELES, 0)).toEqual({ nivel: N100_10, falta: 100 });
+  });
+});
+
+describe("descuentoDeCupon · topes y límites", () => {
+  it("topeDescuento 0 equivale a «sin tope» (igual que null)", () => {
+    expect(descuentoDeCupon(cupon({ valor: 20, topeDescuento: 0 }), 100)).toBe(20);
+  });
+  it("topeDescuento undefined = sin tope", () => {
+    expect(descuentoDeCupon(cupon({ valor: 20, topeDescuento: undefined }), 100)).toBe(20);
+  });
+  it("porcentaje > 100 se limita a la base", () => {
+    expect(descuentoDeCupon(cupon({ valor: 150 }), 40)).toBe(40);
+  });
+  it("el mínimo es inclusivo", () => {
+    expect(descuentoDeCupon(cupon({ valor: 10, montoMinimo: 100 }), 100)).toBe(10);
+  });
+});
+
+describe("calcularTotales · más casos de cupón", () => {
+  it("tope del cupón dentro de calcularTotales: 50 % tope 15 sobre 100 con nivel de 10 → gana el cupón con 15", () => {
+    const t = calcularTotales({ lineas: [{ precio: 100, cantidad: 1 }], niveles: NIVELES, cupon: cupon({ valor: 50, topeDescuento: 15 }) });
+    expect(t.descuentoCupon).toBe(15);
+    expect(t.aplicado).toBe("cupon");
+    expect(t.total).toBe(85);
+  });
+  it("empate con valores casi iguales en coma flotante: se compara ya redondeado → gana el nivel", () => {
+    // 33.3 × 10 / 100 = 3.33 (con ruido de coma flotante) frente a un cupón fijo de 3.33
+    const t = calcularTotales({ lineas: [{ precio: 33.3, cantidad: 1 }], niveles: [nivel(0, "porcentaje", 10)], cupon: cupon({ tipo: "monto_fijo", valor: 3.33 }) });
+    expect(t.descuentoNivel).toBe(3.33);
+    expect(t.descuentoCupon).toBe(3.33);
+    expect(t.aplicado).toBe("nivel");
+  });
+  it("acumulable cuyo mínimo NO se cumple con el subtotal original → cupón 0 y «nivel»", () => {
+    const t = calcularTotales({
+      lineas: [{ precio: 200, cantidad: 1 }],
+      niveles: [nivel(100, "porcentaje", 10)],
+      cupon: cupon({ valor: 10, acumulable: true, montoMinimo: 250 }),
+    });
+    expect(t.descuentoCupon).toBe(0);
+    expect(t.aplicado).toBe("nivel");
+    expect(t.descuentoTotal).toBe(20);
+  });
+  it("cupón porcentual > 100 acumulable no deja el total negativo", () => {
+    const t = calcularTotales({ lineas: [{ precio: 100, cantidad: 1 }], niveles: [nivel(0, "porcentaje", 10)], cupon: cupon({ valor: 150, acumulable: true }) });
+    expect(t.descuentoTotal).toBe(100);
+    expect(t.total).toBe(0);
   });
 });

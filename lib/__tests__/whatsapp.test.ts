@@ -125,6 +125,51 @@ describe("construirMensajeCarrito (texto exacto)", () => {
   });
 });
 
+describe("construirMensajeCarrito · más casos", () => {
+  const cabecera = "¡Hola! 👋 Quiero realizar el siguiente pedido:\n\n";
+  const pie = "Deseo comprar estos productos. ¡Gracias! 😊";
+
+  it("varianteEtiqueta vacía: no sale la línea 🎨", () => {
+    const m = construirMensajeCarrito({ items: [{ nombre: "A", precio: 1, cantidad: 1, varianteEtiqueta: "" }], totales: sinDescuento(1) });
+    expect(m.includes("🎨")).toBe(false);
+  });
+
+  it("dos líneas del mismo producto con variantes distintas: dos ítems numerados", () => {
+    const items = [
+      { nombre: "Mochila", precio: 10, cantidad: 1, varianteEtiqueta: "Color: Negro" },
+      { nombre: "Mochila", precio: 10, cantidad: 2, varianteEtiqueta: "Color: Rosado" },
+    ];
+    expect(construirMensajeCarrito({ items, totales: sinDescuento(30) })).toBe(
+      cabecera +
+        "1. *Mochila*\n   🎨 Color: Negro\n   💰 Precio: S/ 10.00\n   📦 Cantidad: 1\n   💵 Subtotal: S/ 10.00\n\n" +
+        "2. *Mochila*\n   🎨 Color: Rosado\n   💰 Precio: S/ 10.00\n   📦 Cantidad: 2\n   💵 Subtotal: S/ 20.00\n\n" +
+        "Subtotal: S/ 30.00\n*TOTAL: S/ 30.00*\n\n" +
+        pie,
+    );
+  });
+
+  it("nivel aplicado con descuento 0: la línea de descuento sale igual que hoy", () => {
+    const totales: Totales = {
+      ...sinDescuento(10),
+      nivel: { _id: "n", nombre: "Gratis", montoMinimo: 0, tipoDescuento: "monto_fijo", valorDescuento: 0, activo: true },
+    };
+    expect(construirMensajeCarrito({ items: [{ nombre: "A", precio: 10, cantidad: 1 }], totales })).toBe(
+      cabecera +
+        "1. *A*\n   💰 Precio: S/ 10.00\n   📦 Cantidad: 1\n   💵 Subtotal: S/ 10.00\n\n" +
+        "Subtotal: S/ 10.00\n🎉 Descuento aplicado (Gratis): -S/ 0.00\n*TOTAL: S/ 10.00*\n\n" +
+        pie,
+    );
+  });
+
+  it("nombre con caracteres especiales: el enlace no se codifica dos veces", () => {
+    const items = [{ nombre: "Tazón & Cía #1 100%", precio: 5, cantidad: 1 }];
+    const link = enlaceWhatsAppCarrito({ items, totales: sinDescuento(5) });
+    expect(link.includes("%2526")).toBe(false);
+    expect(texto(link)).toBe(construirMensajeCarrito({ items, totales: sinDescuento(5) }));
+    expect(texto(link).includes("*Tazón & Cía #1 100%*")).toBe(true);
+  });
+});
+
 describe("enlaceWhatsAppCarrito", () => {
   it("carrito vacío → «#»", () => {
     expect(enlaceWhatsAppCarrito({ items: [], totales: sinDescuento(0) })).toBe("#");
