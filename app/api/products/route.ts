@@ -6,7 +6,7 @@ import { crearProducto, listarProductosPublicos } from "@/server/services/produc
 export const GET = handle(async () => json(await listarProductosPublicos()));
 
 export const POST = handle(async (req) => {
-  await requireAdmin("catalogo.editar");
+  const admin = await requireAdmin("catalogo.editar");
   const datos = productoCrearSchema.parse(await req.json());
-  return json(await crearProducto(datos));
+  return json(await crearProducto(datos, { adminId: admin.id }));
 });

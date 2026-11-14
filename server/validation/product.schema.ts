@@ -17,7 +17,7 @@ export const productoCrearSchema = z.object({
   descripcionCompleta: texto(20000).optional(),
   categorias: listaTexto(20, 100).optional(),
   categoriaSlugs: listaTexto(20, 100).optional(),
-  stock: z.enum(["Disponible", "Limitado", "Agotado"]).optional(), // se retira en la fase 13
+  // `stock` (texto) ya no se acepta del cliente: siempre lo deriva el servidor de la cantidad (fase 13, N1-5).
   imagenes: listaTexto(10, 300).optional(),
   imagenPrincipal: texto(300).optional(),
   imagenUrl: urlOVacio.optional(),

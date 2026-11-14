@@ -13,10 +13,10 @@ export const GET = handle(async (_req, ctx) => {
 });
 
 export const PUT = handle(async (req, ctx) => {
-  await requireAdmin("catalogo.editar");
+  const admin = await requireAdmin("catalogo.editar");
   const { id } = await ctx.params;
   const datos = productoActualizarSchema.parse(await req.json());
-  return json(await actualizarProducto(id, datos));
+  return json(await actualizarProducto(id, datos, { adminId: admin.id }));
 });
 
 export const DELETE = handle(async (_req, ctx) => {

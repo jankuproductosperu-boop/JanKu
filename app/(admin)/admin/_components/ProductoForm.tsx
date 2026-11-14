@@ -7,12 +7,13 @@ import type { ProductAdmin, Category } from "@/types";
 import { ImageUploader } from "@/app/(admin)/admin/_components/ImageUploader";
 import { useImageUpload } from "@/app/(admin)/admin/_components/useImageUpload";
 import { esNovedad, fechaNuevoHasta } from "@/lib/novedades";
+import { estadoDeStock } from "@/lib/stock";
 import { getCloudinaryUrl, type UploadedImage } from "@/app/(admin)/admin/_components/imageTypes";
 
 type Props = { product?: ProductAdmin; categories: Category[]; onSaved: () => Promise<void> };
 
 const FORM_VACIO = {
-  nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible",
+  nombre: "", precio: "", descripcion: "", categorias: "", stockCantidad: "", stockMinimo: "5",
   deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
   metaTitulo: "", metaDescripcion: "", mostrarEnHome: false, novedad: false,
   whatsappNumero: "", videoUrl: "", tags: "",
@@ -26,7 +27,8 @@ function formDe(product?: ProductAdmin): typeof FORM_VACIO {
     descripcion: product.descripcion || "",
     descripcionCompleta: product.descripcionCompleta || "",
     categorias: Array.isArray(product.categorias) ? product.categorias.join(",") : "",
-    stock: product.stock || "Disponible",
+    stockCantidad: String(product.stockCantidad ?? 0),
+    stockMinimo: String(product.stockMinimo ?? 5),
     deliveryHuancayo: product.deliveryHuancayo ?? true,
     mostrarEnHome: product.mostrarEnHome ?? false,
     novedad: esNovedad(product),
@@ -98,7 +100,10 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
         nombre: form.nombre.trim(), precio: Number(form.precio),
         descripcion: form.descripcion?.trim() || "",
         descripcionCompleta: form.descripcionCompleta?.trim() || "",
-        categorias: selectedCategories, categoriaSlugs: selectedSlugs, stock: form.stock,
+        categorias: selectedCategories, categoriaSlugs: selectedSlugs,
+        // Inventario: el servidor deriva la etiqueta de stock; no se envía `stock`.
+        stockCantidad: Math.max(0, Math.floor(Number(form.stockCantidad || 0))),
+        stockMinimo: form.stockMinimo === "" ? 5 : Math.max(0, Math.floor(Number(form.stockMinimo))),
         // Cloudinary — public_ids
         imagenes: imageResult.imagenes.filter(Boolean),
         imagenPrincipal: imageResult.imagenPrincipal,
@@ -209,7 +214,11 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
       <div className="space-y-6 lg:sticky lg:top-20">
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 space-y-4">
           <h2 className="font-bold text-[var(--ink)]">Publicación</h2>
-          <div><label className="block text-sm font-medium text-[var(--ink)] mb-2">Stock</label><select name="stock" value={form.stock} onChange={handleChange} className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-[var(--surface)]"><option value="Disponible">✅ Disponible</option><option value="Limitado">⚠️ Limitado</option><option value="Agotado">❌ Agotado</option></select></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="block text-sm font-medium text-[var(--ink)] mb-2">Cantidad en stock</label><input name="stockCantidad" type="number" min="0" step="1" value={form.stockCantidad} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+            <div><label className="block text-sm font-medium text-[var(--ink)] mb-2">Stock mínimo</label><input name="stockMinimo" type="number" min="0" step="1" value={form.stockMinimo} onChange={handleChange} placeholder="5" className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+          </div>
+          <p className="text-xs text-[var(--muted)] -mt-2">Estado en la tienda: <b className="text-[var(--ink)]">{estadoDeStock(Math.max(0, Number(form.stockCantidad || 0)), form.stockMinimo === "" ? 5 : Number(form.stockMinimo))}</b> (se calcula solo; «Limitado» cuando la cantidad es igual o menor al mínimo).</p>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="deliveryHuancayo" checked={form.deliveryHuancayo} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">🚚 Delivery gratis Huancayo</span></label>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="mostrarEnHome" checked={form.mostrarEnHome} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">⭐ Mostrar en página de inicio</span></label>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="novedad" checked={form.novedad} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">🆕 Novedad de la semana</span></label>
