@@ -37,6 +37,7 @@ Todo dentro de `app/(admin)/admin/`.
    - Búsqueda por nombre, etiquetas y código (sin distinguir mayúsculas ni tildes). El buscador de la barra superior la abre con `?q=`; lo que se escribe después en la propia lista no se guarda en la URL.
    - Filtros: categoría (por `categoriaSlugs`), estado (activo/inactivo), stock (`Disponible`/`Limitado`/`Agotado`).
    - Orden: más recientes (`createdAt`), nombre, precio.
+   - Dos vistas, con selector «Lista / Iconos»: tabla compacta o cuadrícula de tarjetas con imagen grande (2 a 4 columnas según el ancho). La elección se recuerda en `localStorage` (dentro de `try/catch`). Ambas comparten filtros, selección y acciones masivas.
    - Paginación de 20 (igual que hoy).
    - Columnas: miniatura, nombre, categoría, precio, estado de stock, interruptor de activo, botón Editar.
    - Acciones masivas con casillas: **Activar**, **Desactivar**, **Cambiar categoría** (desplegable; pide confirmación porque reemplaza las categorías del producto). Cada una llama al `PUT /api/products/[id]` existente, producto por producto, y muestra el resultado ("12 actualizados, 1 con error"). Sin endpoint nuevo.

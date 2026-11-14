@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Plus, Download, Pencil } from "lucide-react";
+import { Search, Plus, Download, Pencil, LayoutGrid, List } from "lucide-react";
 import { invalidateCachePattern } from "@/lib/cache";
 import type { ProductAdmin, Category } from "@/types";
 import { getCloudinaryUrl } from "@/app/(admin)/admin/_components/imageTypes";
@@ -13,9 +13,11 @@ type Props = {
   busquedaInicial?: string;
 };
 
+type Vista = "lista" | "iconos";
 type Orden = "recientes" | "nombre" | "precio-asc" | "precio-desc";
 
 const ITEMS_PER_PAGE = 20;
+const CLAVE_VISTA = "admin-productos-vista";
 
 const normalizar = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -53,6 +55,13 @@ export default function ProductosLista({ products, categories, onReload, busqued
   const [pagina, setPagina] = useState(1);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   const [trabajando, setTrabajando] = useState(false);
+  const [vista, setVista] = useState<Vista>(() => {
+    try { return localStorage.getItem(CLAVE_VISTA) === "iconos" ? "iconos" : "lista"; } catch { return "lista"; }
+  });
+  const cambiarVista = (v: Vista) => {
+    setVista(v);
+    try { localStorage.setItem(CLAVE_VISTA, v); } catch { /* sin almacenamiento: la vista no se recuerda */ }
+  };
 
   // ── Filtrado, orden y paginación (todo en el navegador) ──
   const consulta = normalizar(q.trim());
@@ -107,7 +116,9 @@ export default function ProductosLista({ products, categories, onReload, busqued
     let ok = 0;
     let fallos = 0;
     for (const id of seleccion) {
-      try { (await actualizar(id, cambios)) ? ok++ : fallos++; } catch { fallos++; }
+      try {
+        if (await actualizar(id, cambios)) ok++; else fallos++;
+      } catch { fallos++; }
     }
     invalidateCachePattern("products");
     setSeleccion(new Set());
@@ -181,6 +192,13 @@ export default function ProductosLista({ products, categories, onReload, busqued
           <option value="precio-asc">Precio: menor a mayor</option>
           <option value="precio-desc">Precio: mayor a menor</option>
         </select>
+        <div className="inline-flex rounded-[10px] border border-[var(--line)] bg-[var(--surface)] p-0.5" role="group" aria-label="Tipo de vista">
+          {([["lista", "Lista", List], ["iconos", "Iconos", LayoutGrid]] as const).map(([v, texto, Icono]) => (
+            <button key={v} onClick={() => cambiarVista(v)} aria-pressed={vista === v} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${vista === v ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:bg-[var(--bg)]"}`}>
+              <Icono className="w-4 h-4" /> {texto}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Acciones masivas */}
@@ -208,6 +226,45 @@ export default function ProductosLista({ products, categories, onReload, busqued
           <div className="text-center py-12 text-[var(--muted)]"><p className="text-lg">No hay productos</p><p className="mt-2 text-sm">¡Agrega tu primer producto!</p></div>
         ) : filtrados.length === 0 ? (
           <div className="text-center py-12 text-[var(--muted)]"><p className="text-lg">Ningún producto coincide con la búsqueda</p></div>
+        ) : vista === "iconos" ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 p-2">
+            {visibles.map((p) => (
+              <div key={p._id} className={`relative rounded-2xl border bg-[var(--surface)] overflow-hidden hover:shadow-lg transition ${seleccion.has(p._id) ? "border-[var(--accent)] ring-2 ring-[var(--accent-soft)]" : "border-[var(--line)]"} ${p.activo === false ? "opacity-70" : ""}`}>
+                <label className="absolute top-2 left-2 z-10 rounded-md bg-white/90 p-1 shadow">
+                  <input type="checkbox" aria-label={`Seleccionar ${p.nombre}`} checked={seleccion.has(p._id)} onChange={() => alternarUno(p._id)} />
+                </label>
+                {p.activo === false && <span className="absolute top-2 right-2 z-10 rounded-full bg-gray-800/80 px-2 py-0.5 text-[11px] font-semibold text-white">Inactivo</span>}
+                <Link href={`/admin/productos/${p._id}`} className="block aspect-square bg-[var(--accent-soft)]">
+                  {(p.imagenUrl || p.imagenPrincipal) && (
+                    <img src={p.imagenUrl || getCloudinaryUrl(p.imagenPrincipal || "", 300)} alt={p.nombre} className="w-full h-full object-cover" />
+                  )}
+                </Link>
+                <div className="p-3 space-y-2">
+                  <b className="block text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{p.nombre}</b>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold">S/ {p.precio.toFixed(2)}</span>
+                    {p.stock && (
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.stock === "Disponible" ? "bg-emerald-100 text-emerald-700" : p.stock === "Limitado" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{p.stock}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      role="switch"
+                      aria-checked={p.activo !== false}
+                      aria-label={`Activo: ${p.nombre}`}
+                      onClick={() => alternarActivo(p)}
+                      className={`relative inline-block w-9 h-5 rounded-full transition ${p.activo !== false ? "bg-[var(--accent)]" : "bg-[var(--line)]"}`}
+                    >
+                      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${p.activo !== false ? "left-[18px]" : "left-0.5"}`} />
+                    </button>
+                    <Link href={`/admin/productos/${p._id}`} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm font-semibold hover:bg-[var(--bg)] transition">
+                      <Pencil className="w-3.5 h-3.5" /> Editar
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
