@@ -6,5 +6,6 @@ export type Category = {
   imagenUrl?: string;
   activo: boolean;
   orden?: number;
+  padre?: string; // slug de la categoría madre (D-57); sin uso público todavía
 };
 export type CategoryInput = Omit<Category, "_id" | "slug"> & { slug?: string };

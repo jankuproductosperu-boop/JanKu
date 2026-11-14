@@ -7,7 +7,8 @@ const CategorySchema = new Schema(
     descripcion: { type: String, default: "" },
     imagenUrl: { type: String, default: "" },
     activo: { type: Boolean, default: true },
-    orden: { type: Number, default: 0 }
+    orden: { type: Number, default: 0 },
+    padre: { type: String } // slug de la categoría madre (D-57); opcional, sin interfaz todavía
   },
   { timestamps: true }
 );

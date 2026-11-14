@@ -69,9 +69,11 @@ export async function requireAdmin(permiso?: Permiso): Promise<AdminSession> {
  */
 export function exigirPermisosDeCampos(
   admin: AdminSession,
-  datos: { stockCantidad?: unknown; precioCosto?: unknown; proveedor?: unknown },
+  datos: { stockCantidad?: unknown; variantes?: unknown; precioCosto?: unknown; proveedor?: unknown },
 ): void {
-  if (datos.stockCantidad !== undefined && !admin.permisos.includes("inventario.editar")) throw prohibido();
+  // Las variantes llevan stock propio: tocarlas también es inventario (fase 13b).
+  const tocaStock = datos.stockCantidad !== undefined || datos.variantes !== undefined;
+  if (tocaStock && !admin.permisos.includes("inventario.editar")) throw prohibido();
   if ((datos.precioCosto !== undefined || datos.proveedor !== undefined) && !admin.permisos.includes("costos.ver")) {
     throw prohibido();
   }

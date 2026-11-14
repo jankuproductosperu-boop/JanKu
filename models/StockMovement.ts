@@ -11,6 +11,9 @@ const StockMovementSchema = new Schema(
     motivo: { type: String, maxlength: 200 },
     orderId: { type: Schema.Types.ObjectId, ref: "Order" },
     adminId: { type: Schema.Types.ObjectId, ref: "AdminUser" },
+    // Fase 13b: variante afectada y su etiqueta en ese momento (si luego se renombra, el historial no cambia).
+    variantId: { type: Schema.Types.ObjectId },
+    varianteEtiqueta: { type: String, maxlength: 200 },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

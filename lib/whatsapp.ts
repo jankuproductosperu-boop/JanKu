@@ -8,11 +8,13 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://jan-ku.com";
 export function buildWhatsAppLink(
   numero: string | undefined,
   nombre: string,
-  urlRelativa: string
+  urlRelativa: string,
+  variante?: string // etiqueta de la variante elegida (fase 13b); sin ella el mensaje es el de siempre
 ): string {
   const numeroLimpio = (numero || "").replace(/\D/g, ""); // solo dígitos
   if (!numeroLimpio) return "";
 
-  const mensaje = `Hola, estoy interesado(a) en: ${nombre}\n${SITE_URL}${urlRelativa}`;
+  const nombreCompleto = variante ? `${nombre} (${variante})` : nombre;
+  const mensaje = `Hola, estoy interesado(a) en: ${nombreCompleto}\n${SITE_URL}${urlRelativa}`;
   return `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
 }

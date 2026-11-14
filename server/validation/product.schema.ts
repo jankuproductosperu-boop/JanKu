@@ -9,8 +9,57 @@ import {
   textoRequerido,
   urlOVacio,
 } from "@/server/validation/common";
+import { MAX_OPCIONES, MAX_VALORES, MAX_VARIANTES, validarVariantes } from "@/lib/variantes";
 
-export const productoCrearSchema = z.object({
+// ── Variantes (fase 13b) ─────────────────────────────────────────────────────
+// Los nombres de opción son claves de un Map en MongoDB: sin puntos y sin "$" al inicio.
+const nombreOpcion = z
+  .string()
+  .trim()
+  .min(1, "Obligatorio")
+  .max(40)
+  .regex(/^[^$.][^.]*$/, "No uses puntos ni empieces con $");
+const valorOpcion = z.string().trim().min(1, "Obligatorio").max(40);
+
+const opcionSchema = z.object({
+  nombre: nombreOpcion,
+  valores: z.array(valorOpcion).min(1).max(MAX_VALORES),
+});
+
+const varianteSchema = z.object({
+  _id: objectId.optional(), // sin _id = variante nueva
+  combinacion: z.record(nombreOpcion, valorOpcion),
+  // Solo si cambió (o es nueva). El servidor la aplica con ajustarStock, nunca con un $set.
+  stockCantidad: enteroNoNegativo.optional(),
+  // La cantidad que veía el formulario al abrirse: si cambió entretanto, 409 (como stockEsperado).
+  stockEsperado: enteroNoNegativo.optional(),
+  precio: dinero.optional(),
+  imagen: texto(300).optional(),
+  sku: texto(50).optional(),
+  activo: z.boolean().optional(),
+});
+
+export type VarianteEntrada = z.infer<typeof varianteSchema>;
+
+const camposVariantes = {
+  opciones: z.array(opcionSchema).max(MAX_OPCIONES).optional(),
+  variantes: z.array(varianteSchema).max(MAX_VARIANTES).optional(),
+};
+
+function revisarVariantes(
+  d: { opciones?: z.infer<typeof opcionSchema>[]; variantes?: VarianteEntrada[] },
+  ctx: z.RefinementCtx,
+): void {
+  if ((d.opciones === undefined) !== (d.variantes === undefined)) {
+    ctx.addIssue({ code: "custom", path: ["variantes"], message: "Envía opciones y variantes juntas" });
+    return;
+  }
+  if (!d.opciones || !d.variantes) return;
+  const error = validarVariantes(d.opciones, d.variantes);
+  if (error) ctx.addIssue({ code: "custom", path: ["variantes"], message: error });
+}
+
+const productoBase = z.object({
   nombre: textoRequerido(200),
   precio: dinero,
   descripcion: texto(2000).optional(),
@@ -41,12 +90,18 @@ export const productoCrearSchema = z.object({
   stockMinimo: enteroNoNegativo.optional(),
   proveedor: texto(200).optional(),
   activo: z.boolean().optional(),
+  ...camposVariantes,
 });
 
-export const productoActualizarSchema = productoCrearSchema.partial().extend({
-  // Stock que veía el formulario al abrirse: si cambió entretanto, 409 en vez de pisarlo.
-  stockEsperado: enteroNoNegativo.optional(),
-});
+export const productoCrearSchema = productoBase.superRefine(revisarVariantes);
+
+export const productoActualizarSchema = productoBase
+  .partial()
+  .extend({
+    // Stock que veía el formulario al abrirse: si cambió entretanto, 409 en vez de pisarlo.
+    stockEsperado: enteroNoNegativo.optional(),
+  })
+  .superRefine(revisarVariantes);
 
 export const reordenarSchema = z.object({
   context: z
@@ -60,3 +115,6 @@ export const reordenarSchema = z.object({
     .min(1)
     .max(1000),
 });
+
+export type ProductoCrear = z.infer<typeof productoCrearSchema>;
+export type ProductoActualizar = z.infer<typeof productoActualizarSchema>;

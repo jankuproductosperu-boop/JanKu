@@ -1,6 +1,7 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
+import { lineaId } from "@/lib/variantes";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Trash2, Minus, Plus, ArrowLeft, Sparkles, Tag } from "lucide-react";
@@ -27,6 +28,7 @@ export default function CarritoPage() {
     
     cart.forEach((item, index) => {
       message += `${index + 1}. *${item.nombre}*\n`;
+      if (item.varianteEtiqueta) message += `   🎨 ${item.varianteEtiqueta}\n`;
       message += `   💰 Precio: S/ ${item.precio.toFixed(2)}\n`;
       message += `   📦 Cantidad: ${item.cantidad}\n`;
       message += `   💵 Subtotal: S/ ${(item.precio * item.cantidad).toFixed(2)}\n\n`;
@@ -126,7 +128,7 @@ export default function CarritoPage() {
 
               {cart.map((item) => (
                 <div 
-                  key={item._id}
+                  key={lineaId(item._id, item.varianteId)}
                   className="bg-white rounded-xl shadow-md p-3 md:p-6 hover:shadow-lg transition"
                 >
                   <div className="flex flex-col sm:flex-row gap-3 md:gap-6">
@@ -155,9 +157,12 @@ export default function CarritoPage() {
                           className="font-bold text-gray-900 text-base md:text-lg hover:text-[#2C2C6C] transition line-clamp-2"
                         >
                           {item.nombre}
+                          {item.varianteEtiqueta && (
+                            <span className="block text-xs md:text-sm font-normal text-gray-500 mt-0.5">{item.varianteEtiqueta}</span>
+                          )}
                         </Link>
                         <button
-                          onClick={() => removeFromCart(item._id)}
+                          onClick={() => removeFromCart(lineaId(item._id, item.varianteId))}
                           className="text-red-500 hover:text-red-700 transition flex-shrink-0"
                           title="Eliminar"
                         >
@@ -174,7 +179,7 @@ export default function CarritoPage() {
                         <span className="text-xs md:text-sm text-gray-600 font-medium">Cantidad:</span>
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => updateQuantity(item._id, item.cantidad - 1)}
+                            onClick={() => updateQuantity(lineaId(item._id, item.varianteId), item.cantidad - 1)}
                             className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center transition"
                           >
                             <Minus className="w-4 h-4 md:w-5 md:h-5" />
@@ -183,11 +188,11 @@ export default function CarritoPage() {
                             type="number"
                             min="1"
                             value={item.cantidad}
-                            onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 1)}
+                            onChange={(e) => updateQuantity(lineaId(item._id, item.varianteId), parseInt(e.target.value) || 1)}
                             className="w-14 md:w-16 text-center border-2 border-gray-300 rounded-lg font-bold text-base md:text-lg focus:border-[#2C2C6C] outline-none py-1.5 md:py-2"
                           />
                           <button
-                            onClick={() => updateQuantity(item._id, item.cantidad + 1)}
+                            onClick={() => updateQuantity(lineaId(item._id, item.varianteId), item.cantidad + 1)}
                             className="bg-[#2C2C6C] hover:bg-[#241B57] text-white w-9 h-9 md:w-10 md:h-10 rounded-lg flex items-center justify-center transition"
                           >
                             <Plus className="w-4 h-4 md:w-5 md:h-5" />
@@ -219,9 +224,9 @@ export default function CarritoPage() {
 
                 <div className="space-y-2 md:space-y-3 mb-4 md:mb-6">
                   {cart.map((item) => (
-                    <div key={item._id} className="flex justify-between text-xs md:text-sm gap-2">
+                    <div key={lineaId(item._id, item.varianteId)} className="flex justify-between text-xs md:text-sm gap-2">
                       <span className="text-gray-600 line-clamp-1 flex-1">
-                        {item.nombre} × {item.cantidad}
+                        {item.nombre}{item.varianteEtiqueta ? ` (${item.varianteEtiqueta})` : ""} × {item.cantidad}
                       </span>
                       <span className="font-semibold text-gray-900 flex-shrink-0">
                         S/ {(item.precio * item.cantidad).toFixed(2)}

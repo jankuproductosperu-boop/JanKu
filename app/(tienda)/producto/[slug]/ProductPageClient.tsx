@@ -10,6 +10,8 @@ import Accordion from "@/Components/Accordion/Accordion";
 import ProductCard from "@/Components/ProductCard/ProductCard";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { buildProductUrl } from "@/lib/productUrl";
+import { getCloudinaryUrl } from "@/lib/cloudinaryUrl";
+import { etiquetaVariante, precioDeVariante, precioDesde, tieneVariantes } from "@/lib/variantes";
 import type { Product } from "@/types";
 
 // ✅ Ahora recibe el producto ya cargado desde el servidor (page.tsx)
@@ -20,6 +22,44 @@ export default function ProductPageClient({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
   const { addToCart, toggleCart } = useCart();
+
+  // ── Variantes (fase 13b). Sin variantes, todo lo de abajo da los mismos valores que antes. ──
+  const conVariantes = tieneVariantes(product);
+  const opciones = conVariantes ? product.opciones ?? [] : [];
+  const variantes = conVariantes ? product.variantes ?? [] : [];
+  const [eleccion, setEleccion] = useState<Record<string, string>>({});
+  const coincide = (comb: Record<string, string>, sel: Record<string, string>) =>
+    Object.entries(sel).every(([k, v]) => comb[k] === v);
+  const completa = opciones.length > 0 && opciones.every((o) => eleccion[o.nombre]);
+  const varianteElegida = completa ? variantes.find((v) => coincide(v.combinacion, eleccion)) : undefined;
+  const faltan = opciones.filter((o) => !eleccion[o.nombre]).map((o) => o.nombre.toLowerCase());
+  const desde = conVariantes ? precioDesde(product) : null;
+  const precioMostrado = varianteElegida ? precioDeVariante(product.precio, varianteElegida) : (desde?.precio ?? product.precio);
+  const textoPrecio = !varianteElegida && desde?.varia ? `Desde S/ ${precioMostrado.toFixed(2)}` : `S/ ${precioMostrado.toFixed(2)}`;
+  const stockMostrado = varianteElegida ? varianteElegida.stock : product.stock;
+  const agotado = stockMostrado === "Agotado";
+  const etiquetaElegida = varianteElegida
+    ? etiquetaVariante(varianteElegida.combinacion, opciones.map((o) => o.nombre))
+    : undefined;
+  const sinElegir = conVariantes && !varianteElegida;
+
+  const elegir = (nombre: string, valor: string) => {
+    const nueva = { ...eleccion, [nombre]: valor };
+    setEleccion(nueva);
+    const v = opciones.every((o) => nueva[o.nombre]) ? variantes.find((x) => coincide(x.combinacion, nueva)) : undefined;
+    if (v?.imagen) {
+      setSelectedImage(getCloudinaryUrl(v.imagen));
+      setShowingVideo(false);
+    }
+  };
+
+  /** Disponibilidad de un valor con lo ya elegido en las otras opciones. */
+  const estadoValor = (nombre: string, valor: string): "ok" | "agotado" | "no" => {
+    const sel = { ...eleccion, [nombre]: valor };
+    const posibles = variantes.filter((v) => coincide(v.combinacion, sel));
+    if (posibles.length === 0) return "no";
+    return posibles.every((v) => v.stock === "Agotado") ? "agotado" : "ok";
+  };
 
   // Función para extraer el ID del video de YouTube
   const getYouTubeVideoId = (url: string) => {
@@ -80,16 +120,17 @@ export default function ProductPageClient({ product }: { product: Product }) {
   };
 
   const handleAddToCart = () => {
-    if (product.stock === "Agotado") return;
+    if (agotado || sinElegir) return;
 
     for (let i = 0; i < quantity; i++) {
       addToCart({
         _id: product._id,
         nombre: product.nombre,
-        precio: product.precio,
-        imagenUrl: product.imagenUrl,
+        precio: precioMostrado,
+        imagenUrl: varianteElegida?.imagen ? getCloudinaryUrl(varianteElegida.imagen, { width: 300 }) : product.imagenUrl,
         slug: product.slug,
         codigoUrl: product.codigoUrl,
+        ...(varianteElegida ? { varianteId: varianteElegida._id, varianteEtiqueta: etiquetaElegida } : {}),
       });
     }
 
@@ -108,7 +149,8 @@ export default function ProductPageClient({ product }: { product: Product }) {
   const whatsappLink = buildWhatsAppLink(
     product.whatsappNumero,
     product.nombre,
-    `/producto/${buildProductUrl(product.nombre, product.codigoUrl)}`
+    `/producto/${buildProductUrl(product.nombre, product.codigoUrl)}`,
+    etiquetaElegida
   );
 
   return (
@@ -249,16 +291,54 @@ export default function ProductPageClient({ product }: { product: Product }) {
           {/* Precio */}
           <div className="border-t border-b py-4">
             <p className="text-4xl font-bold text-indigo-600">
-              S/ {product.precio.toFixed(2)}
+              {textoPrecio}
             </p>
           </div>
 
+          {/* Opciones de la variante (solo productos con variantes) */}
+          {conVariantes && (
+            <div className="space-y-4">
+              {opciones.map((op) => (
+                <div key={op.nombre}>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    {op.nombre}
+                    {eleccion[op.nombre] && <span className="font-semibold text-gray-900">: {eleccion[op.nombre]}</span>}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {op.valores.map((valor) => {
+                      const estado = estadoValor(op.nombre, valor);
+                      const activo = eleccion[op.nombre] === valor;
+                      return (
+                        <button
+                          key={valor}
+                          type="button"
+                          disabled={estado === "no"}
+                          onClick={() => elegir(op.nombre, valor)}
+                          aria-pressed={activo}
+                          className={`min-w-12 px-4 py-2 rounded-lg border-2 text-sm font-semibold transition ${
+                            activo
+                              ? "border-indigo-600 bg-indigo-600 text-white"
+                              : "border-gray-300 bg-white text-gray-800 hover:border-indigo-400"
+                          } ${estado === "agotado" ? "line-through opacity-60" : ""} ${
+                            estado === "no" ? "opacity-30 cursor-not-allowed" : ""
+                          }`}
+                        >
+                          {valor}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Stock */}
-          {product.stock && (
+          {stockMostrado && (
             <div className="flex items-center gap-2">
               <span className="text-lg">Stock:</span>
-              <span className={`px-4 py-2 rounded-lg font-semibold text-sm ${getStockColor(product.stock)}`}>
-                {getStockIcon(product.stock)} {product.stock}
+              <span className={`px-4 py-2 rounded-lg font-semibold text-sm ${getStockColor(stockMostrado)}`}>
+                {getStockIcon(stockMostrado)} {stockMostrado}
               </span>
             </div>
           )}
@@ -291,7 +371,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
           )}
 
           {/* Selector de cantidad */}
-          {product.stock !== "Agotado" && (
+          {!agotado && (
             <div className="border-t pt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cantidad:
@@ -322,14 +402,15 @@ export default function ProductPageClient({ product }: { product: Product }) {
 
           {/* Botones de acción */}
           <div className="space-y-3 pt-4">
-            {product.stock !== "Agotado" && (
+            {!agotado && (
               <>
                 <button
                   onClick={handleAddToCart}
-                  className="w-full bg-indigo-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2"
+                  disabled={sinElegir}
+                  className="w-full bg-indigo-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
                 >
                   <ShoppingCart className="w-6 h-6" />
-                  Agregar al Carrito ({quantity})
+                  {sinElegir ? `Elige ${faltan.join(" y ")}` : `Agregar al Carrito (${quantity})`}
                 </button>
 
                 {whatsappLink ? (
@@ -355,7 +436,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
               </>
             )}
 
-            {product.stock === "Agotado" && (
+            {agotado && (
               <div className="w-full bg-gray-300 text-gray-600 py-4 rounded-lg font-bold text-lg text-center cursor-not-allowed">
                 Producto Agotado
               </div>

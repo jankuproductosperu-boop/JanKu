@@ -75,6 +75,7 @@ export default function MovimientosModal({ producto, onCerrar }: { producto: { _
                   <tr className="border-b border-[var(--line)] text-left text-[12.5px] text-[var(--muted)]">
                     <th className="p-2">Fecha</th>
                     <th className="p-2">Tipo</th>
+                    {datos.items.some((m) => m.varianteEtiqueta) && <th className="p-2">Variante</th>}
                     <th className="p-2 text-right">Cantidad</th>
                     <th className="p-2 text-right">Antes → después</th>
                     <th className="p-2">Motivo</th>
@@ -86,6 +87,7 @@ export default function MovimientosModal({ producto, onCerrar }: { producto: { _
                     <tr key={m._id} className="border-b border-[var(--line)] last:border-0">
                       <td className="p-2 whitespace-nowrap">{new Date(m.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" })}</td>
                       <td className="p-2"><Chip tono={ETIQUETA[m.tipo].tono}>{ETIQUETA[m.tipo].texto}</Chip></td>
+                      {datos.items.some((x) => x.varianteEtiqueta) && <td className="p-2 whitespace-nowrap">{m.varianteEtiqueta || "—"}</td>}
                       <td className={`p-2 text-right font-bold ${m.cantidad > 0 ? "text-green-600" : "text-red-600"}`}>{m.cantidad > 0 ? `+${m.cantidad}` : m.cantidad}</td>
                       <td className="p-2 text-right whitespace-nowrap">{m.stockAntes} → {m.stockDespues}</td>
                       <td className="p-2 text-[var(--muted)]">{m.motivo || "—"}</td>

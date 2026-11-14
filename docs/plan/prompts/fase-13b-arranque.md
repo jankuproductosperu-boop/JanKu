@@ -14,7 +14,7 @@ Vas a ejecutar la sesión A de la fase 13b de Janku (variantes de producto, part
 Lee, en este orden y solo esto:
 1. CLAUDE.md (raíz) y sus Reglas de Nivel 1.
 2. docs/plan/README.md.
-3. docs/plan/fases/fase-13b-variantes.md (solo esa fase). Haz SOLO los pasos 1 a 7 (sesión A) y la lista "Sesión A · backend".
+3. docs/plan/fases/fase-13b-variantes.md (solo esa fase), incluida la sección 13 «Ajustes tras la revisión del 2026-11-14», que manda sobre el resto. Haz SOLO los pasos 1 a 7 (sesión A) y la lista "Sesión A · backend".
 4. Las decisiones D-56, D-57 y D-60 a D-67 de docs/plan/03-decisiones.md.
 5. Para entender lo que ya existe: server/services/inventory.service.ts, server/services/product.service.ts, models/Product.ts, models/StockMovement.ts, lib/stock.ts y las notas de implementación al final de docs/plan/fases/fase-13-inventario-movimientos.md.
 
@@ -27,7 +27,7 @@ Reglas de esta sesión:
 - La integridad del stock es lo crítico: toda escritura de stockCantidad (de producto o de variante) pasa por ajustarStock dentro de una transacción, con escritura condicional. Piensa en concurrencia antes de escribir.
 - Commits pequeños, en español, con la línea Co-Authored-By.
 
-Al terminar: npm run typecheck, npm run lint (la línea base son 4 errores en lib/cache.ts y server/db.ts; no deben aparecer nuevos), npm test, npm run build y npm run smoke. Reporta resultados REALES (si algo falla, pega la salida). Lista: qué hiciste, qué desviaciones del plan hubo y por qué, y qué debo revisar yo a mano (inventory.service.ts y product.service.ts). No fusiones a main: pregúntame primero.
+Al terminar: npm run typecheck, npm run lint (la línea base son 3 errores react-hooks/set-state-in-effect en busqueda/page.tsx, CartContext.tsx y FavoritesContext.tsx; no deben aparecer nuevos), npm test, npm run build y npm run smoke. Reporta resultados REALES (si algo falla, pega la salida). Lista: qué hiciste, qué desviaciones del plan hubo y por qué, y qué debo revisar yo a mano (inventory.service.ts y product.service.ts). No fusiones a main: pregúntame primero.
 ```
 
 ---
@@ -53,7 +53,7 @@ Reglas de esta sesión:
 - No abras ni muestres .env*. No ejecutes scripts contra la base, ni --apply, ni git push. No lances npm run dev (lo corro yo). Subir imágenes a Cloudinary real solo si yo te lo autorizo en esta sesión.
 - Commits pequeños, en español, con la línea Co-Authored-By.
 
-Al terminar: npm run typecheck, npm run lint (la línea base son 4 errores en lib/cache.ts y server/db.ts), npm test, npm run build y npm run smoke. Reporta resultados REALES. Entrégame el checklist de la sección 8 de la fase para que lo pruebe yo. Avisa qué debo revisar a mano (sobre todo context/CartContext.tsx). No fusiones a main: pregúntame primero.
+Al terminar: npm run typecheck, npm run lint (la línea base son 3 errores react-hooks/set-state-in-effect en busqueda/page.tsx, CartContext.tsx y FavoritesContext.tsx), npm test, npm run build y npm run smoke. Reporta resultados REALES. Entrégame el checklist de la sección 8 de la fase para que lo pruebe yo. Avisa qué debo revisar a mano (sobre todo context/CartContext.tsx). No fusiones a main: pregúntame primero.
 ```
 
 ---

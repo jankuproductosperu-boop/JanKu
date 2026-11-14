@@ -2,12 +2,14 @@
 
   import Image from "next/image";
   import Link from "next/link";
+  import { useRouter } from "next/navigation";
   import { useState, useEffect } from "react";
   import { ShoppingCart, Heart } from "lucide-react";
   import { useCart } from "@/context/CartContext";
   import { useFavorites } from "@/context/FavoritesContext";
   import { buildProductUrl } from "@/lib/productUrl";
   import { esNovedad } from "@/lib/novedades";
+  import { precioDesde, tieneVariantes } from "@/lib/variantes";
   import type { Product } from "@/types";
 
   // Función inline para no depender de la lib en el cliente directamente
@@ -71,6 +73,10 @@
     const [showStockAlert, setShowStockAlert] = useState(false);
     const [showFavoriteMessage, setShowFavoriteMessage] = useState(false);
     const { addToCart } = useCart();
+    const router = useRouter();
+    // Con variantes (D-65) el botón lleva a la ficha para elegir; sin variantes, todo igual que antes.
+    const conVariantes = tieneVariantes(product);
+    const desde = conVariantes ? precioDesde(product) : null;
     const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
 
     const isProductFavorite = isFavorite(product._id);
@@ -78,6 +84,11 @@
     const handleAddToCart = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
+      if (conVariantes) {
+        router.push(`/producto/${buildProductUrl(product.nombre, product.codigoUrl)}`);
+        return;
+      }
 
       if (product.stock === "Agotado") {
         setShowStockAlert(true);
@@ -260,7 +271,7 @@
               compact ? "text-sm mt-0.5" : "text-base md:text-lg mt-1"
             }`}
           >
-            S/ {product.precio.toFixed(2)}
+            {desde && desde.varia ? `Desde S/ ${desde.precio.toFixed(2)}` : `S/ ${(desde ? desde.precio : product.precio).toFixed(2)}`}
           </p>
 
           {product.deliveryHuancayo && !compact && (

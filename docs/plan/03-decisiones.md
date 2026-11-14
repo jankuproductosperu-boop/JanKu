@@ -244,3 +244,15 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-66 · Pedidos y WhatsApp llevan la variante.** El mensaje de WhatsApp y cada ítem de pedido incluyen la etiqueta de la variante; el servidor revalida variante, precio y stock (N1-5). Las fases 14, 15 y 17 se ajustan a esto.
 
 **D-67 · Subcategorías: solo la base (D-57).** `Category.padre` opcional (slug de la categoría madre), sin interfaz ni uso público.
+
+---
+
+## Ajustes del 2026-11-14 (revisión del panel y arranque de la 13b)
+
+*Acordados con el dueño el 2026-11-14.*
+
+**D-68 · La cantidad exacta de stock es secreta.** La API pública (`GET /api/products`, `GET /api/products/[id]` y la ficha `/producto/[slug]`) deja de enviar `stockCantidad` y `stockMinimo`, y las variantes públicas no llevan `stockCantidad`: llevan solo su etiqueta `stock` (Disponible / Limitado / Agotado), calculada en el servidor. La tienda nunca usó la cantidad (solo la etiqueta) y el panel lee de `/api/admin/*`, así que no cambia nada visible. Es una excepción a N1-6 aprobada por el dueño.
+
+**D-69 · Las variantes existentes no se pueden omitir al guardar.** Si `PUT /api/products/[id]` trae `variantes` y falta alguna de las ya guardadas, o trae un `_id` que no existe en el producto → 400. Se desactivan, nunca se borran (D-64).
+
+**D-70 · Retoque visual del panel** (pedido por el dueño durante la 13b). Solo estilo, sin reestructurar: tarjetas, botones e iconos de sección con el azul de la tienda (`#2C2C6C`) y el acento índigo, y un modo oscuro con más contraste y profundidad. Se hace con los tokens de `.panel` (D-49); no se toca `app/globals.css` fuera de ese bloque, ni la tienda, ni el CSP.
