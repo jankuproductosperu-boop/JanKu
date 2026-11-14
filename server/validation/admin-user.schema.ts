@@ -35,6 +35,8 @@ export const adminActualizarSchema = z
     rol: z.enum(ROLES).optional(),
     activo: z.boolean().optional(),
     password: password.optional(),
+    // Obligatoria solo al cambiar la contraseña propia (lo comprueba el servicio).
+    passwordActual: z.string().min(1).max(200).optional(),
   })
   .strict();
 

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, ShoppingCart, Heart, ChevronDown, Facebook, Instagram, Twitter, Youtube, Music2, Truck, Plane, BadgePercent, User, Menu, X, LogOut, UserCircle } from "lucide-react";
+import { Search, ShoppingCart, Heart, ChevronDown, Facebook, Instagram, Youtube, Music2, Truck, Plane, BadgePercent, User, Menu, X, LogOut, UserCircle } from "lucide-react";
 import { fetchWithCache } from "@/lib/cache";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useScrollDirection } from "@/hooks/useScrollDirection";

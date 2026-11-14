@@ -43,7 +43,10 @@ export const productoCrearSchema = z.object({
   activo: z.boolean().optional(),
 });
 
-export const productoActualizarSchema = productoCrearSchema.partial();
+export const productoActualizarSchema = productoCrearSchema.partial().extend({
+  // Stock que veía el formulario al abrirse: si cambió entretanto, 409 en vez de pisarlo.
+  stockEsperado: enteroNoNegativo.optional(),
+});
 
 export const reordenarSchema = z.object({
   context: z

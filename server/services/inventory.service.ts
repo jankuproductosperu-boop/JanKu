@@ -15,6 +15,8 @@ export type AjusteStockArgs = {
   motivo?: string;
   tipo?: StockMovimientoTipo; // por defecto: sumar→entrada, restar→salida, fijar→ajuste
   orderId?: string;
+  /** Stock que vio quien pide el cambio. Si el actual es otro, 409 STOCK_CAMBIO (evita pisar ajustes ajenos). */
+  esperado?: number;
   actor?: { adminId: string };
   session?: ClientSession; // si llega, se usa esa transacción; si no, se abre una propia
 };
@@ -29,6 +31,12 @@ async function aplicarAjuste(args: AjusteStockArgs, s: ClientSession): Promise<A
   const crudo = p.stockCantidad as number | null | undefined;
   const antes = crudo ?? 0;
   const minimo = p.stockMinimo ?? 5;
+  if (args.esperado !== undefined && antes !== args.esperado) {
+    throw conflicto(
+      `El stock cambió mientras editabas (ahora hay ${antes}). Recarga y vuelve a intentarlo.`,
+      "STOCK_CAMBIO",
+    );
+  }
   const despues = stockResultante(args.modo, antes, args.cantidad);
 
   if (despues < 0) throw conflicto(`Stock insuficiente: hay ${antes}`, "SIN_STOCK");
@@ -66,11 +74,23 @@ async function aplicarAjuste(args: AjusteStockArgs, s: ClientSession): Promise<A
   return { stockAntes: antes, stockDespues: despues, stock };
 }
 
+let initMovimientos: Promise<unknown> | null = null;
+
+/** Asegura una sola vez por proceso que la colección y sus índices existen antes de la primera transacción. */
+export function asegurarColeccionMovimientos(): Promise<unknown> {
+  if (!initMovimientos) {
+    initMovimientos = StockMovement.init().catch((err: unknown) => {
+      initMovimientos = null; // se reintenta en la siguiente llamada
+      throw err;
+    });
+  }
+  return initMovimientos;
+}
+
 /** Cambia el stock de un producto y deja un movimiento. Es la ÚNICA vía para escribir stockCantidad. */
 export async function ajustarStock(args: AjusteStockArgs): Promise<AjusteStockResultado> {
   await connectDB();
-  // Asegura que la colección y sus índices existen antes de la primera transacción.
-  await StockMovement.init();
+  await asegurarColeccionMovimientos();
   if (args.session) return aplicarAjuste(args, args.session);
 
   const session = await mongoose.startSession();

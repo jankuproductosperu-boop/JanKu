@@ -9,24 +9,31 @@ import { consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit"
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { log } from "@/server/logger";
 
+// Hash bcrypt (coste 12) de un valor aleatorio que nadie conoce. Se compara contra él cuando el
+// usuario no existe, para que el tiempo de respuesta no revele qué usuarios existen.
+const HASH_FICTICIO = "$2b$12$XPEs8KzRWsDpK3aYvSZWFO15/TocCiDt0zCWtljwRAXEn/4sKgS/i";
+
 export async function POST(request: Request) {
   try {
     const headersList = await headers();
     const clientIP = obtenerIP(headersList);
 
-    // ── 1. Verificar si la IP está bloqueada (persistente en MongoDB) ─────
-    const estado = await consultar("login-admin", "ip", clientIP);
-    if (estado.bloqueado) {
+    const bloqueado = (minutos?: number) => {
+      const m = minutos ?? 15;
       log.warn("login_admin.bloqueado", { ip: clientIP });
       return NextResponse.json(
         {
-          error: `Demasiados intentos fallidos. Bloqueado por ${estado.minutosRestantes} minutos.`,
+          error: `Demasiados intentos fallidos. Bloqueado por ${m} minutos.`,
           blocked: true,
-          remainingTime: estado.minutosRestantes,
+          remainingTime: m,
         },
         { status: 429, headers: SECURITY_HEADERS }
       );
-    }
+    };
+
+    // ── 1. Verificar si la IP está bloqueada (persistente en MongoDB) ─────
+    const estado = await consultar("login-admin", "ip", clientIP);
+    if (estado.bloqueado) return bloqueado(estado.minutosRestantes);
 
     // ── 2. Validar y parsear el body ─────────────────────────────────────
     let body: { username?: string; password?: string };
@@ -49,36 +56,57 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cada fallo de credenciales cuenta un intento y responde igual
-    const fallo = async (motivo: string) => {
+    // Limitar longitud para prevenir ataques (cuenta como fallo, como antes)
+    if (typeof username !== "string" || typeof password !== "string" || username.length > 50 || password.length > 200) {
       const r = await registrarIntento("login-admin", "ip", clientIP);
-      log.warn("login_admin.fallo", { motivo, ip: clientIP, restantes: r.restantes });
+      log.warn("login_admin.fallo", { motivo: "entrada_larga", ip: clientIP, restantes: r.restantes });
       return NextResponse.json(
         { error: "Usuario o contraseña incorrectos", remainingAttempts: r.restantes },
         { status: 401, headers: SECURITY_HEADERS }
       );
-    };
-
-    // Limitar longitud para prevenir ataques
-    if (typeof username !== "string" || typeof password !== "string" || username.length > 50 || password.length > 200) {
-      return fallo("entrada_larga");
     }
 
-    // ── 3. Buscar usuario en BD ──────────────────────────────────────────
+    // ── 3. Bloqueo por cuenta: un acierto de otra cuenta no lo reinicia ───
+    // Se aplica a cualquier nombre recibido, exista o no, para no revelar usuarios.
+    const cuenta = username.trim().toLowerCase();
+    const estadoCuenta = await consultar("login-admin", "user", cuenta);
+    if (estadoCuenta.bloqueado) return bloqueado(estadoCuenta.minutosRestantes);
+
+    // ── 4. El intento se cuenta ANTES de comparar ────────────────────────
+    // Así una ráfaga en paralelo no prueba más contraseñas que el máximo. Un acierto lo borra
+    // después, de modo que en la práctica solo cuentan los fallos (D-18).
+    const [porIp, porCuenta] = await Promise.all([
+      registrarIntento("login-admin", "ip", clientIP),
+      registrarIntento("login-admin", "user", cuenta),
+    ]);
+    if (!porIp.dentroDelLimite || !porCuenta.dentroDelLimite) {
+      return bloqueado(Math.max(porIp.minutosRestantes ?? 0, porCuenta.minutosRestantes ?? 0) || undefined);
+    }
+
+    const fallo = (motivo: string) => {
+      log.warn("login_admin.fallo", { motivo, ip: clientIP, restantes: porIp.restantes });
+      return NextResponse.json(
+        { error: "Usuario o contraseña incorrectos", remainingAttempts: porIp.restantes },
+        { status: 401, headers: SECURITY_HEADERS }
+      );
+    };
+
+    // ── 5. Buscar usuario y verificar contraseña (mismo coste exista o no) ─
     await connectDB();
     const user = await AdminUser.findOne({
       username: username.trim(),
       activo: true,
     });
 
+    const isValidPassword = await bcrypt.compare(password, user?.password ?? HASH_FICTICIO);
     if (!user) return fallo("usuario");
-
-    // ── 4. Verificar contraseña ──────────────────────────────────────────
-    const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) return fallo("password");
 
-    // ── 5. Login exitoso ─────────────────────────────────────────────────
-    await reiniciar("login-admin", "ip", clientIP);
+    // ── 6. Login exitoso ─────────────────────────────────────────────────
+    await Promise.all([
+      reiniciar("login-admin", "ip", clientIP),
+      reiniciar("login-admin", "user", cuenta),
+    ]);
     await AdminUser.findByIdAndUpdate(user._id, { ultimoAcceso: new Date() });
 
     const token = await firmarAdmin({

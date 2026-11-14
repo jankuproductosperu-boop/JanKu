@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 
@@ -24,7 +24,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Error capturado:", error, errorInfo);
     // Aquí podrías enviar a un servicio de logging como Sentry
   }

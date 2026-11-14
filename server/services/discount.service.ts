@@ -1,6 +1,6 @@
 import "server-only";
 import { connectDB } from "@/server/db";
-import { noEncontrado } from "@/server/http/errors";
+import { entradaInvalida, noEncontrado } from "@/server/http/errors";
 import DiscountTier from "@/models/DiscountTier";
 import type { DiscountTier as NivelTipo, DiscountTierInput } from "@/types";
 
@@ -38,6 +38,18 @@ export async function actualizarNivel(
   datos: Partial<DiscountTierInput>,
 ): Promise<NivelTipo> {
   await connectDB();
+  // El esquema parcial no ve el documento guardado: se valida el resultado combinado.
+  if (datos.tipoDescuento !== undefined || datos.valorDescuento !== undefined) {
+    const actual = await DiscountTier.findById(id)
+      .select("tipoDescuento valorDescuento")
+      .lean<{ tipoDescuento?: string; valorDescuento?: number }>();
+    if (!actual) throw noEncontrado("Descuento");
+    const tipo = datos.tipoDescuento ?? actual.tipoDescuento ?? "porcentaje";
+    const valor = datos.valorDescuento ?? actual.valorDescuento ?? 0;
+    if (tipo === "porcentaje" && valor > 100) {
+      throw entradaInvalida({ valorDescuento: "El porcentaje no puede superar 100" });
+    }
+  }
   const actualizado = await DiscountTier.findByIdAndUpdate(id, datos, {
     new: true,
     runValidators: true,

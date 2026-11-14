@@ -237,14 +237,33 @@ export default function InventarioPage() {
     setGuardando(true);
     setErrorGuardar("");
 
-    const body = {
-      codigo: editForm.codigo.trim() || undefined,
+    // Solo viaja lo que cambió. Así no se pisa un ajuste de stock hecho mientras tanto
+    // (va con stockEsperado y el servidor responde 409) ni se escriben costos sin tocarlos.
+    const original = products.find((p) => p._id === id);
+    const nuevo = {
+      codigo: editForm.codigo.trim(),
       stockCantidad: Math.max(0, parseInt(editForm.stockCantidad) || 0),
       stockMinimo: Math.max(0, parseInt(editForm.stockMinimo) || 0),
       precioCosto: Math.max(0, parseFloat(editForm.precioCosto) || 0),
       proveedor: editForm.proveedor.trim(),
       activo: editForm.activo,
     };
+    const body: Record<string, unknown> = {};
+    if (!original || nuevo.codigo !== (original.codigo || "")) body.codigo = nuevo.codigo; // "" = quitar el código
+    if (!original || nuevo.stockCantidad !== (original.stockCantidad ?? 0)) {
+      body.stockCantidad = nuevo.stockCantidad;
+      if (original) body.stockEsperado = original.stockCantidad ?? 0;
+    }
+    if (!original || nuevo.stockMinimo !== (original.stockMinimo ?? 5)) body.stockMinimo = nuevo.stockMinimo;
+    if (!original || nuevo.precioCosto !== (original.precioCosto ?? 0)) body.precioCosto = nuevo.precioCosto;
+    if (!original || nuevo.proveedor !== (original.proveedor || "")) body.proveedor = nuevo.proveedor;
+    if (!original || nuevo.activo !== (original.activo !== false)) body.activo = nuevo.activo;
+
+    if (Object.keys(body).length === 0) {
+      cancelarEdicion();
+      setGuardando(false);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/products/${id}`, {

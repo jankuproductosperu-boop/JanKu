@@ -1,5 +1,6 @@
   import { NextResponse } from "next/server";
   import { borrarCookieAdmin } from "@/server/auth/session";
+  import { log } from "@/server/logger";
 
   export async function POST() {
     try {
@@ -15,7 +16,7 @@
         }
       );
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      log.error("logout_admin.error", error);
       return NextResponse.json(
         { error: "Error al cerrar sesión" },
         { status: 500 }

@@ -3,12 +3,14 @@ import { connectDB } from "@/server/db";
 import RateLimit from "@/models/RateLimit";
 
 export type Politica = "login-admin" | "login-user" | "register" | "resend-verif" | "forgot" | "order" | "coupon";
-export type TipoClave = "ip" | "email";
+export type TipoClave = "ip" | "email" | "user";
 
 type Regla = { max: number; ventanaMs: number; bloqueoMs?: number };
 
 const POLITICAS: Record<string, Regla> = {
   "login-admin:ip": { max: 3, ventanaMs: 3_600_000, bloqueoMs: 900_000 },
+  // Por cuenta (aprobado por el dueño el 2026-11-13): un acierto de OTRA cuenta no lo reinicia.
+  "login-admin:user": { max: 5, ventanaMs: 3_600_000, bloqueoMs: 900_000 },
   "login-user:ip": { max: 5, ventanaMs: 3_600_000, bloqueoMs: 900_000 },
   "register:ip": { max: 3, ventanaMs: 3_600_000 },
   "resend-verif:email": { max: 3, ventanaMs: 3_600_000 },
@@ -23,6 +25,9 @@ export type EstadoLimite = {
   bloqueado: boolean; // hay blockedUntil en el futuro
   restantes: number; // max - count, mínimo 0
   minutosRestantes?: number; // hasta fin de bloqueo o de ventana
+  // Solo en registrarIntento: el intento recién contado es el número max o anterior.
+  // Sirve para contar ANTES de comprobar credenciales sin que una ráfaga en paralelo pase entera.
+  dentroDelLimite?: boolean;
 };
 
 type Registro = { count: number; windowStart: Date; blockedUntil: Date | null };
@@ -164,7 +169,27 @@ export async function registrarIntento(politica: Politica, tipo: TipoClave, valo
     resultado = await ejecutar();
   }
   if (!resultado.reg) throw new Error("RateLimit: upsert sin documento");
-  return estadoDe(resultado.reg, r, resultado.ahora.getTime(), true);
+  return {
+    ...estadoDe(resultado.reg, r, resultado.ahora.getTime(), true),
+    dentroDelLimite: resultado.reg.count <= r.max,
+  };
+}
+
+/**
+ * Deshace un intento contado por adelantado que al final no fue un fallo de credenciales
+ * (p. ej. contraseña correcta pero email sin verificar). Atómico; si el bloqueo lo había
+ * provocado solo ese intento, también lo quita.
+ */
+export async function anularIntento(politica: Politica, tipo: TipoClave, valor: string): Promise<void> {
+  const r = regla(politica, tipo);
+  await connectDB();
+  const etapas: Record<string, unknown>[] = [
+    { $set: { count: { $max: [0, { $subtract: [{ $ifNull: ["$count", 0] }, 1] }] } } },
+  ];
+  if (r.bloqueoMs !== undefined) {
+    etapas.push({ $set: { blockedUntil: { $cond: [{ $lt: ["$count", r.max] }, null, "$blockedUntil"] } } });
+  }
+  await RateLimit.updateOne({ key: clave(politica, tipo, valor) }, etapas, { updatePipeline: true });
 }
 
 /** Borra el contador. Tras un login correcto. */

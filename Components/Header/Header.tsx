@@ -9,7 +9,7 @@ import {
   Home,
   Gamepad2,
   Brush,
-  Glasses, Tag, Box, Pencil
+  Glasses, Box, Pencil
 } from "lucide-react";
 
 export default function CarruselCategorias() {

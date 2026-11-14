@@ -4,7 +4,7 @@ type CacheEntry<T> = {
 };
 
 class SimpleCache {
-  private cache: Map<string, CacheEntry<any>>;
+  private cache: Map<string, CacheEntry<unknown>>;
   private defaultTTL: number;
 
   constructor(defaultTTL = 300000) { // 5 minutos por defecto
@@ -25,7 +25,6 @@ class SimpleCache {
       return null;
     }
 
-    console.log(`✅ Cache HIT: ${key}`);
     return entry.data as T;
   }
 
@@ -34,35 +33,22 @@ class SimpleCache {
       data,
       timestamp: Date.now()
     });
-    console.log(`💾 Cache SET: ${key}`);
   }
 
   delete(key: string): boolean {
-    const deleted = this.cache.delete(key);
-    if (deleted) {
-      console.log(`🗑️ Cache DELETE: ${key}`);
-    }
-    return deleted;
+    return this.cache.delete(key);
   }
 
   clear(): void {
     this.cache.clear();
-    console.log('🧹 Cache CLEARED');
   }
 
   cleanup(): void {
     const now = Date.now();
-    let cleaned = 0;
-
     for (const [key, entry] of this.cache.entries()) {
       if (now - entry.timestamp > this.defaultTTL) {
         this.cache.delete(key);
-        cleaned++;
       }
-    }
-
-    if (cleaned > 0) {
-      console.log(`🧹 Cache CLEANUP: ${cleaned} entradas eliminadas`);
     }
   }
 
@@ -86,15 +72,15 @@ if (typeof window !== 'undefined') {
 /**
  * Función helper para fetch con caché automático y retry
  */
-export async function fetchWithCache<T = any>(
-  url: string, 
+export async function fetchWithCache<T = unknown>(
+  url: string,
   options: {
-    ttl?: number;
+    ttl?: number; // aceptado por compatibilidad; hoy no se usa (todas las entradas duran el TTL por defecto)
     retries?: number;
     retryDelay?: number;
   } = {}
 ): Promise<T> {
-  const { ttl, retries = 2, retryDelay = 1000 } = options;
+  const { retries = 2, retryDelay = 1000 } = options;
   const cacheKey = `fetch:${url}`;
 
   // Intentar obtener de caché
@@ -104,12 +90,8 @@ export async function fetchWithCache<T = any>(
   }
 
   // Función de fetch con retry
-  let lastError: Error | null = null;
-  
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      console.log(`🌐 Fetching (intento ${attempt + 1}/${retries + 1}): ${url}`);
-      
       const response = await fetch(url, {
         cache: 'no-store', // Evitar caché del navegador
         headers: {
@@ -135,13 +117,11 @@ export async function fetchWithCache<T = any>(
       cache.set(cacheKey, data);
       return data as T;
       
-    } catch (error: any) {
-      lastError = error;
-      console.error(`❌ Error en fetch (intento ${attempt + 1}):`, error.message);
-      
+    } catch (error: unknown) {
+      console.error(`❌ Error en fetch (intento ${attempt + 1}):`, error instanceof Error ? error.message : error);
+
       // Si no es el último intento, esperar antes de reintentar
       if (attempt < retries) {
-        console.log(`⏳ Reintentando en ${retryDelay}ms...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     }
@@ -167,17 +147,9 @@ export function invalidateCache(url: string): void {
  * Invalida todos los cachés que coincidan con un patrón
  */
 export function invalidateCachePattern(pattern: string): void {
-  const keys = cache.keys();
-  let deleted = 0;
-
-  keys.forEach(key => {
-    if (key.includes(pattern)) {
-      cache.delete(key);
-      deleted++;
-    }
+  cache.keys().forEach(key => {
+    if (key.includes(pattern)) cache.delete(key);
   });
-
-  console.log(`🗑️ Invalidated ${deleted} cache entries matching: ${pattern}`);
 }
 
 export default cache;

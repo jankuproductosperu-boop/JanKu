@@ -22,10 +22,12 @@ export async function listarPromociones(): Promise<PromotionTipo[]> {
   return plano<PromotionTipo[]>(promociones);
 }
 
+/** Vía pública: una promoción desactivada no existe para la tienda (mismo criterio que productos, D-20). */
 export async function obtenerPromocion(id: string): Promise<PromotionTipo | null> {
   if (!/^[0-9a-fA-F]{24}$/.test(id)) return null;
   await connectDB();
-  const promocion = await Promotion.findById(id).lean();
+  // $ne: false incluye documentos antiguos sin el campo
+  const promocion = await Promotion.findOne({ _id: id, activo: { $ne: false } }).lean();
   return promocion ? plano<PromotionTipo>(promocion) : null;
 }
 

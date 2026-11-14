@@ -37,7 +37,7 @@ export default function LoginAdminPage() {
           setError(`Bloqueado por ${data.remainingTime} minutos`);
         }
       }
-    } catch (err) {
+    } catch {
       setError("Error de conexión");
     } finally {
       setLoading(false);

@@ -96,13 +96,23 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
       const imageResult = await uploadPendingImages(productImages, form.nombre, firstCategorySlug, tagsList);
       const selectedSlugs = selectedCategories.map(n => categories.find(c => c.nombre === n)?.slug).filter(Boolean);
 
+      // La cantidad solo viaja si se cambió, junto con la que se veía al abrir: si alguien ajustó
+      // el stock mientras tanto, el servidor responde 409 en vez de pisar ese ajuste.
+      const cantidad = Math.max(0, Math.floor(Number(form.stockCantidad || 0)));
+      const cantidadAlAbrir = product?.stockCantidad ?? 0;
+      const stock = !isEditing
+        ? { stockCantidad: cantidad }
+        : cantidad !== cantidadAlAbrir
+          ? { stockCantidad: cantidad, stockEsperado: cantidadAlAbrir }
+          : {};
+
       const productData = {
         nombre: form.nombre.trim(), precio: Number(form.precio),
         descripcion: form.descripcion?.trim() || "",
         descripcionCompleta: form.descripcionCompleta?.trim() || "",
         categorias: selectedCategories, categoriaSlugs: selectedSlugs,
         // Inventario: el servidor deriva la etiqueta de stock; no se envía `stock`.
-        stockCantidad: Math.max(0, Math.floor(Number(form.stockCantidad || 0))),
+        ...stock,
         stockMinimo: form.stockMinimo === "" ? 5 : Math.max(0, Math.floor(Number(form.stockMinimo))),
         // Cloudinary — public_ids
         imagenes: imageResult.imagenes.filter(Boolean),

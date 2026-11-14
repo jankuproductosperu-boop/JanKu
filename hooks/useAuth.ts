@@ -18,7 +18,7 @@ export function useAuth() {
         } else {
           router.push("/login-admin");
         }
-      } catch (error) {
+      } catch {
         router.push("/login-admin");
       } finally {
         setIsChecking(false);

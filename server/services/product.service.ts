@@ -6,7 +6,7 @@ import { extractCodigoUrl } from "@/lib/productUrl";
 import { estadoDeStock } from "@/lib/stock";
 import Product from "@/models/Product";
 import StockMovement from "@/models/StockMovement";
-import { ajustarStock } from "@/server/services/inventory.service";
+import { ajustarStock, asegurarColeccionMovimientos } from "@/server/services/inventory.service";
 import type { Product as ProductTipo, ProductAdmin, ProductInput } from "@/types";
 
 function plano<T>(doc: unknown): T {
@@ -99,7 +99,7 @@ function errorDuplicado(error: unknown): never {
 
 export async function crearProducto(datos: ProductInput, actor?: ActorAdmin): Promise<ProductAdmin> {
   await connectDB();
-  await StockMovement.init();
+  await asegurarColeccionMovimientos();
   const cantidad = Number(datos.stockCantidad ?? 0);
   const minimo = Number(datos.stockMinimo ?? 5);
 
@@ -140,17 +140,20 @@ export async function crearProducto(datos: ProductInput, actor?: ActorAdmin): Pr
 
 export async function actualizarProducto(
   id: string,
-  datos: Partial<ProductInput>,
+  datos: Partial<ProductInput> & { stockEsperado?: number },
   actor?: ActorAdmin,
 ): Promise<ProductAdmin> {
   await connectDB();
-  await StockMovement.init();
+  await asegurarColeccionMovimientos();
 
-  const { stockCantidad, stockMinimo, ...resto } = datos;
+  const { stockCantidad, stockMinimo, stockEsperado, ...resto } = datos;
   const cambios: Record<string, unknown> = { ...resto };
   // El texto `stock` jamás se escribe desde fuera: se deriva siempre de la cantidad (N1-5).
   delete cambios.stock;
   if (stockMinimo !== undefined) cambios.stockMinimo = Number(stockMinimo);
+  // Código vacío = quitar el código. Guardar "" chocaría con el índice único+sparse.
+  const quitaCodigo = cambios.codigo === "";
+  if (quitaCodigo) delete cambios.codigo;
   // Solo se recalcula la etiqueta si la petición toca cantidad o mínimo.
   const tocaStock = stockCantidad !== undefined || stockMinimo !== undefined;
 
@@ -161,8 +164,12 @@ export async function actualizarProducto(
       const existe = await Product.findById(id).select("_id").session(session).lean();
       if (!existe) throw noEncontrado("Producto");
 
-      if (Object.keys(cambios).length > 0) {
-        await Product.findByIdAndUpdate(id, { $set: cambios }, { runValidators: true, session });
+      if (Object.keys(cambios).length > 0 || quitaCodigo) {
+        await Product.findByIdAndUpdate(
+          id,
+          { ...(Object.keys(cambios).length > 0 ? { $set: cambios } : {}), ...(quitaCodigo ? { $unset: { codigo: 1 } } : {}) },
+          { runValidators: true, session },
+        );
       }
 
       // La cantidad solo cambia por inventory.service (deja movimiento). Si es igual, no hace nada.
@@ -172,6 +179,7 @@ export async function actualizarProducto(
           modo: "fijar",
           cantidad: Number(stockCantidad),
           motivo: "Edición desde el panel",
+          esperado: stockEsperado,
           actor,
           session,
         });
@@ -197,6 +205,14 @@ export async function actualizarProducto(
 
 export async function eliminarProducto(id: string): Promise<void> {
   await connectDB();
+  // Con historial de inventario no se borra: quedaría huérfano (mismo criterio que D-64).
+  const conHistorial = await StockMovement.exists({ productId: id });
+  if (conHistorial) {
+    throw conflicto(
+      "Este producto tiene historial de inventario. Desactívalo en vez de borrarlo.",
+      "PRODUCTO_CON_HISTORIAL",
+    );
+  }
   const eliminado = await Product.findByIdAndDelete(id).lean();
   if (!eliminado) throw noEncontrado("Producto");
 }

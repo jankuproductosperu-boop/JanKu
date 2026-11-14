@@ -2,7 +2,7 @@ import "server-only";
 import bcrypt from "bcryptjs";
 import { isValidObjectId, type Types } from "mongoose";
 import { connectDB } from "@/server/db";
-import { conflicto, noEncontrado } from "@/server/http/errors";
+import { conflicto, entradaInvalida, noEncontrado } from "@/server/http/errors";
 import { log } from "@/server/logger";
 import AdminUser from "@/models/AdminUser";
 import { ROLES } from "@/lib/permissions";
@@ -124,6 +124,14 @@ export async function actualizarAdmin(
 
   if (String(actual._id) === actor.adminId && (cambiaRol || cambiaActivo)) {
     throw conflicto("No puedes cambiar tu propio rol ni desactivarte", "NO_AUTOEDICION");
+  }
+
+  // Cambiar la contraseña propia exige la actual: una sesión robada no basta para quedarse la cuenta.
+  if (String(actual._id) === actor.adminId && datos.password !== undefined) {
+    const conHash = await AdminUser.findById(actual._id).select("password").lean<{ password?: string }>();
+    const correcta =
+      !!datos.passwordActual && !!conHash?.password && (await bcrypt.compare(datos.passwordActual, conHash.password));
+    if (!correcta) throw entradaInvalida({ passwordActual: "La contraseña actual no es correcta" });
   }
 
   const quitaSuperadmin =
