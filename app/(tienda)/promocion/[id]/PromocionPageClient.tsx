@@ -76,6 +76,7 @@ export default function PromocionPageClient({
         precio: promotion.precio,
         imagenUrl: promotion.imagenUrl,
         slug: promotion._id,
+        tipo: "promocion",
       });
     }
 

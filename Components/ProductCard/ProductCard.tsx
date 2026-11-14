@@ -106,6 +106,7 @@
         imagenUrl: imageForCart,
         slug: product.slug,
         codigoUrl: product.codigoUrl,
+        tipo: "producto",
       });
 
       setShowAddedMessage(true);

@@ -1,7 +1,9 @@
 "use client";
 
+import { SITE } from "@/lib/siteConfig";
+
     export default function FloatingWhatsApp() {
-    const phoneNumber = "51978339737";
+    const phoneNumber = SITE.whatsappPedidos;
     const site = "https://jan-ku.com/";
     const message = `${site}
 

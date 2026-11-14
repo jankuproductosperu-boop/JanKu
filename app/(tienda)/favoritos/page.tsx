@@ -6,15 +6,31 @@ import { useFavorites, type FavoriteProduct } from "@/context/FavoritesContext";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { fetchWithCache } from "@/lib/cache";
+import { tieneVariantes } from "@/lib/variantes";
+import type { Product } from "@/types";
 import { buildProductUrl } from "@/lib/productUrl";
 
 export default function FavoritosPage() {
   const { favorites, removeFromFavorites, clearFavorites } = useFavorites();
   const { addToCart } = useCart();
+  const router = useRouter();
   const [showAddedMessage, setShowAddedMessage] = useState<string | null>(null);
 
-    const handleAddToCart = (favorite: FavoriteProduct) => {
-    addToCart(favorite);
+  const handleAddToCart = async (favorite: FavoriteProduct) => {
+    // Si el producto tiene variantes hay que elegir una: se lleva a la ficha, igual que la tarjeta (D-65).
+    try {
+      const productos = await fetchWithCache<Product[]>("/api/products");
+      const actual = productos.find((p) => p._id === favorite._id);
+      if (actual && tieneVariantes(actual)) {
+        router.push(`/producto/${buildProductUrl(favorite.nombre, favorite.codigoUrl)}`);
+        return;
+      }
+    } catch {
+      // sin catálogo no se puede saber: se agrega como siempre
+    }
+    addToCart({ ...favorite, tipo: "producto" });
     setShowAddedMessage(favorite._id);
     setTimeout(() => setShowAddedMessage(null), 2000);
   };

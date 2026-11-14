@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
 import type { CartItem, DiscountTier } from "@/types";
 import { lineaId } from "@/lib/variantes";
+import { calcularTotales, proximoNivel as calcularProximoNivel } from "@/lib/pricing";
 
 type CartContextType = {
   cart: CartItem[];
@@ -26,22 +27,55 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Acepta solo ítems con _id (texto), precio (número finito ≥ 0) y cantidad (entero ≥ 1); descarta el resto.
+// Si el JSON es inválido o no es un arreglo, borra la clave y devuelve un carrito vacío.
+function leerCarritoGuardado(texto: string): CartItem[] {
+  try {
+    const datos: unknown = JSON.parse(texto);
+    if (!Array.isArray(datos)) throw new Error("no es un arreglo");
+    return datos.filter((x): x is CartItem => {
+      if (typeof x !== "object" || x === null) return false;
+      const i = x as Record<string, unknown>;
+      return (
+        typeof i._id === "string" &&
+        typeof i.precio === "number" && Number.isFinite(i.precio) && i.precio >= 0 &&
+        typeof i.cantidad === "number" && Number.isInteger(i.cantidad) && i.cantidad >= 1
+      );
+    });
+  } catch {
+    try {
+      localStorage.removeItem("janku-cart");
+    } catch {
+      // nada que hacer
+    }
+    return [];
+  }
+}
+
+const MAX_CANTIDAD = 99;
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [nivelesDescuento, setNivelesDescuento] = useState<DiscountTier[]>([]);
 
-  // Cargar carrito del localStorage al iniciar
+  // Cargar carrito del localStorage al iniciar. Un JSON roto o con ítems inválidos nunca rompe la tienda.
   useEffect(() => {
-    const savedCart = localStorage.getItem("janku-cart");
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
+    try {
+      const savedCart = localStorage.getItem("janku-cart");
+      if (savedCart) setCart(leerCarritoGuardado(savedCart));
+    } catch {
+      // localStorage no disponible: se sigue con el carrito vacío
     }
   }, []);
 
   // Guardar carrito en localStorage cada vez que cambie
   useEffect(() => {
-    localStorage.setItem("janku-cart", JSON.stringify(cart));
+    try {
+      localStorage.setItem("janku-cart", JSON.stringify(cart));
+    } catch {
+      // sin almacenamiento: el carrito sigue funcionando en memoria
+    }
   }, [cart]);
 
   // Cargar los niveles de descuento configurados desde el admin — una vez,
@@ -96,7 +130,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     setCart((prev) =>
       prev.map((item) =>
-        idDe(item) === linea ? { ...item, cantidad } : item
+        idDe(item) === linea ? { ...item, cantidad: Math.min(cantidad, MAX_CANTIDAD) } : item
       )
     );
   };
@@ -110,42 +144,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
+  // Subtotal, descuento por monto y total salen de lib/pricing: la misma función que usará el servidor (N1-5).
+  const totales = useMemo(() => calcularTotales({ lineas: cart, niveles: nivelesDescuento }), [cart, nivelesDescuento]);
+  const totalPrice = totales.subtotal;
+  const nivelDescuentoAplicado = totales.nivel;
+  const montoDescuento = totales.descuentoTotal;
+  const totalFinal = totales.total;
 
-  // ── Cálculo del descuento aplicable — valor derivado, se recalcula solo
-  // cuando cambia el total del carrito o los niveles configurados ──────────
-  const nivelDescuentoAplicado = useMemo(() => {
-    const alcanzados = nivelesDescuento.filter((n) => totalPrice >= n.montoMinimo);
-    if (alcanzados.length === 0) return null;
-    // Siempre gana el nivel de monto mínimo más alto que sí se cumple —
-    // los descuentos nunca se suman entre sí.
-    return alcanzados.reduce((mejor, actual) =>
-      actual.montoMinimo > mejor.montoMinimo ? actual : mejor
-    );
-  }, [nivelesDescuento, totalPrice]);
-
-  const montoDescuento = useMemo(() => {
-    if (!nivelDescuentoAplicado) return 0;
-    if (nivelDescuentoAplicado.tipoDescuento === "porcentaje") {
-      // Un porcentaje mal guardado (>100) nunca deja el total en negativo
-      return Math.min(totalPrice * (nivelDescuentoAplicado.valorDescuento / 100), totalPrice);
-    }
-    // Monto fijo — nunca descontar más de lo que hay en el carrito
-    return Math.min(nivelDescuentoAplicado.valorDescuento, totalPrice);
-  }, [nivelDescuentoAplicado, totalPrice]);
-
-  const totalFinal = totalPrice - montoDescuento;
-
-  // El próximo nivel que el cliente todavía no alcanza — útil para mostrar
-  // un mensaje tipo "¡Agrega S/ 20 más y obtén 15% de descuento!"
-  const proximoNivel = useMemo(() => {
-    const noAlcanzados = nivelesDescuento
-      .filter((n) => totalPrice < n.montoMinimo)
-      .sort((a, b) => a.montoMinimo - b.montoMinimo);
-    return noAlcanzados[0] || null;
-  }, [nivelesDescuento, totalPrice]);
-
-  const montoParaProximoNivel = proximoNivel ? proximoNivel.montoMinimo - totalPrice : 0;
+  // El próximo nivel que el cliente todavía no alcanza — útil para mostrar "¡Agrega S/ 20 más y obtén 15% de descuento!"
+  const siguiente = useMemo(() => calcularProximoNivel(nivelesDescuento, totalPrice), [nivelesDescuento, totalPrice]);
+  const proximoNivel = siguiente ? siguiente.nivel : null;
+  const montoParaProximoNivel = siguiente ? siguiente.falta : 0;
 
   return (
     <CartContext.Provider

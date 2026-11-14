@@ -2,6 +2,8 @@
 
 import { useCart } from "@/context/CartContext";
 import { lineaId } from "@/lib/variantes";
+import { enlaceWhatsAppCarrito } from "@/lib/whatsapp";
+import type { Totales } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
 import { X, Trash2, Minus, Plus, ShoppingCart, Sparkles, Tag } from "lucide-react";
@@ -24,28 +26,15 @@ export default function CartSidebar() {
 
   const [imagenesRotas, setImagenesRotas] = useState<Record<string, boolean>>({});
 
-  const generateWhatsAppLink = () => {
-    if (cart.length === 0) return "#";
-
-    let message = "¡Hola! 👋 Quiero realizar el siguiente pedido:\n\n";
-    
-    cart.forEach((item, index) => {
-      message += `${index + 1}. *${item.nombre}*\n`;
-      if (item.varianteEtiqueta) message += `   🎨 ${item.varianteEtiqueta}\n`;
-      message += `   💰 Precio: S/ ${item.precio.toFixed(2)}\n`;
-      message += `   📦 Cantidad: ${item.cantidad}\n`;
-      message += `   💵 Subtotal: S/ ${(item.precio * item.cantidad).toFixed(2)}\n\n`;
-    });
-
-    message += `Subtotal: S/ ${totalPrice.toFixed(2)}\n`;
-    if (nivelDescuentoAplicado) {
-      message += `🎉 Descuento aplicado (${nivelDescuentoAplicado.nombre}): -S/ ${montoDescuento.toFixed(2)}\n`;
-    }
-    message += `*TOTAL: S/ ${totalFinal.toFixed(2)}*\n\n`;
-    message += "Deseo comprar estos productos. ¡Gracias! 😊";
-
-    const phoneNumber = "51978339737"; // 👈 CAMBIA ESTE NÚMERO
-    return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+  const totales: Totales = {
+    subtotal: totalPrice,
+    nivel: nivelDescuentoAplicado,
+    descuentoNivel: montoDescuento,
+    descuentoCupon: 0,
+    aplicado: nivelDescuentoAplicado ? "nivel" : "ninguno",
+    descuentoTotal: montoDescuento,
+    costoEnvio: 0,
+    total: totalFinal,
   };
 
   if (!isCartOpen) return null;
@@ -228,7 +217,7 @@ export default function CartSidebar() {
               </Link>
               
               <a
-                href={generateWhatsAppLink()}
+                href={enlaceWhatsAppCarrito({ items: cart, totales })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-bold hover:bg-green-700 transition flex items-center justify-center gap-2"

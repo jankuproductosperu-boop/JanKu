@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ShoppingCart, Sparkles } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import type { Promotion } from "@/types";
+import { SITE } from "@/lib/siteConfig";
 
 export default function PromocionesPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -84,6 +85,7 @@ export default function PromocionesPage() {
         precio: promotion.precio,
         imagenUrl: promotion.imagenUrl,
         slug: promotion._id,
+        tipo: "promocion",
       });
 
       setShowAddedMessage(true);
@@ -264,7 +266,7 @@ return (
             Contáctanos por WhatsApp para más información sobre nuestras promociones
           </p>
           <a
-            href="https://wa.me/51978339737"
+            href={`https://wa.me/${SITE.whatsappPedidos}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold transition"

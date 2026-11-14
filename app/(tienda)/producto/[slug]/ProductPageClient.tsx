@@ -130,6 +130,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
         imagenUrl: varianteElegida?.imagen ? getCloudinaryUrl(varianteElegida.imagen, { width: 300 }) : product.imagenUrl,
         slug: product.slug,
         codigoUrl: product.codigoUrl,
+        tipo: "producto",
         ...(varianteElegida ? { varianteId: varianteElegida._id, varianteEtiqueta: etiquetaElegida } : {}),
       });
     }

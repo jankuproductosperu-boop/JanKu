@@ -10,6 +10,7 @@ import { ImageUploader } from "@/app/(admin)/admin/_components/ImageUploader";
 import { useImageUpload } from "@/app/(admin)/admin/_components/useImageUpload";
 import { esNovedad, fechaNuevoHasta } from "@/lib/novedades";
 import { estadoDeStock } from "@/lib/stock";
+import { SITE } from "@/lib/siteConfig";
 import { getCloudinaryUrl, type UploadedImage } from "@/app/(admin)/admin/_components/imageTypes";
 
 type Props = { product?: ProductAdmin; categories: Category[]; onSaved: () => Promise<void> };
@@ -353,7 +354,7 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-[var(--ink)] mb-2">Número de WhatsApp</label>
-            <input name="whatsappNumero" value={form.whatsappNumero} onChange={handleChange} placeholder="51978339737" className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <input name="whatsappNumero" value={form.whatsappNumero} onChange={handleChange} placeholder={SITE.whatsappPedidos} className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             <p className="text-xs text-[var(--muted)] mt-1">Solo el número, con código de país (51...) — el mensaje y el link del producto se arman solos.</p>
           </div>
           <div>

@@ -1,4 +1,5 @@
 import { Phone, Facebook, Mail } from "lucide-react";
+import { SITE } from "@/lib/siteConfig";
 
 export default function ContactSection() {
   return (
@@ -22,7 +23,7 @@ export default function ContactSection() {
           <div className="space-y-6">
             {/* WhatsApp */}
             <a
-              href="https://wa.me/51978339737"
+              href={`https://wa.me/${SITE.whatsappPedidos}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 hover:opacity-80 transition"
