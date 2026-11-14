@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Package, FolderTree, Archive, ListOrdered,
-  Tag, Sparkles, Image as ImageIcon, LogOut,
+  Tag, Sparkles, Image as ImageIcon, MessageSquare, LogOut,
 } from "lucide-react";
 import type { Permiso } from "@/types";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
@@ -19,7 +19,8 @@ const MENU: Item[] = [
   { grupo: "Marketing", href: "/admin/descuentos", etiqueta: "Descuentos", permiso: "descuentos.gestionar", icono: Tag },
   { href: "/admin/promociones", etiqueta: "Promociones", permiso: "catalogo.editar", icono: Sparkles },
   { href: "/admin/banners", etiqueta: "Banners", permiso: "catalogo.editar", icono: ImageIcon },
-  // fase 13b/12e: Novedades · 12f: Popup · 17: Pedidos · 19: Cupones · 21: Usuarios · 21b: Estadísticas
+  { href: "/admin/popup", etiqueta: "Popup de oferta", permiso: "catalogo.editar", icono: MessageSquare },
+  // fase 13b: Variantes · 17: Pedidos · 19: Cupones · 21: Usuarios · 21b: Estadísticas
 ];
 
 export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {

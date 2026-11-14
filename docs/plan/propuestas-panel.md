@@ -28,6 +28,8 @@ Alcance y decisiones ya acordadas con el dueño. **Aún no son fases ejecutables
 
 ## 12f · Popup de oferta
 
+> **Ya tiene su archivo de fase:** [fase-12f-popup-oferta.md](fases/fase-12f-popup-oferta.md). Lo de abajo es el borrador original.
+
 - Colección nueva con un único documento «popup» (D-59): `imagenUrl` (Cloudinary, mismas reglas de subida que los banners), `textoBoton`, `destino` (producto, categoría, promoción o enlace libre), `activo`, `desde`, `hasta` (opcionales).
 - Panel: pantalla «Popup de oferta» con vista previa, selector de destino y interruptor Activo/Inactivo.
 - Tienda: al entrar, si está activo y dentro de fechas, tarjeta centrada con fondo oscurecido y botón de cierre; al cerrarla no vuelve a salir durante 24 h (`localStorage` dentro de `try/catch`). Inactivo = la tienda carga igual que hoy.

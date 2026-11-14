@@ -70,6 +70,9 @@ const CHECKS = [
     nombre: `GET /api/admin/${n} (sin cookie)`, metodo: "GET", ruta: `/api/admin/${n}`, espera: estado(401),
   })),
   // Fase 11
+  { nombre: "GET /api/popup (público)", metodo: "GET", ruta: "/api/popup", espera: estado(200) },
+  { nombre: "GET /api/admin/popup (sin cookie)", metodo: "GET", ruta: "/api/admin/popup", espera: estado(401) },
+  { nombre: "PUT /api/admin/popup (sin cookie)", metodo: "PUT", ruta: "/api/admin/popup", cuerpo: {}, espera: estado(401) },
   { nombre: "POST /api/upload (sin cookie)", metodo: "POST", ruta: "/api/upload", cuerpo: {}, espera: estado(401) },
   {
     nombre: "GET /api/products sin precioCosto ni proveedor", metodo: "GET", ruta: "/api/products",
