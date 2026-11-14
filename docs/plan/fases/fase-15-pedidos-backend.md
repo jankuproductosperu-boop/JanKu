@@ -1,6 +1,8 @@
 # Fase 15 · Pedidos: modelo y creación (backend)
 
 > **Aviso de la fase 13b (variantes):** cada ítem del pedido guarda `varianteId` y `varianteEtiqueta`. El servidor **vuelve a leer** el precio de la variante y valida su stock (N1-5); si el producto tiene variantes y el ítem no trae `varianteId`, responde 400. Ver `fase-13b-variantes.md` §10.
+>
+> **Aviso del 2026-11-14 (D-68, stock secreto):** `ajustarStock` responde `Stock insuficiente: hay N` (409 `SIN_STOCK`). Ese texto es para el panel: en `/api/orders` (público) el error de stock **no** debe incluir la cantidad; solo qué ítem no alcanza.
 
 > ⚠️ **ALTO RIESGO — dinero y datos personales.** Es el primer endpoint público que **escribe** en la base. Revisión del dueño obligatoria.
 

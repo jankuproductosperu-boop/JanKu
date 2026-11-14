@@ -1,6 +1,8 @@
 # Fase 14 · Reglas de precio compartidas y carrito robusto
 
 > **Aviso de la fase 13b (variantes):** el carrito ya identifica cada línea por `lineaId` (`productoId` o `productoId:varianteId`) y el `CartItem` trae `varianteId?` y `varianteEtiqueta?`. `calcularTotales` y `construirMensajeCarrito` deben usar `lineaId`, `precioDeVariante` (de `lib/variantes.ts`) y mostrar la etiqueta de la variante en el mensaje. Ver `fase-13b-variantes.md` §5 y §10.
+>
+> **Aviso del 2026-11-14:** desde «Favoritos» se agrega al carrito sin variante (`app/(tienda)/favoritos/page.tsx` llama a `addToCart(favorite)`). Si el producto tiene variantes, ese botón debe llevar a la ficha, como la tarjeta (D-65). Hasta entonces, una línea así sale sin variante en el mensaje de WhatsApp.
 
 ## 1. Objetivo y por qué va en este orden
 

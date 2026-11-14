@@ -3,7 +3,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { invalidateCachePattern } from "@/lib/cache";
-import type { ProductAdmin, Category } from "@/types";
+import type { ProductAdmin, Category, ProductoOpcion } from "@/types";
+import VariantesEditor, { type VarianteForm } from "@/app/(admin)/admin/_components/VariantesEditor";
+import { stockTotal, validarVariantes } from "@/lib/variantes";
 import { ImageUploader } from "@/app/(admin)/admin/_components/ImageUploader";
 import { useImageUpload } from "@/app/(admin)/admin/_components/useImageUpload";
 import { esNovedad, fechaNuevoHasta } from "@/lib/novedades";
@@ -38,6 +40,21 @@ function formDe(product?: ProductAdmin): typeof FORM_VACIO {
     metaTitulo: product.metaTitulo || "", metaDescripcion: product.metaDescripcion || "",
   };
 }
+
+function variantesDe(product?: ProductAdmin): VarianteForm[] {
+  return (product?.variantes ?? []).map((v) => ({
+    _id: v._id,
+    combinacion: { ...v.combinacion },
+    stock: String(v.stockCantidad ?? 0),
+    stockAlAbrir: v.stockCantidad ?? 0,
+    precio: typeof v.precio === "number" ? String(v.precio) : "",
+    imagen: v.imagen ?? "",
+    sku: v.sku ?? "",
+    activo: v.activo !== false,
+  }));
+}
+
+const entero = (x: string) => Math.max(0, Math.floor(Number(x || 0)));
 
 function imagenesDe(product?: ProductAdmin): UploadedImage[] {
   if (!product) return [];
@@ -74,6 +91,13 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
   const [productImages, setProductImages] = useState<UploadedImage[]>(() => imagenesDe(product));
   const { uploadPendingImages, isUploading, uploadProgress, uploadError } = useImageUpload();
   const [form, setForm] = useState(() => formDe(product));
+  // Variantes (fase 13b). Un producto que ya las tiene no puede volver a «sin variantes» (D-64).
+  const [opciones, setOpciones] = useState<ProductoOpcion[]>(() => product?.opciones?.map((o) => ({ ...o, valores: [...o.valores] })) ?? []);
+  const [variantes, setVariantes] = useState<VarianteForm[]>(() => variantesDe(product));
+  const yaTeniaVariantes = (product?.variantes?.length ?? 0) > 0;
+  const [usaVariantes, setUsaVariantes] = useState(yaTeniaVariantes);
+  const conVariantes = usaVariantes && variantes.length > 0;
+  const totalVariantes = stockTotal(variantes.map((v) => ({ stockCantidad: entero(v.stock), activo: v.activo })));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const value = e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -85,6 +109,11 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
     e.preventDefault();
     if (!form.nombre || !form.precio) { alert("Nombre y precio son obligatorios"); return; }
     if (productImages.length === 0) { alert("Agrega al menos una imagen al producto"); return; }
+    const opcionesLimpias = opciones.map((o) => ({ nombre: o.nombre.trim(), valores: o.valores.map((v) => v.trim()) }));
+    if (usaVariantes) {
+      const error = validarVariantes(opcionesLimpias, variantes);
+      if (error) { alert(error); return; }
+    }
 
     try {
       const selectedCategories = form.categorias ? form.categorias.split(",").filter(c => c.trim()) : [];
@@ -100,11 +129,33 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
       // el stock mientras tanto, el servidor responde 409 en vez de pisar ese ajuste.
       const cantidad = Math.max(0, Math.floor(Number(form.stockCantidad || 0)));
       const cantidadAlAbrir = product?.stockCantidad ?? 0;
-      const stock = !isEditing
-        ? { stockCantidad: cantidad }
-        : cantidad !== cantidadAlAbrir
-          ? { stockCantidad: cantidad, stockEsperado: cantidadAlAbrir }
-          : {};
+      // Con variantes, la cantidad del producto es el total que calcula el servidor: no se envía.
+      const stock = conVariantes
+        ? {}
+        : !isEditing
+          ? { stockCantidad: cantidad }
+          : cantidad !== cantidadAlAbrir
+            ? { stockCantidad: cantidad, stockEsperado: cantidadAlAbrir }
+            : {};
+      // Cada variante manda su stock solo si cambió (o es nueva), con el que se veía al abrir.
+      const datosVariantes = conVariantes
+        ? {
+            opciones: opcionesLimpias,
+            variantes: variantes.map((v) => {
+              const nuevo = entero(v.stock);
+              const cambiaStock = !v._id ? nuevo > 0 : nuevo !== v.stockAlAbrir;
+              return {
+                ...(v._id ? { _id: v._id } : {}),
+                combinacion: v.combinacion,
+                ...(cambiaStock ? { stockCantidad: nuevo, ...(v._id ? { stockEsperado: v.stockAlAbrir } : {}) } : {}),
+                ...(v.precio !== "" ? { precio: Number(v.precio) } : {}),
+                ...(v.imagen ? { imagen: v.imagen } : {}),
+                ...(v.sku.trim() ? { sku: v.sku.trim() } : {}),
+                activo: v.activo,
+              };
+            }),
+          }
+        : {};
 
       const productData = {
         nombre: form.nombre.trim(), precio: Number(form.precio),
@@ -113,6 +164,7 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
         categorias: selectedCategories, categoriaSlugs: selectedSlugs,
         // Inventario: el servidor deriva la etiqueta de stock; no se envía `stock`.
         ...stock,
+        ...datosVariantes,
         stockMinimo: form.stockMinimo === "" ? 5 : Math.max(0, Math.floor(Number(form.stockMinimo))),
         // Cloudinary — public_ids
         imagenes: imageResult.imagenes.filter(Boolean),
@@ -148,7 +200,7 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
       } else {
         response = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(productData) });
       }
-      if (!response.ok) { const err = await response.json(); alert(`Error: ${err.error || "No se pudo guardar"}`); return; }
+      if (!response.ok) { const err = await response.json(); alert(`Error: ${err.fields?.variantes ?? err.error ?? "No se pudo guardar"}`); return; }
       invalidateCachePattern("products");
       alert(isEditing ? "Producto actualizado" : "Producto agregado");
       await onSaved(); router.push("/admin/productos");
@@ -201,6 +253,27 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
           {uploadError && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">❌ {uploadError}</div>}
         </div>
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-[var(--ink)]">🎨 Variantes</h3>
+              <p className="text-xs text-[var(--muted)]">Color, talla u otras opciones, cada una con su propio stock. Opcional.</p>
+            </div>
+            <label className={`flex items-center gap-2 text-sm font-medium text-[var(--ink)] ${yaTeniaVariantes ? "opacity-60" : "cursor-pointer"}`}>
+              <input type="checkbox" checked={usaVariantes} disabled={yaTeniaVariantes} onChange={(e) => setUsaVariantes(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
+              Este producto tiene variantes
+            </label>
+          </div>
+          {usaVariantes && (
+            <VariantesEditor
+              opciones={opciones}
+              variantes={variantes}
+              imagenes={productImages.filter((i) => i.status === "done" && i.public_id).map((i) => ({ public_id: i.public_id, url: i.secure_url }))}
+              precioProducto={form.precio}
+              onChange={(ops, vs) => { setOpciones(ops); setVariantes(vs); }}
+            />
+          )}
+        </div>
+        <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 space-y-4">
           <div className="">
             <h3 className="font-bold text-[var(--ink)] mb-3">📄 Información adicional (página del producto)</h3>
             <div className="space-y-4">
@@ -225,10 +298,10 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 space-y-4">
           <h2 className="font-bold text-[var(--ink)]">Publicación</h2>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-sm font-medium text-[var(--ink)] mb-2">Cantidad en stock</label><input name="stockCantidad" type="number" min="0" step="1" value={form.stockCantidad} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+            <div><label className="block text-sm font-medium text-[var(--ink)] mb-2">{conVariantes ? "Stock total" : "Cantidad en stock"}</label>{conVariantes ? <div className="w-full px-4 py-3 border border-[var(--line)] rounded-lg bg-[var(--bg)] text-[var(--ink)] font-semibold" title="Suma de las variantes activas">{totalVariantes}</div> : <input name="stockCantidad" type="number" min="0" step="1" value={form.stockCantidad} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />}</div>
             <div><label className="block text-sm font-medium text-[var(--ink)] mb-2">Stock mínimo</label><input name="stockMinimo" type="number" min="0" step="1" value={form.stockMinimo} onChange={handleChange} placeholder="5" className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
           </div>
-          <p className="text-xs text-[var(--muted)] -mt-2">Estado en la tienda: <b className="text-[var(--ink)]">{estadoDeStock(Math.max(0, Number(form.stockCantidad || 0)), form.stockMinimo === "" ? 5 : Number(form.stockMinimo))}</b> (se calcula solo; «Limitado» cuando la cantidad es igual o menor al mínimo).</p>
+          <p className="text-xs text-[var(--muted)] -mt-2">Estado en la tienda: <b className="text-[var(--ink)]">{estadoDeStock(conVariantes ? totalVariantes : Math.max(0, Number(form.stockCantidad || 0)), form.stockMinimo === "" ? 5 : Number(form.stockMinimo))}</b> (se calcula solo; «Limitado» cuando la cantidad es igual o menor al mínimo).</p>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="deliveryHuancayo" checked={form.deliveryHuancayo} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">🚚 Delivery gratis Huancayo</span></label>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="mostrarEnHome" checked={form.mostrarEnHome} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">⭐ Mostrar en página de inicio</span></label>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="novedad" checked={form.novedad} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">🆕 Novedad de la semana</span></label>

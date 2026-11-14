@@ -2,12 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
 import type { CartItem, DiscountTier } from "@/types";
+import { lineaId } from "@/lib/variantes";
 
 type CartContextType = {
   cart: CartItem[];
   addToCart: (product: Omit<CartItem, "cantidad">) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, cantidad: number) => void;
+  // Reciben el id de la LÍNEA: lineaId(item._id, item.varianteId). Sin variante es el _id de siempre (D-63).
+  removeFromCart: (linea: string) => void;
+  updateQuantity: (linea: string, cantidad: number) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number; // subtotal, SIN descuento — se mantiene igual que antes
@@ -59,14 +61,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     cargarDescuentos();
   }, []);
 
+  // Cada línea se identifica por producto + variante: Negro y Rosado son dos líneas distintas.
+  // Los ítems guardados antes de las variantes (sin varianteId) tienen lineaId = _id y siguen igual.
+  const idDe = (item: Pick<CartItem, "_id" | "varianteId">) => lineaId(item._id, item.varianteId);
+
   const addToCart = (product: Omit<CartItem, "cantidad">) => {
     setCart((prev) => {
-      const existingItem = prev.find((item) => item._id === product._id);
+      const linea = idDe(product);
+      const existingItem = prev.find((item) => idDe(item) === linea);
       
       if (existingItem) {
         // Si ya existe, incrementar cantidad
         return prev.map((item) =>
-          item._id === product._id
+          idDe(item) === linea
             ? { ...item, cantidad: item.cantidad + 1 }
             : item
         );
@@ -77,19 +84,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item._id !== productId));
+  const removeFromCart = (linea: string) => {
+    setCart((prev) => prev.filter((item) => idDe(item) !== linea));
   };
 
-  const updateQuantity = (productId: string, cantidad: number) => {
+  const updateQuantity = (linea: string, cantidad: number) => {
     if (cantidad <= 0) {
-      removeFromCart(productId);
+      removeFromCart(linea);
       return;
     }
     
     setCart((prev) =>
       prev.map((item) =>
-        item._id === productId ? { ...item, cantidad } : item
+        idDe(item) === linea ? { ...item, cantidad } : item
       )
     );
   };

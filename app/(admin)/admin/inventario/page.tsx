@@ -12,11 +12,13 @@ import {
   Pencil,
   CheckCircle,
   History,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { invalidateCachePattern } from "@/lib/cache";
 import type { ProductAdmin, Category, StockEstado } from "@/types";
 import MovimientosModal from "@/app/(admin)/admin/_components/MovimientosModal";
+import { etiquetaVariante } from "@/lib/variantes";
 
 type ProductoInventario = ProductAdmin & { stock: StockEstado };
 
@@ -35,6 +37,116 @@ type EditState = {
   proveedor: string;
   activo: boolean;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FILAS POR VARIANTE (fase 13b): el stock de cada variante solo cambia con
+// /api/admin/inventory/adjust (deja movimiento). Se envía el stock que se veía
+// (`esperado`): si alguien lo cambió entretanto, el servidor responde 409.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ResultadoAjuste = { stockDespues: number; stock: StockEstado; stockTotal?: number };
+
+function FilasVariantes({
+  producto,
+  onAjustado,
+}: {
+  producto: ProductoInventario;
+  onAjustado: (varianteId: string, r: ResultadoAjuste) => void;
+}) {
+  const [valores, setValores] = useState<Record<string, string>>({});
+  const [guardandoId, setGuardandoId] = useState<string | null>(null);
+  const [error, setError] = useState<{ id: string; texto: string } | null>(null);
+  const orden = (producto.opciones ?? []).map((o) => o.nombre);
+
+  const guardar = async (varianteId: string, antes: number) => {
+    const texto = valores[varianteId];
+    const cantidad = Math.max(0, parseInt(texto ?? "") || 0);
+    if (texto === undefined || cantidad === antes) return;
+    setGuardandoId(varianteId);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/inventory/adjust", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: producto._id,
+          variantId: varianteId,
+          modo: "fijar",
+          cantidad,
+          esperado: antes,
+          motivo: "Ajuste desde Inventario",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError({ id: varianteId, texto: data.error || "No se pudo guardar el stock de la variante" });
+        return;
+      }
+      onAjustado(varianteId, data as ResultadoAjuste);
+      setValores((v) => {
+        const resto = { ...v };
+        delete resto[varianteId];
+        return resto;
+      });
+    } catch {
+      setError({ id: varianteId, texto: "Error de conexión al guardar" });
+    } finally {
+      setGuardandoId(null);
+    }
+  };
+
+  return (
+    <>
+      {(producto.variantes ?? []).map((v) => {
+        const antes = v.stockCantidad ?? 0;
+        const valor = valores[v._id] ?? String(antes);
+        const cambiado = valores[v._id] !== undefined && (parseInt(valor) || 0) !== antes;
+        return (
+          <tr key={v._id} className={`bg-[var(--bg)]/60 ${v.activo === false ? "opacity-55" : ""}`}>
+            <td className="px-4 py-2 font-mono text-[11px] text-[var(--muted)]">{v.sku || ""}</td>
+            <td className="px-4 py-2 text-xs text-[var(--ink)]" colSpan={2}>
+              <span className="text-[var(--muted)] mr-1">↳</span>
+              {etiquetaVariante(v.combinacion, orden)}
+              {v.activo === false && <span className="ml-2 text-[10px] font-semibold uppercase text-[var(--muted)]">inactiva</span>}
+            </td>
+            <td className="px-4 py-2 text-center">
+              <div className="inline-flex items-center gap-1">
+                <input
+                  type="number"
+                  min={0}
+                  value={valor}
+                  onChange={(e) => setValores((x) => ({ ...x, [v._id]: e.target.value }))}
+                  onKeyDown={(e) => { if (e.key === "Enter") guardar(v._id, antes); }}
+                  aria-label={`Stock de ${etiquetaVariante(v.combinacion, orden)}`}
+                  className="w-16 px-2 py-1 border border-[var(--line)] rounded text-center text-xs"
+                />
+                {cambiado && (
+                  <button
+                    onClick={() => guardar(v._id, antes)}
+                    disabled={guardandoId === v._id}
+                    className="p-1 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50"
+                    title="Guardar stock"
+                  >
+                    <Save className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </td>
+            <td className="px-4 py-2" />
+            <td className="px-4 py-2" />
+            <td className="px-4 py-2" />
+            <td className="px-4 py-2 text-right text-xs text-[var(--muted)]">
+              {typeof v.precio === "number" ? `S/ ${v.precio.toFixed(2)}` : ""}
+            </td>
+            <td className="px-4 py-2" colSpan={4}>
+              {error?.id === v._id && <span className="text-xs text-red-700">{error.texto}</span>}
+            </td>
+          </tr>
+        );
+      })}
+    </>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -128,6 +240,27 @@ export default function InventarioPage() {
   const [errorGuardar, setErrorGuardar] = useState("");
   const [savedFlashId, setSavedFlashId] = useState<string | null>(null);
   const [movimientosDe, setMovimientosDe] = useState<{ _id: string; nombre: string } | null>(null);
+  const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
+  const alternarExpandido = (id: string) =>
+    setExpandidos((prev) => {
+      const nuevo = new Set(prev);
+      if (nuevo.has(id)) nuevo.delete(id);
+      else nuevo.add(id);
+      return nuevo;
+    });
+  const alAjustarVariante = (productoId: string, varianteId: string, r: ResultadoAjuste) =>
+    setProducts((prev) =>
+      prev.map((p) =>
+        p._id !== productoId
+          ? p
+          : {
+              ...p,
+              stock: r.stock,
+              stockCantidad: r.stockTotal ?? p.stockCantidad,
+              variantes: (p.variantes ?? []).map((v) => (v._id === varianteId ? { ...v, stockCantidad: r.stockDespues } : v)),
+            }
+      )
+    );
 
   const loadData = async () => {
     try {
@@ -427,6 +560,8 @@ export default function InventarioPage() {
                     const editando = editandoId === p._id;
                     const { monto: margenMonto, porcentaje: margenPct } = calcularMargen(p.precio, p.precioCosto);
                     const bajoStock = (p.stockCantidad ?? 0) <= (p.stockMinimo ?? 5);
+                    const conVariantes = (p.variantes?.length ?? 0) > 0;
+                    const expandido = expandidos.has(p._id);
 
                     return (
                       <Fragment key={p._id}>
@@ -449,7 +584,15 @@ export default function InventarioPage() {
 
                         {/* Nombre */}
                         <td className="px-4 py-3 font-medium text-[var(--ink)] max-w-[220px] truncate" title={p.nombre}>
-                          {p.nombre}
+                          {conVariantes ? (
+                            <button onClick={() => alternarExpandido(p._id)} className="inline-flex items-center gap-1 max-w-full text-left hover:text-[var(--accent)]" aria-expanded={expandido}>
+                              <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${expandido ? "" : "-rotate-90"}`} />
+                              <span className="truncate">{p.nombre}</span>
+                              <span className="shrink-0 text-[10px] font-semibold text-[var(--accent)]">{p.variantes?.length} var.</span>
+                            </button>
+                          ) : (
+                            p.nombre
+                          )}
                         </td>
 
                         {/* Categoría */}
@@ -459,7 +602,7 @@ export default function InventarioPage() {
 
                         {/* Stock cantidad */}
                         <td className="px-4 py-3 text-center">
-                          {editando ? (
+                          {editando && !conVariantes ? (
                             <input
                               type="number"
                               min={0}
@@ -602,6 +745,9 @@ export default function InventarioPage() {
                           </div>
                         </td>
                       </tr>
+                      {conVariantes && expandido && (
+                        <FilasVariantes producto={p} onAjustado={(vid, r) => alAjustarVariante(p._id, vid, r)} />
+                      )}
                       {/* Error de guardado — pegado a la fila que estás editando, para verlo sin bajar la vista */}
                       {editando && errorGuardar && (
                         <tr>

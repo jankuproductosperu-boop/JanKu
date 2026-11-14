@@ -1,6 +1,7 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
+import { lineaId } from "@/lib/variantes";
 import Image from "next/image";
 import Link from "next/link";
 import { X, Trash2, Minus, Plus, ShoppingCart, Sparkles, Tag } from "lucide-react";
@@ -30,6 +31,7 @@ export default function CartSidebar() {
     
     cart.forEach((item, index) => {
       message += `${index + 1}. *${item.nombre}*\n`;
+      if (item.varianteEtiqueta) message += `   🎨 ${item.varianteEtiqueta}\n`;
       message += `   💰 Precio: S/ ${item.precio.toFixed(2)}\n`;
       message += `   📦 Cantidad: ${item.cantidad}\n`;
       message += `   💵 Subtotal: S/ ${(item.precio * item.cantidad).toFixed(2)}\n\n`;
@@ -109,12 +111,12 @@ export default function CartSidebar() {
 
               {cart.map((item) => (
                 <div 
-                  key={item._id} 
+                  key={lineaId(item._id, item.varianteId)} 
                   className="bg-gray-50 rounded-lg p-3 relative border border-gray-200 hover:shadow-md transition"
                 >
                   {/* Botón eliminar */}
                   <button
-                    onClick={() => removeFromCart(item._id)}
+                    onClick={() => removeFromCart(lineaId(item._id, item.varianteId))}
                     className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full transition"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -144,6 +146,9 @@ export default function CartSidebar() {
                       <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 mb-1 pr-6">
                         {item.nombre}
                       </h3>
+                      {item.varianteEtiqueta && (
+                        <p className="text-xs text-gray-500 -mt-0.5 mb-1 pr-6">{item.varianteEtiqueta}</p>
+                      )}
                       <p className="text-[#2C2C6C] font-bold text-lg mb-2">
                         S/ {item.precio.toFixed(2)}
                       </p>
@@ -151,7 +156,7 @@ export default function CartSidebar() {
                       {/* Control de cantidad */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => updateQuantity(item._id, item.cantidad - 1)}
+                          onClick={() => updateQuantity(lineaId(item._id, item.varianteId), item.cantidad - 1)}
                           className="bg-gray-200 hover:bg-gray-300 text-gray-700 w-8 h-8 rounded-lg flex items-center justify-center transition"
                         >
                           <Minus className="w-4 h-4" />
@@ -160,11 +165,11 @@ export default function CartSidebar() {
                           type="number"
                           min="1"
                           value={item.cantidad}
-                          onChange={(e) => updateQuantity(item._id, parseInt(e.target.value) || 1)}
+                          onChange={(e) => updateQuantity(lineaId(item._id, item.varianteId), parseInt(e.target.value) || 1)}
                           className="w-14 text-center border-2 border-gray-300 rounded-lg font-semibold focus:border-[#2C2C6C] outline-none"
                         />
                         <button
-                          onClick={() => updateQuantity(item._id, item.cantidad + 1)}
+                          onClick={() => updateQuantity(lineaId(item._id, item.varianteId), item.cantidad + 1)}
                           className="bg-[#2C2C6C] hover:bg-[#241B57] text-white w-8 h-8 rounded-lg flex items-center justify-center transition"
                         >
                           <Plus className="w-4 h-4" />

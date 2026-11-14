@@ -246,6 +246,7 @@ export default function ProductosLista({ products, categories, onReload, busqued
                 </Link>
                 <div className="p-3 space-y-2">
                   <b className="block text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{p.nombre}</b>
+                  {(p.variantes?.length ?? 0) > 0 && <span className="block text-xs text-[var(--accent)] font-semibold">{p.variantes?.length} variantes</span>}
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-bold">S/ {p.precio.toFixed(2)}</span>
                     {p.stock && (
@@ -289,6 +290,7 @@ export default function ProductosLista({ products, categories, onReload, busqued
                         </span>
                         <div className="min-w-0">
                           <b className="block truncate max-w-[260px]">{p.nombre}</b>
+                          {(p.variantes?.length ?? 0) > 0 && <span className="block text-xs text-[var(--accent)] font-semibold">{p.variantes?.length} variantes</span>}
                           {p.slug && <small className="text-[var(--muted)]">/producto/{p.slug}</small>}
                           {esNovedad(p) && <div className="mt-0.5"><Chip tono="acento">Nuevo</Chip></div>}
                         </div>
