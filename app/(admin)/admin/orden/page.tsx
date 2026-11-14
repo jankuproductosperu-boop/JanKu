@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   ChevronUp,
   ChevronDown,
   ChevronsUp,
@@ -335,13 +333,6 @@ export default function OrdenProductosPage() {
               <p className="text-gray-600 text-sm">Elige qué producto se muestra primero</p>
             </div>
           </div>
-          <Link
-            href="/admin"
-            className="flex items-center gap-2 px-4 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition text-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Volver al panel
-          </Link>
         </div>
 
         {/* Selector de contexto */}

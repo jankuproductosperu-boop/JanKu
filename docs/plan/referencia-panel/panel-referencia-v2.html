@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel Janku — referencia visual v2</title>
+<!-- REFERENCIA VISUAL, NO CÓDIGO PARA COPIAR. La implementación real usa Tailwind + next/font (sin fuentes externas por el CSP). -->
+<style>
+:root{
+  --bg:#F3F4FA; --surface:#FFFFFF; --ink:#1B1E3A; --muted:#5F648A; --line:#E4E6F2;
+  --navy:#2C2C6C; --navy-ink:#DCE0FF; --navy-mute:#A9AEE0; --accent:#4F46E5; --accent-soft:#E9E8FC;
+  --ok:#15803D; --ok-soft:#DCF3E4; --warn:#B45309; --warn-soft:#FDEBC8; --bad:#B91C1C; --bad-soft:#FBDADA;
+  --wa:#16A34A; --bar:#C9CCF0;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12142B; --surface:#1B1F42; --ink:#ECEEFF; --muted:#9A9FC9; --line:#2D325F;
+    --navy:#161A3E; --navy-ink:#ECEEFF; --navy-mute:#9A9FC9; --accent:#8B85FF; --accent-soft:#2A2D63;
+    --ok:#6EE7A0; --ok-soft:#173B2A; --warn:#FBBF4D; --warn-soft:#44340F; --bad:#FCA5A5; --bad-soft:#4A1D24;
+    --wa:#4ADE80; --bar:#3A3F7C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12142B; --surface:#1B1F42; --ink:#ECEEFF; --muted:#9A9FC9; --line:#2D325F;
+  --navy:#161A3E; --navy-ink:#ECEEFF; --navy-mute:#9A9FC9; --accent:#8B85FF; --accent-soft:#2A2D63;
+  --ok:#6EE7A0; --ok-soft:#173B2A; --warn:#FBBF4D; --warn-soft:#44340F; --bad:#FCA5A5; --bad-soft:#4A1D24;
+  --wa:#4ADE80; --bar:#3A3F7C;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+/* Layout: contenido a la izquierda, barra lateral a la DERECHA */
+.app{display:grid;grid-template-columns:1fr 252px;min-height:100vh}
+.side{grid-column:2;grid-row:1;background:var(--navy);color:var(--navy-ink);position:sticky;top:0;height:100vh;overflow-y:auto;padding:18px 12px 20px;display:flex;flex-direction:column;gap:2px}
+.main{grid-column:1;grid-row:1;min-width:0}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 14px;font-weight:700;font-size:18px;color:#fff}
+.brand i{width:32px;height:32px;border-radius:9px;background:#fff;color:var(--navy);display:grid;place-items:center;font-style:normal}
+.grp{margin:14px 10px 4px;font-size:11.5px;color:var(--navy-mute);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--navy-ink);background:none;border:0;text-align:left;width:100%;text-decoration:none}
+.nav svg{width:18px;height:18px;flex:none;opacity:.9}
+.nav:hover{background:rgba(255,255,255,.09)}
+.nav[aria-current="page"]{background:#fff;color:var(--navy);font-weight:600}
+.nav .n{margin-left:auto;font-size:11px;background:#F59E0B;color:#2A1B00;border-radius:99px;padding:0 7px;font-weight:700}
+.me{margin-top:auto;display:flex;gap:10px;align-items:center;padding:12px 10px 0;border-top:1px solid rgba(255,255,255,.14)}
+.me b{display:block;color:#fff;font-size:13px}.me small{color:var(--navy-mute)}
+.av{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+.out{margin:8px 0 0;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.25);background:none;color:var(--navy-ink);width:100%}
+.out:hover{background:rgba(255,255,255,.09)}
+/* Barra superior */
+.top{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:12px 24px}
+.search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--muted);background:var(--bg)}
+.search input{border:0;background:none;outline:0;width:100%}
+.sp{flex:1}
+.btn{color:inherit;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 14px;font-weight:600;text-decoration:none;display:inline-block}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:#0B2A15}
+.btn.sm{padding:4px 10px;font-size:13px}
+.ic{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.menu{display:none}
+.wrap{padding:24px;max-width:1240px;margin:0 auto}
+h1{font-size:24px;margin:0;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:2px 0 0}
+a{color:var(--accent)}
+.head{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.demo{background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin-bottom:18px;font-size:13px}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(4,1fr);margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card h2{font-size:15px;margin:0 0 2px;font-weight:700}
+.card .hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+.kpi small{color:var(--muted)}
+.kpi .v{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.kpi .d{font-size:12.5px;font-weight:600}
+.up{color:var(--ok)}.dn{color:var(--bad)}.wn{color:var(--warn)}
+.two{grid-template-columns:1.6fr 1fr;margin-bottom:16px}
+.chart{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:8px}
+.chart div{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.chart span{width:100%;border-radius:8px 8px 3px 3px;background:var(--bar)}
+.chart .hi span{background:var(--accent)}
+.chart em{font-style:normal;font-size:12px;color:var(--muted)}.chart b{font-size:12px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.thumb{display:inline-block;width:38px;height:38px;border-radius:9px;background:var(--accent-soft);flex:none}
+.grow{flex:1;min-width:0}
+.grow b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.grow small{color:var(--muted)}
+.meter{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:5px}
+.meter i{display:block;height:100%;border-radius:9px}
+.chip{display:inline-block;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.c-ok{background:var(--ok-soft);color:var(--ok)}.c-wn{background:var(--warn-soft);color:var(--warn)}.c-bd{background:var(--bad-soft);color:var(--bad)}.c-ac{background:var(--accent-soft);color:var(--accent)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:12.5px;padding:8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.code{font-weight:700;letter-spacing:.02em;background:var(--accent-soft);color:var(--accent);border-radius:7px;padding:2px 8px}
+/* Productos */
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.tools .search{max-width:320px;background:var(--surface)}
+.sel{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px}
+.bulk{display:flex;align-items:center;gap:10px;background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin-bottom:12px}
+.pg{display:flex;justify-content:space-between;align-items:center;padding-top:12px;color:var(--muted)}
+.sw{width:36px;height:20px;border-radius:99px;background:var(--line);position:relative;display:inline-block}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.sw.on{background:var(--accent)}.sw.on::after{left:18px}
+/* Formulario */
+.form{grid-template-columns:1.7fr 1fr;align-items:start}
+.f{display:grid;gap:12px}
+.f label{display:grid;gap:4px;font-weight:600;font-size:13px}
+.f input,.f select{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;font-weight:400}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hide{display:none}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.two,.form{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;top:0;right:0;bottom:0;height:auto;width:270px;z-index:40;transform:translateX(102%);transition:transform .2s;grid-column:auto}
+  .side.open{transform:none}
+  .menu{display:grid;place-items:center}
+  .top{padding:10px 14px}.wrap{padding:16px 14px}
+  .hide-m{display:none}
+}
+@media (prefers-reduced-motion:reduce){.side,.sw::after{transition:none}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="main">
+  <header class="top">
+    <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input placeholder="Buscar producto"></label>
+    <span class="sp"></span>
+    <a class="btn hide-m" href="#">Ver tienda ↗</a>
+    <button class="ic" id="theme" aria-label="Cambiar tema">◐</button>
+    <button class="ic menu" id="menu" aria-label="Abrir menú">☰</button>
+  </header>
+
+  <main class="wrap">
+    <div class="demo">Referencia visual con datos de ejemplo. Sin pagos en línea: los pedidos se cierran por WhatsApp. Cambia de pantalla desde el menú de la derecha (Resumen, Productos, Editar producto).</div>
+
+    <!-- ============ RESUMEN ============ -->
+    <section id="v-resumen">
+      <div class="head">
+        <div><h1>Resumen</h1><p class="sub">Esto es lo que pasa hoy en tu tienda.</p></div>
+        <div class="acts"><a class="btn pri" href="#" data-go="editar">Nuevo producto</a><a class="btn" href="#">Nuevo cupón</a><a class="btn" href="#">Nuevo banner</a></div>
+      </div>
+      <div class="grid kpis">
+        <article class="card kpi"><small>Productos activos</small><div class="v">105</div><div class="d up">+4 esta semana</div></article>
+        <article class="card kpi"><small>Pedidos por WhatsApp hoy</small><div class="v">14</div><div class="d up">+3 que ayer</div></article>
+        <article class="card kpi"><small>Stock bajo o agotado</small><div class="v">8</div><div class="d wn">Reponer pronto</div></article>
+        <article class="card kpi"><small>Visitas a productos hoy</small><div class="v">312</div><div class="d up">+9 % que ayer</div></article>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>Pedidos por día</h2><p class="hint">Últimos 7 días</p>
+          <div class="chart" role="img" aria-label="Gráfico de pedidos por día">
+            <div><b>9</b><span style="height:38%"></span><em>Lun</em></div><div><b>12</b><span style="height:52%"></span><em>Mar</em></div>
+            <div><b>8</b><span style="height:34%"></span><em>Mié</em></div><div><b>15</b><span style="height:64%"></span><em>Jue</em></div>
+            <div><b>19</b><span style="height:82%"></span><em>Vie</em></div><div class="hi"><b>23</b><span style="height:100%"></span><em>Sáb</em></div>
+            <div><b>14</b><span style="height:60%"></span><em>Dom</em></div>
+          </div>
+        </article>
+        <article class="card">
+          <h2>Stock crítico</h2><p class="hint">Productos por debajo del mínimo</p>
+          <div class="row"><span class="thumb"></span><div class="grow"><b>Zapatero vertical 10 niveles</b><small>2 de 5 unidades</small><div class="meter"><i style="width:40%;background:var(--bad)"></i></div></div><span class="chip c-bd">Bajo</span></div>
+          <div class="row"><span class="thumb"></span><div class="grow"><b>Mini parlante hongo</b><small>4 de 8 unidades</small><div class="meter"><i style="width:50%;background:var(--warn)"></i></div></div><span class="chip c-wn">Limitado</span></div>
+          <div class="row"><span class="thumb"></span><div class="grow"><b>Guirnalda solar LED 10 m</b><small>0 unidades</small><div class="meter"><i style="width:0"></i></div></div><span class="chip c-bd">Agotado</span></div>
+        </article>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>Pedidos recientes</h2><p class="hint">Se registran al presionar «Pedir por WhatsApp»</p>
+          <div class="tw"><table>
+            <thead><tr><th>Cliente</th><th>Productos</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>María Quispe</b></td><td>Ropero armable ×1</td><td>S/ 189.00</td><td><span class="chip c-wn">Pendiente</span></td><td><a class="btn wa sm" href="#">Escribir</a></td></tr>
+              <tr><td><b>Luis Rojas</b></td><td>Mochila capibara ×2</td><td>S/ 96.00</td><td><span class="chip c-ac">Confirmado</span></td><td><a class="btn wa sm" href="#">Escribir</a></td></tr>
+              <tr><td><b>Ana Huamán</b></td><td>Set de cuchillos ×1</td><td>S/ 45.00</td><td><span class="chip c-ok">Entregado</span></td><td><a class="btn wa sm" href="#">Escribir</a></td></tr>
+              <tr><td><b>Pedro Salas</b></td><td>Tomatodo K-Pop ×3</td><td>S/ 87.00</td><td><span class="chip c-bd">Cancelado</span></td><td><a class="btn wa sm" href="#">Escribir</a></td></tr>
+            </tbody>
+          </table></div>
+        </article>
+        <div class="grid">
+          <article class="card">
+            <h2>Más vistos esta semana</h2><p class="hint">Visitas a la página del producto</p>
+            <div class="row"><span class="thumb"></span><div class="grow"><b>Mochila capibara</b><small>Mochilas</small></div><b>412</b></div>
+            <div class="row"><span class="thumb"></span><div class="grow"><b>Ropero armable</b><small>Hogar</small></div><b>288</b></div>
+            <div class="row"><span class="thumb"></span><div class="grow"><b>Tomatodo K-Pop</b><small>Accesorios</small></div><b>201</b></div>
+          </article>
+          <article class="card">
+            <h2>Cupones activos</h2><p class="hint">Se validan siempre en el servidor</p>
+            <div class="row"><span class="code">JANKU10</span><div class="grow"><small>10 % · mínimo S/ 80</small></div><span class="chip c-ok">23 usos</span></div>
+            <div class="row"><span class="code">ENVIOGRATIS</span><div class="grow"><small>Vence en 3 días</small></div><span class="chip c-wn">Por vencer</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRODUCTOS (lista) ============ -->
+    <section id="v-productos" class="hide">
+      <div class="head">
+        <div><h1>Productos</h1><p class="sub">105 productos · 98 activos</p></div>
+        <div class="acts"><button class="btn">Exportar CSV</button><a class="btn pri" href="#" data-go="editar">Nuevo producto</a></div>
+      </div>
+      <div class="tools">
+        <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input placeholder="Buscar por nombre o etiqueta"></label>
+        <select class="sel" aria-label="Categoría"><option>Todas las categorías</option></select>
+        <select class="sel" aria-label="Estado"><option>Activos e inactivos</option></select>
+        <select class="sel" aria-label="Stock"><option>Todo el stock</option></select>
+        <select class="sel" aria-label="Orden"><option>Más recientes</option></select>
+      </div>
+      <div class="bulk"><b>3 seleccionados</b><button class="btn sm">Activar</button><button class="btn sm">Desactivar</button><button class="btn sm">Cambiar categoría</button><button class="btn sm">Marcar como novedad</button></div>
+      <article class="card">
+        <div class="tw"><table>
+          <thead><tr><th><input type="checkbox" aria-label="Seleccionar todos"></th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Activo</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox" checked aria-label="Seleccionar"></td><td><div class="row" style="border:0;padding:0"><span class="thumb"></span><div class="grow"><b>Mochila capibara</b><small>3 variantes · <span class="chip c-ac">Nuevo</span></small></div></div></td><td>Mochilas</td><td>S/ 48.00</td><td><span class="chip c-ok">Disponible · 24</span></td><td><span class="sw on"></span></td><td><button class="btn sm" data-go="editar">Editar</button></td></tr>
+            <tr><td><input type="checkbox" checked aria-label="Seleccionar"></td><td><div class="row" style="border:0;padding:0"><span class="thumb"></span><div class="grow"><b>Mini parlante hongo</b><small>Sin variantes</small></div></div></td><td>Tecnología</td><td>S/ 35.00</td><td><span class="chip c-wn">Limitado · 4</span></td><td><span class="sw on"></span></td><td><button class="btn sm" data-go="editar">Editar</button></td></tr>
+            <tr><td><input type="checkbox" checked aria-label="Seleccionar"></td><td><div class="row" style="border:0;padding:0"><span class="thumb"></span><div class="grow"><b>Guirnalda solar LED 10 m</b><small>Sin variantes</small></div></div></td><td>Hogar</td><td>S/ 29.90</td><td><span class="chip c-bd">Agotado</span></td><td><span class="sw"></span></td><td><button class="btn sm" data-go="editar">Editar</button></td></tr>
+          </tbody>
+        </table></div>
+        <div class="pg"><span>1–20 de 105</span><span><button class="btn sm">← Anterior</button> <button class="btn sm">Siguiente →</button></span></div>
+      </article>
+    </section>
+
+    <!-- ============ EDITAR PRODUCTO ============ -->
+    <section id="v-editar" class="hide">
+      <div class="head">
+        <div><h1>Editar producto</h1><p class="sub"><a href="#" data-go="productos">← Volver a productos</a></p></div>
+        <div class="acts"><button class="btn">Vista previa en la tienda ↗</button><button class="btn">Duplicar</button><button class="btn pri">Guardar cambios</button></div>
+      </div>
+      <div class="grid form">
+        <div class="grid">
+          <article class="card f"><h2>Datos básicos</h2>
+            <div class="f2"><label>Nombre<input value="Mochila capibara"></label><label>Precio (S/)<input value="48.00"></label></div>
+            <label>Descripción corta<input value="Mochila antirrobo con diseño capibara"></label>
+          </article>
+          <article class="card"><h2>Imágenes</h2><p class="hint">Arrastra para reordenar · ★ = portada</p><div class="drop">Arrastra imágenes o haz clic para seleccionar</div></article>
+          <article class="card f"><div class="opt"><div><h2>Variantes</h2><p class="hint" style="margin:0">Opcional. Úsalas si el producto viene en colores, tallas u otras opciones.</p></div><span class="sw on"></span></div>
+            <div class="f2"><label>Opción 1<input value="Color"></label><label>Valores<input value="Negro, Rosado, Celeste"></label></div>
+            <div class="tw"><table>
+              <thead><tr><th>Variante</th><th>Stock</th><th>Precio propio</th><th>Imagen</th></tr></thead>
+              <tbody>
+                <tr><td>Negro</td><td>10</td><td>—</td><td><span class="thumb"></span></td></tr>
+                <tr><td>Rosado</td><td>9</td><td>—</td><td><span class="thumb"></span></td></tr>
+                <tr><td>Celeste</td><td>5</td><td>S/ 52.00</td><td><span class="thumb"></span></td></tr>
+              </tbody>
+            </table></div>
+          </article>
+        </div>
+        <div class="grid">
+          <article class="card f"><h2>Publicación</h2>
+            <div class="opt"><span>Activo en la tienda</span><span class="sw on"></span></div>
+            <div class="opt"><span>Mostrar en el inicio</span><span class="sw"></span></div>
+            <div class="opt"><span>Novedad de la semana</span><span class="sw on"></span></div>
+            <small style="color:var(--muted)">Aparece en «Novedades» hasta el 20 nov.</small>
+          </article>
+          <article class="card f"><h2>Categoría</h2><label>Categoría principal<select><option>Mochilas</option></select></label><label>Etiquetas<input value="kpop, escolar"></label></article>
+          <article class="card f"><h2>Inventario</h2><div class="opt"><span>Stock total</span><b>24</b></div><span class="chip c-ok" style="width:max-content">Disponible</span></article>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<aside class="side" id="side" aria-label="Navegación del panel">
+  <div class="brand"><i>J</i> Janku</div>
+  <nav id="nav"></nav>
+  <div class="me"><span class="av">A</span><div><b>Administrador</b><small>Rol: superadmin</small></div></div>
+  <button class="out">Cerrar sesión</button>
+</aside>
+</div>
+<script>
+(function(){
+  var I={
+    resumen:'<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
+    productos:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+    categorias:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+    inventario:'<path d="M3 7h18v13H3zM8 7V4h8v3"/>',
+    novedades:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+    pedidos:'<path d="M21 12a8 8 0 0 1-11.8 7L3 21l2-5.8A8 8 0 1 1 21 12z"/>',
+    clientes:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+    cupones:'<path d="M20 12 12 20 3 11V3h8z"/><circle cx="7.5" cy="7.5" r="1.5"/>',
+    promos:'<path d="M3 11l16-7v16L3 13z"/><path d="M7 14v5"/>',
+    banners:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 15 5-5 4 4 3-3 6 6"/>',
+    popup:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6M9 13h4"/>',
+    stats:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+    usuarios:'<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/>',
+    registro:'<path d="M12 8v5l3 2M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/>'
+  };
+  var NAV=[
+    {k:'resumen',t:'Resumen',v:'resumen'},
+    {g:'Catálogo'},{k:'productos',t:'Productos',v:'productos'},{k:'categorias',t:'Categorías'},{k:'inventario',t:'Inventario',n:8},{k:'novedades',t:'Novedades'},
+    {g:'Ventas por WhatsApp'},{k:'pedidos',t:'Pedidos',n:5},{k:'clientes',t:'Clientes'},
+    {g:'Marketing'},{k:'cupones',t:'Descuentos y cupones'},{k:'promos',t:'Promociones'},{k:'banners',t:'Banners'},{k:'popup',t:'Popup de oferta'},
+    {g:'Análisis y sistema'},{k:'stats',t:'Estadísticas'},{k:'usuarios',t:'Usuarios y roles'},{k:'registro',t:'Registro de cambios'}
+  ];
+  var nav=document.getElementById('nav'),side=document.getElementById('side');
+  NAV.forEach(function(x){
+    if(x.g){var d=document.createElement('div');d.className='grp';d.textContent=x.g;nav.appendChild(d);return;}
+    var a=document.createElement('a');a.className='nav';a.href='#';a.dataset.k=x.k;if(x.v)a.dataset.v=x.v;
+    a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+I[x.k]+'</svg>'+x.t+(x.n?'<span class="n">'+x.n+'</span>':'');
+    nav.appendChild(a);
+  });
+  function show(v,k){
+    ['resumen','productos','editar'].forEach(function(n){document.getElementById('v-'+n).classList.toggle('hide',n!==v)});
+    nav.querySelectorAll('.nav').forEach(function(a){
+      if(a.dataset.k===k)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+    });
+    side.classList.remove('open');window.scrollTo(0,0);
+  }
+  nav.addEventListener('click',function(e){var a=e.target.closest('.nav');if(!a)return;e.preventDefault();show(a.dataset.v||'resumen',a.dataset.k);});
+  document.addEventListener('click',function(e){var g=e.target.closest('[data-go]');if(!g)return;e.preventDefault();show(g.dataset.go,'productos');});
+  var h=location.hash.slice(1);show(h==='productos'||h==='editar'?h:'resumen',h==='editar'?'productos':h==='productos'?'productos':'resumen');
+  document.getElementById('menu').addEventListener('click',function(){side.classList.toggle('open')});
+  document.getElementById('theme').addEventListener('click',function(){
+    var r=document.documentElement;
+    var dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+    r.setAttribute('data-theme',dark?'light':'dark');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo, Fragment } from "react";
-import Link from "next/link";
 import {
   Package,
   Search,
   ArrowUpDown,
-  ArrowLeft,
   Download,
   AlertTriangle,
   Save,
@@ -315,13 +313,6 @@ export default function InventarioPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-4 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition text-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver al panel
-            </Link>
             <button
               onClick={() => exportarCSV(productosFiltrados, categories)}
               className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition text-sm"
