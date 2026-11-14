@@ -8,7 +8,7 @@ Sustituir la barra superior de la fase 12 por una **barra lateral a la derecha**
 
 Va justo después de la 12 porque ya dejó las pestañas como componentes aislados, y antes de la 13, 17 y 19, que añaden pantallas: así nacen ya con el estilo final.
 
-**Cambio visible anunciado (solo panel):** nueva navegación lateral, nuevos colores y modo oscuro opcional; `/admin` pasa a ser el Resumen y el catálogo se mueve a `/admin/productos`, `/admin/categorias`, `/admin/banners`, `/admin/promociones`. El sitio público no cambia.
+**Cambio visible anunciado (solo panel):** nueva navegación lateral y nuevos colores (el modo oscuro llega en la 12d); `/admin` pasa a ser el Resumen y el catálogo se mueve a `/admin/productos`, `/admin/categorias`, `/admin/banners`, `/admin/promociones`. El sitio público no cambia.
 
 ## 2. Prerrequisitos
 
@@ -25,8 +25,9 @@ Todo dentro de `app/(admin)/admin/` salvo indicación.
 | Crear | `panel.css` | Tokens de color (sección 5) y reglas mínimas bajo la clase `.panel`. Se importa solo desde `layout.tsx` del panel |
 | Modificar | `layout.tsx` | Envuelve con `<div className="panel">`, rejilla contenido + barra lateral derecha, `AdminTopbar` y `AdminSidebar` |
 | Crear | `_components/AdminSidebar.tsx` | Menú lateral (contrato en 5). Sustituye a `AdminNav` |
-| Crear | `_components/AdminTopbar.tsx` | Barra superior: "Ver tienda", botón de tema, botón ☰ (móvil) |
-| Crear | `_components/useTema.ts` | Tema claro/oscuro: sigue el sistema; la elección se guarda en `localStorage` dentro de `try/catch` |
+| Crear | `_components/AdminTopbar.tsx` | Barra superior: "Ver tienda" y botón ☰ (móvil). **Sin botón de tema**: se añade en la 12d, cuando todas las pantallas ya usan tokens |
+| Crear | `_components/AdminShell.tsx` | Carcasa cliente: estado del cajón móvil, comprobación de sesión (spinner «Verificando acceso…») y rejilla. `layout.tsx` solo la usa |
+| Crear | `_components/Seccion.tsx` | Contenedor con título para las 4 páginas del catálogo |
 | Eliminar | `_components/AdminNav.tsx` | Queda sustituido |
 | Modificar | `page.tsx` | Pasa a ser el **Resumen** (sección 4, paso 5) |
 | Crear | `productos/page.tsx`, `categorias/page.tsx`, `banners/page.tsx`, `promociones/page.tsx` | Cada una renderiza su componente `*Tab` con los datos que hoy carga `page.tsx`. Ver paso 3 |
@@ -45,15 +46,15 @@ app/(admin)/admin/
   productos/page.tsx  categorias/page.tsx  banners/page.tsx  promociones/page.tsx
   inventario/  orden/  descuentos/          (ya existen)
   _components/
-    AdminSidebar.tsx  AdminTopbar.tsx  useTema.ts  useAdminSession.ts  useAdminData.ts
+    AdminShell.tsx  AdminSidebar.tsx  AdminTopbar.tsx  Seccion.tsx  useAdminSession.ts  useAdminData.ts
     ProductosTab.tsx  CategoriasTab.tsx  BannersTab.tsx  PromocionesTab.tsx
     ImageUploader.tsx  useImageUpload.ts  imageTypes.ts  BannerImageField.tsx  PromocionImageField.tsx
 ```
 
 ## 4. Pasos de implementación
 
-1. `panel.css` con los tokens y modo oscuro (valores en sección 5). Fuente: la que ya carga el layout raíz (`--font-geist-sans`); **no** se añaden fuentes externas (el CSP solo permite `'self'`, N1-4).
-2. `useTema.ts`, `AdminTopbar.tsx`, `AdminSidebar.tsx`. Los enlaces son `<Link>` con `aria-current="page"` en el activo.
+1. `panel.css` con los tokens; los valores oscuros quedan definidos bajo `.panel[data-theme="dark"]` pero sin activarse (valores en sección 5). Fuente: la que ya carga el layout raíz (`--font-geist-sans`); **no** se añaden fuentes externas (el CSP solo permite `'self'`, N1-4).
+2. `AdminShell.tsx`, `AdminTopbar.tsx`, `AdminSidebar.tsx`. Los enlaces son `<Link>` con `aria-current="page"` en el activo.
 3. `useAdminData.ts` mueve los cuatro `load*` y el `useEffect` inicial de `page.tsx`. Las cuatro páginas nuevas lo usan y pasan los datos a su `*Tab` (mismos props de la fase 12). **Cortar y pegar**: no se cambia la lógica de ningún handler.
 4. `layout.tsx` con la rejilla `grid-template-columns: 1fr 252px` y, en ≤ 860 px, la barra como cajón que entra desde la **derecha**.
 5. `page.tsx` = Resumen, **solo con datos reales de hoy**:

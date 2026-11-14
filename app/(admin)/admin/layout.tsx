@@ -1,5 +1,6 @@
-import AdminNav from "@/app/(admin)/admin/_components/AdminNav";
+import AdminShell from "@/app/(admin)/admin/_components/AdminShell";
+import "@/app/(admin)/admin/panel.css";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (<><AdminNav /><main>{children}</main></>);
+  return <AdminShell>{children}</AdminShell>;
 }
