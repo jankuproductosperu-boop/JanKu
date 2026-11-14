@@ -79,7 +79,7 @@ const MENU: { grupo?: string; href: string; etiqueta: string; permiso?: Permiso 
   { grupo: "Marketing", href: "/admin/descuentos", etiqueta: "Descuentos", permiso: "descuentos.gestionar" },
   { href: "/admin/promociones", etiqueta: "Promociones", permiso: "catalogo.editar" },
   { href: "/admin/banners", etiqueta: "Banners", permiso: "catalogo.editar" },
-  // fase 13b/16b: Novedades · 16c: Popup · 17: Pedidos · 19: Cupones · 21: Usuarios · 21b: Estadísticas
+  // fase 13b/12e: Novedades · 12f: Popup · 17: Pedidos · 19: Cupones · 21: Usuarios · 21b: Estadísticas
 ];
 ```
 

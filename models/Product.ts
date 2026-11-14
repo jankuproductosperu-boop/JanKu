@@ -21,6 +21,7 @@ export interface IProduct extends Document {
   videoUrl?: string;
   deliveryHuancayo: boolean;
   mostrarEnHome: boolean;
+  nuevoHasta?: Date | null; // novedad de la semana: es novedad mientras la fecha sea futura
   whatsappLink?: string;
   whatsappNumero?: string;
   metaTitulo?: string;
@@ -70,6 +71,7 @@ const ProductSchema = new Schema<IProduct>(
     videoUrl: { type: String, default: "" },
     deliveryHuancayo: { type: Boolean, default: true },
     mostrarEnHome: { type: Boolean, default: false },
+    nuevoHasta: { type: Date, default: null },
     whatsappLink: { type: String, default: "" },
     whatsappNumero: { type: String, default: "" },
     metaTitulo: { type: String, default: "" },

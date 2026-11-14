@@ -20,6 +20,7 @@ export type Product = {
   videoUrl?: string;
   deliveryHuancayo?: boolean;
   mostrarEnHome?: boolean;
+  nuevoHasta?: string | null; // ISO; ver lib/novedades.ts
   envioGratis?: boolean;
   whatsappLink?: string;
   whatsappNumero?: string;

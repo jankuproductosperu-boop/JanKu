@@ -6,6 +6,7 @@ import { invalidateCachePattern } from "@/lib/cache";
 import type { ProductAdmin, Category } from "@/types";
 import { ImageUploader } from "@/app/(admin)/admin/_components/ImageUploader";
 import { useImageUpload } from "@/app/(admin)/admin/_components/useImageUpload";
+import { esNovedad, fechaNuevoHasta } from "@/lib/novedades";
 import { getCloudinaryUrl, type UploadedImage } from "@/app/(admin)/admin/_components/imageTypes";
 
 type Props = { product?: ProductAdmin; categories: Category[]; onSaved: () => Promise<void> };
@@ -13,7 +14,7 @@ type Props = { product?: ProductAdmin; categories: Category[]; onSaved: () => Pr
 const FORM_VACIO = {
   nombre: "", precio: "", descripcion: "", categorias: "", stock: "Disponible",
   deliveryHuancayo: true, descripcionCompleta: "", caracteristicas: "",
-  metaTitulo: "", metaDescripcion: "", mostrarEnHome: false,
+  metaTitulo: "", metaDescripcion: "", mostrarEnHome: false, novedad: false,
   whatsappNumero: "", videoUrl: "", tags: "",
 };
 
@@ -28,6 +29,7 @@ function formDe(product?: ProductAdmin): typeof FORM_VACIO {
     stock: product.stock || "Disponible",
     deliveryHuancayo: product.deliveryHuancayo ?? true,
     mostrarEnHome: product.mostrarEnHome ?? false,
+    novedad: esNovedad(product),
     whatsappNumero: product.whatsappNumero || "", videoUrl: product.videoUrl || "",
     tags: Array.isArray(product.tags) ? product.tags.join(", ") : "",
     caracteristicas: product.caracteristicas?.join("\n") || "",
@@ -105,6 +107,8 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
         imagenesAdicionales: imageResult.imagenesAdicionales,
         videoUrl: form.videoUrl?.trim() || "",
         deliveryHuancayo: form.deliveryHuancayo, mostrarEnHome: form.mostrarEnHome,
+        // Novedad de la semana: si ya lo era se conserva su fecha; si no, 7 días desde hoy; si se desmarca, se limpia.
+        nuevoHasta: form.novedad ? (product && esNovedad(product) ? product.nuevoHasta : fechaNuevoHasta()) : null,
         whatsappNumero: form.whatsappNumero?.trim() || "",
         caracteristicas: form.caracteristicas ? form.caracteristicas.split("\n").filter(c => c.trim()) : [],
         tags: tagsList,
@@ -208,6 +212,8 @@ export default function ProductoForm({ product, categories, onSaved }: Props) {
           <div><label className="block text-sm font-medium text-[var(--ink)] mb-2">Stock</label><select name="stock" value={form.stock} onChange={handleChange} className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-[var(--surface)]"><option value="Disponible">✅ Disponible</option><option value="Limitado">⚠️ Limitado</option><option value="Agotado">❌ Agotado</option></select></div>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="deliveryHuancayo" checked={form.deliveryHuancayo} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">🚚 Delivery gratis Huancayo</span></label>
           <label className="flex items-center cursor-pointer"><input type="checkbox" name="mostrarEnHome" checked={form.mostrarEnHome} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-[var(--line)] rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">⭐ Mostrar en página de inicio</span></label>
+          <label className="flex items-center cursor-pointer"><input type="checkbox" name="novedad" checked={form.novedad} onChange={handleChange} className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500" /><span className="ml-3 text-sm font-medium text-[var(--ink)]">🆕 Novedad de la semana</span></label>
+          {product && esNovedad(product) && form.novedad && <p className="text-xs text-[var(--muted)] -mt-2 ml-8">Aparece en Novedades hasta el {new Date(product.nuevoHasta as string).toLocaleDateString("es-PE", { day: "numeric", month: "long" })}.</p>}
         </div>
         <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 space-y-4">
           <h2 className="font-bold text-[var(--ink)]">Categorías</h2>

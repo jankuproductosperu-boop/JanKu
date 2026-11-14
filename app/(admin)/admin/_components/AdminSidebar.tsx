@@ -19,7 +19,7 @@ const MENU: Item[] = [
   { grupo: "Marketing", href: "/admin/descuentos", etiqueta: "Descuentos", permiso: "descuentos.gestionar", icono: Tag },
   { href: "/admin/promociones", etiqueta: "Promociones", permiso: "catalogo.editar", icono: Sparkles },
   { href: "/admin/banners", etiqueta: "Banners", permiso: "catalogo.editar", icono: ImageIcon },
-  // fase 13b/16b: Novedades · 16c: Popup · 17: Pedidos · 19: Cupones · 21: Usuarios · 21b: Estadísticas
+  // fase 13b/12e: Novedades · 12f: Popup · 17: Pedidos · 19: Cupones · 21: Usuarios · 21b: Estadísticas
 ];
 
 export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {

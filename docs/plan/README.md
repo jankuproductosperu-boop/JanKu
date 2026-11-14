@@ -51,6 +51,7 @@ Estado: **pendiente de aprobación del dueño.** Nada de este plan se ha impleme
 | 12b | [Panel: barra lateral izquierda, estilo y Resumen](fases/fase-12b-panel-estructura.md) | Medio | Sonnet | 1 | 1 h | Panel rediseñado; catálogo en rutas propias |
 | 12c | [Panel: lista y formulario de productos](fases/fase-12c-panel-productos.md) | Medio | Sonnet | 1–2 | 1 h | Tabla con búsqueda y filtros; formulario en página propia |
 | 12d | [Panel: restilo del resto de pantallas](fases/fase-12d-panel-restilo.md) | Bajo | Sonnet | 1–2 | 45 min | Colores y tarjetas del panel |
+| 12e | [Novedades de la semana](fases/fase-12e-novedades.md) | Bajo | Sonnet | 1 | 30 min | Sección «Novedades» en el inicio y etiqueta «Nuevo» (solo con productos marcados) |
 | 13 | [Inventario con movimientos](fases/fase-13-inventario-movimientos.md) | ⚠️ Alto · migración 002 | Superior + Sonnet | 2 | 1 h | Formulario de stock del panel |
 | 14 | [Precios y carrito](fases/fase-14-precios-y-carrito.md) | Medio | Sonnet + revisión de pruebas | 1 | 30 min | No |
 | 15 | [Pedidos: backend](fases/fase-15-pedidos-backend.md) | ⚠️ Alto · migración 003 | Superior + Sonnet | 2 | 45 min | No |
@@ -101,6 +102,7 @@ El orden recomendado es lineal. Dependencias **estrictas** (por si hubiera que r
 | 12b | 12 |
 | 12c | 12b |
 | 12d | 12b (y conviene 12c) |
+| 12e | 12c |
 | 13 | 06, 09 (ejecutor de migraciones), 12d |
 | 14 | 05 |
 | 15 | 07, 08, 14 |
@@ -113,7 +115,7 @@ El orden recomendado es lineal. Dependencias **estrictas** (por si hubiera que r
 
 Único adelanto razonable: la **fase 14** puede hacerse en cualquier momento después de la 05.
 
-> **Propuestas posteriores** (13b variantes, 16b novedades, 16c popup, 21b visitas): ver [propuestas-panel.md](propuestas-panel.md). Aún sin archivo de fase.
+> **Propuestas posteriores** (13b variantes, 12e novedades, 12f popup, 21b visitas): ver [propuestas-panel.md](propuestas-panel.md). Aún sin archivo de fase.
 
 ### Migraciones y pasos manuales del dueño
 

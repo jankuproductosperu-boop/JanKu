@@ -219,6 +219,6 @@ pendiente ──► confirmado ──► enviado ──► entregado
 
 **D-57 · Subcategorías: solo la base.** Campo opcional `padre` en `Category`, sin interfaz hasta que el catálogo (hoy ~80–100 productos) lo justifique.
 
-**D-58 · Novedades por fecha.** `nuevoHasta` opcional en `Product`; «novedad» = fecha futura, calculado al consultar, sin tareas programadas. El producto conserva su categoría. *Propuesta 16b.*
+**D-58 · Novedades por fecha.** `nuevoHasta` opcional en `Product`; «novedad» = fecha futura, calculado al consultar, sin tareas programadas. El producto conserva su categoría. *Propuesta 12e.*
 
-**D-59 · Popup de oferta configurable desde el panel:** imagen, texto de botón, destino (producto, categoría, promoción o enlace validado), interruptor activo y fechas opcionales. Se muestra una vez cada 24 h. *Propuesta 16c; cambia lo que ve el público, requiere aprobación explícita (N1-1).*
+**D-59 · Popup de oferta configurable desde el panel:** imagen, texto de botón, destino (producto, categoría, promoción o enlace validado), interruptor activo y fechas opcionales. Se muestra una vez cada 24 h. *Propuesta 12f; cambia lo que ve el público, requiere aprobación explícita (N1-1).*
