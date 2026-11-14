@@ -166,7 +166,7 @@ export function lineaId(productoId: string, varianteId?: string): string;       
 - [ ] Bajar el stock de una variante a 0 en Inventario → la ficha la marca «Agotado»; si todas llegan a 0, el producto sale «Agotado».
 - [ ] Desactivar una variante: desaparece de la ficha pero se conserva su historial.
 - [ ] En móvil, el selector de opciones se usa bien.
-- [ ] Borrar el producto de prueba al terminar (y las imágenes que se hayan subido).
+- [ ] **Desactivar** el producto de prueba al terminar (ya no se puede borrar: tiene historial de stock y responde 409, ver revisión del 2026-11-14).
 
 ## 9. Plan de reversa
 
@@ -186,3 +186,18 @@ export function lineaId(productoId: string, varianteId?: string): string;       
 ## 12. Modelo recomendado
 
 **Modelo superior (Opus)** para la sesión A (transacciones, concurrencia, integridad del stock) y para `CartContext.tsx` en la sesión B. El resto de la sesión B (editor, inventario, tarjetas) puede hacerlo Sonnet en la misma rama. **Revisión del dueño** de `inventory.service.ts`, `product.service.ts` y `CartContext.tsx` antes de fusionar.
+
+## 13. Ajustes tras la revisión del 2026-11-14 (obligatorios)
+
+Lo fusionado en `main` ese día cambia algunas piezas en las que se apoya esta fase. Estos puntos **mandan sobre** lo escrito arriba si se contradicen.
+
+1. **Stock pisado por variante.** Ya existe `stockEsperado` en `PUT /api/products/[id]` y `esperado` en `ajustarStock` (409 `STOCK_CAMBIO` si el stock actual no es el que vio el formulario). Con variantes: cada variante del cuerpo lleva `stockCantidad` **solo si cambió**, junto con su `stockEsperado`; el algoritmo con `variantId` compara `esperado` contra el stock **de la variante**.
+2. **Nunca `$set` del arreglo con stock.** `actualizarProducto` no guarda el `stockCantidad` de las variantes tal como llega: las variantes nuevas nacen con 0 y su stock inicial entra con `ajustarStock` (movimiento «Stock inicial»); los cambios de las existentes, también por `ajustarStock`. El `$set` de `variantes` conserva el `stockCantidad` que ya tenía cada una en la base.
+3. **Variantes omitidas o inventadas → 400** (D-69).
+4. **Permisos por campo.** `exigirPermisosDeCampos` (en `server/auth/guards.ts`) exige `inventario.editar` también cuando el cuerpo trae `variantes`. Se añade `server/auth/guards.ts` a la lista de archivos de la sesión A.
+5. **Cantidad total de solo lectura.** Con variantes, ni el formulario ni la fila de Inventario envían `stockCantidad` del producto (el servidor respondería 409 `USA_VARIANTE`). Se conserva la lógica de «solo lo que cambió» que ya tienen ambos.
+6. **Borrar con historial → 409.** Un producto con movimientos no se borra (`PRODUCTO_CON_HISTORIAL`); ver el checklist.
+7. **Línea base de lint:** 3 errores ya existentes (`react-hooks/set-state-in-effect` en `busqueda/page.tsx`, `CartContext.tsx` y `FavoritesContext.tsx`). Esta fase no los arregla y no debe añadir otros.
+8. **Stock secreto (D-68).** La proyección pública quita `stockCantidad` y `stockMinimo`; cada variante pública lleva `stock` (etiqueta) y nunca su cantidad. `GET /api/admin/products` sigue devolviendo todo. Archivos: `server/services/product.service.ts`, `types/product.ts` y `scripts/smoke.mjs` (comprueba que `stockCantidad` no sale).
+9. **Precios.** `dinero` de `server/validation/common.ts` ya redondea con `redondear2`: úsalo para el precio de la variante.
+10. **Retoque visual del panel (D-70).** En la misma rama, en commits aparte: solo CSS/clases de `app/(admin)/**` y el bloque `.panel` de estilos. Sin cambiar estructura ni textos.
