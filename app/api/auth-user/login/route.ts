@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { firmarUser, ponerCookieUser } from "@/server/auth/session";
 import { validarEmail } from "@/server/auth/validators";
-import { consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit";
+import { anularIntento, consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { obtenerIP } from "@/server/auth/ip";
 import { log } from "@/server/logger";
@@ -13,6 +13,9 @@ import { log } from "@/server/logger";
 // ── Config de bloqueo por CUENTA (independiente del bloqueo por IP) ──────────
 const MAX_INTENTOS_CUENTA = 5;
 const BLOQUEO_CUENTA_MS = 15 * 60 * 1000; // 15 minutos
+
+// Hash bcrypt de un valor aleatorio que nadie conoce: iguala el tiempo de respuesta cuando el email no existe.
+const HASH_FICTICIO = "$2b$12$XPEs8KzRWsDpK3aYvSZWFO15/TocCiDt0zCWtljwRAXEn/4sKgS/i";
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,22 +70,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 3. Buscar usuario ─────────────────────────────────────────────────
+    // ── 3. El intento por IP se cuenta ANTES de comparar ──────────────────
+    // Así una ráfaga en paralelo no prueba más contraseñas que el máximo. Si al final no fue un
+    // fallo de credenciales, se anula (anularIntento) o se borra (acierto): solo cuentan los fallos (D-18).
+    const porIp = await registrarIntento("login-user", "ip", clientIP);
+    if (!porIp.dentroDelLimite) {
+      log.warn("login_user.bloqueado", { ip: clientIP });
+      return NextResponse.json(
+        {
+          error: `Demasiados intentos. Bloqueado por ${porIp.minutosRestantes ?? 15} minutos.`,
+          bloqueado: true,
+        },
+        { status: 429, headers: SECURITY_HEADERS }
+      );
+    }
+
+    // ── 4. Buscar usuario ─────────────────────────────────────────────────
     await connectDB();
     const user = await User.findOne({ email: email.toLowerCase().trim(), activo: true });
 
-    // Mismo mensaje si no existe el usuario o la contraseña es incorrecta
-    // — evita enumeración de usuarios
+    // Mismo mensaje y mismo coste (bcrypt contra un hash ficticio) si no existe el usuario
+    // o la contraseña es incorrecta — evita enumeración de usuarios
     if (!user) {
-      const restantes = await registrarFalloIP();
+      await bcrypt.compare(password, HASH_FICTICIO);
       return NextResponse.json(
-        { error: "Credenciales incorrectas", intentosRestantes: restantes },
+        { error: "Credenciales incorrectas", intentosRestantes: porIp.restantes },
         { status: 401, headers: SECURITY_HEADERS }
       );
     }
 
-    // ── 4. Verificar si la CUENTA está bloqueada (independiente de la IP) ──
+    // ── 5. Verificar si la CUENTA está bloqueada (independiente de la IP) ──
     if (user.bloqueadoHasta && user.bloqueadoHasta.getTime() > Date.now()) {
+      await anularIntento("login-user", "ip", clientIP); // como antes: no cuenta como fallo de IP
       const tiempoRestante = Math.ceil((user.bloqueadoHasta.getTime() - Date.now()) / 1000 / 60);
       log.warn("login_user.cuenta_bloqueada", { id: user._id.toString(), ip: clientIP });
       return NextResponse.json(
@@ -94,35 +113,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── 5. Verificar contraseña ───────────────────────────────────────────
+    // ── 6. Verificar contraseña ───────────────────────────────────────────
     const passwordValida = await bcrypt.compare(password, user.password);
     if (!passwordValida) {
-      const restantes = await registrarFalloIP();
-
-      // Incrementar intentos fallidos de LA CUENTA
-      const nuevosIntentos = (user.intentosFallidos || 0) + 1;
-      const actualizacion: Record<string, unknown> = { intentosFallidos: nuevosIntentos };
-      if (nuevosIntentos >= MAX_INTENTOS_CUENTA) {
-        actualizacion.bloqueadoHasta = new Date(Date.now() + BLOQUEO_CUENTA_MS);
+      // Fallos de LA CUENTA con $inc atómico: dos fallos simultáneos cuentan dos.
+      const tras = await User.findByIdAndUpdate(
+        user._id,
+        { $inc: { intentosFallidos: 1 } },
+        { new: true }
+      )
+        .select("intentosFallidos")
+        .lean<{ intentosFallidos?: number }>();
+      if ((tras?.intentosFallidos ?? 0) >= MAX_INTENTOS_CUENTA) {
+        await User.updateOne({ _id: user._id }, { bloqueadoHasta: new Date(Date.now() + BLOQUEO_CUENTA_MS) });
         log.warn("login_user.cuenta_bloqueada_ahora", { id: user._id.toString() });
       }
-      await User.findByIdAndUpdate(user._id, actualizacion);
 
       return NextResponse.json(
-        { error: "Credenciales incorrectas", intentosRestantes: restantes },
+        { error: "Credenciales incorrectas", intentosRestantes: porIp.restantes },
         { status: 401, headers: SECURITY_HEADERS }
       );
     }
 
-    // ── 6. Verificar que el email esté confirmado ─────────────────────────
+    // ── 7. Verificar que el email esté confirmado ─────────────────────────
     if (!user.emailVerificado) {
+      await anularIntento("login-user", "ip", clientIP); // contraseña correcta: no es un fallo
       return NextResponse.json(
         { error: "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja." },
         { status: 403, headers: SECURITY_HEADERS }
       );
     }
 
-    // ── 7. Login exitoso — resetear TODO (IP y cuenta) ──────────────────────
+    // ── 8. Login exitoso — resetear TODO (IP y cuenta) ──────────────────────
     await reiniciar("login-user", "ip", clientIP);
     await User.findByIdAndUpdate(user._id, {
       ultimoAcceso: new Date(),

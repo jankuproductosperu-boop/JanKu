@@ -175,6 +175,23 @@ export async function registrarIntento(politica: Politica, tipo: TipoClave, valo
   };
 }
 
+/**
+ * Deshace un intento contado por adelantado que al final no fue un fallo de credenciales
+ * (p. ej. contraseña correcta pero email sin verificar). Atómico; si el bloqueo lo había
+ * provocado solo ese intento, también lo quita.
+ */
+export async function anularIntento(politica: Politica, tipo: TipoClave, valor: string): Promise<void> {
+  const r = regla(politica, tipo);
+  await connectDB();
+  const etapas: Record<string, unknown>[] = [
+    { $set: { count: { $max: [0, { $subtract: [{ $ifNull: ["$count", 0] }, 1] }] } } },
+  ];
+  if (r.bloqueoMs !== undefined) {
+    etapas.push({ $set: { blockedUntil: { $cond: [{ $lt: ["$count", r.max] }, null, "$blockedUntil"] } } });
+  }
+  await RateLimit.updateOne({ key: clave(politica, tipo, valor) }, etapas, { updatePipeline: true });
+}
+
 /** Borra el contador. Tras un login correcto. */
 export async function reiniciar(politica: Politica, tipo: TipoClave, valor: string): Promise<void> {
   regla(politica, tipo);
