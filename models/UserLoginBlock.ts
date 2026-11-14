@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 // ── Rate limiting para login de usuarios ─────────────────────────────────────
 const UserLoginBlockSchema = new Schema({

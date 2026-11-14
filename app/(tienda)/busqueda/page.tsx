@@ -127,7 +127,7 @@ function BusquedaContent() {
         </h1>
         {query && (
           <p className="text-sm md:text-base text-gray-600">
-            Mostrando resultados para: <span className="font-semibold">"{query}"</span>
+            Mostrando resultados para: <span className="font-semibold">&quot;{query}&quot;</span>
           </p>
         )}
         <div className="flex items-center justify-between mt-3">

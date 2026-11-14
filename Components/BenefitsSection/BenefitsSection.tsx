@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, Users } from 'lucide-react';
-import Image from 'next/image';
 
 export default function IntroJanKuSection({ 
   marca = 'JanKu',

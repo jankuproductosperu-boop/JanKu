@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="w-full bg-[#21275A] text-white pt-16 pb-6 px-6 relative">
@@ -25,24 +27,24 @@ export default function Footer() {
           <h3 className="text-lg font-semibold mb-4">Enlaces Rápidos</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="/" className="hover:text-gray-300">
+              <Link href="/" className="hover:text-gray-300">
                 Inicio
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="/promociones" className="hover:text-gray-300">
+              <Link href="/promociones" className="hover:text-gray-300">
                 Promociones
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="/nosotros" className="hover:text-gray-300">
+              <Link href="/nosotros" className="hover:text-gray-300">
                 Sobre Nosotros
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="/contacto" className="hover:text-gray-300">
+              <Link href="/contacto" className="hover:text-gray-300">
                 Contáctanos
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
