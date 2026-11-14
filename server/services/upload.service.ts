@@ -103,7 +103,7 @@ export async function subirImagenes(args: {
   const productoSlug = generateSlug(args.producto?.nombre || "producto");
   if (entidad === "producto") tags.push(categoria, productoSlug);
 
-  const resultados = await Promise.all(
+  const intentos = await Promise.allSettled(
     preparadas.map(async (buffer, index) => {
       let publicId: string;
       if (entidad === "banner") {
@@ -125,6 +125,15 @@ export async function subirImagenes(args: {
       };
     }),
   );
+
+  // Si alguna falla, se borran las que sí subieron: el cliente recibe solo el error y no las conocerá.
+  const fallida = intentos.find((r): r is PromiseRejectedResult => r.status === "rejected");
+  if (fallida) {
+    const subidas = intentos.flatMap((r) => (r.status === "fulfilled" ? [r.value.public_id] : []));
+    await Promise.allSettled(subidas.map((id) => deleteFromCloudinary(id)));
+    throw fallida.reason;
+  }
+  const resultados = intentos.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
 
   log.info("imagenes_subidas", { entidad, cantidad: resultados.length });
   return resultados;
