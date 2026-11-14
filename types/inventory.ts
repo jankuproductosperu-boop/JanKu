@@ -9,6 +9,8 @@ export type StockMovement = {
   stockDespues: number;
   motivo?: string;
   orderId?: string;
+  variantId?: string;
+  varianteEtiqueta?: string; // guardada al momento: si luego se renombra el valor, el historial no cambia
   adminId?: string;
   adminNombre?: string;
   createdAt: string;

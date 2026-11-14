@@ -45,9 +45,32 @@ export interface IProduct extends Document {
   ordenHome: number;                       // orden dentro de la página de inicio
   ordenPorCategoria?: Map<string, number>; // orden independiente por cada categoría (clave = slug)
 
+  // ── Variantes (fase 13b, D-60) ───────────────────────────────────────────
+  opciones?: { nombre: string; valores: string[] }[];
+  variantes?: {
+    _id: mongoose.Types.ObjectId;
+    combinacion: Map<string, string>;
+    stockCantidad: number;
+    precio?: number;
+    imagen?: string;
+    sku?: string;
+    activo: boolean;
+  }[];
+
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Sub-esquemas de variantes. `_id` propio y estable en cada variante (lo usan carrito, pedidos y movimientos).
+const OpcionSchema = new Schema({ nombre: { type: String, required: true }, valores: [{ type: String }] }, { _id: false });
+const VarianteSchema = new Schema({
+  combinacion: { type: Map, of: String, required: true },
+  stockCantidad: { type: Number, default: 0, min: 0 },
+  precio: { type: Number, min: 0 },
+  imagen: { type: String },
+  sku: { type: String },
+  activo: { type: Boolean, default: true },
+});
 
 const ProductSchema = new Schema<IProduct>(
   {
@@ -93,6 +116,11 @@ const ProductSchema = new Schema<IProduct>(
     // ── Orden manual (nuevo) ─────────────────────────────────────────────────
     ordenHome: { type: Number, default: 0 },
     ordenPorCategoria: { type: Map, of: Number, default: {} },
+
+    // ── Variantes (fase 13b) ─────────────────────────────────────────────────
+    // default undefined: los productos sin variantes no ganan claves nuevas (N1-1, N1-6).
+    opciones: { type: [OpcionSchema], default: undefined },
+    variantes: { type: [VarianteSchema], default: undefined },
   },
   {
     timestamps: true,

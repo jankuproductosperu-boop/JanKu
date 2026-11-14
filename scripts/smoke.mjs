@@ -85,6 +85,20 @@ const CHECKS = [
       return fugas.length ? `el cuerpo contiene ${fugas.join(", ")}` : true;
     },
   },
+  // Fase 13b (D-68): la cantidad exacta de stock es secreta
+  {
+    nombre: "GET /api/products sin stockCantidad ni stockMinimo", metodo: "GET", ruta: "/api/products",
+    espera: (res, texto) => {
+      const base = esArregloJson(res, texto);
+      if (base !== true) return base;
+      const fugas = ["\"stockCantidad\"", "\"stockMinimo\"", "\"precioCosto\"", "\"sku\""].filter((c) => texto.includes(c));
+      return fugas.length ? `el cuerpo contiene ${fugas.join(", ")}` : true;
+    },
+  },
+  {
+    nombre: "POST /api/admin/inventory/adjust con variantId (sin cookie)", metodo: "POST",
+    ruta: "/api/admin/inventory/adjust", cuerpo: { variantId: "000000000000000000000000" }, espera: estado(401),
+  },
 ];
 
 async function main() {

@@ -1,5 +1,22 @@
 export type StockEstado = "Disponible" | "Limitado" | "Agotado";
 
+/** Eje libre de variantes, p. ej. { nombre: "Color", valores: ["Negro", "Rosado"] } (D-60). */
+export type ProductoOpcion = { nombre: string; valores: string[] };
+
+/** Variante completa, tal como la ve el panel. */
+export type ProductoVariante = {
+  _id: string; // id estable: lo usan carrito, pedidos y movimientos
+  combinacion: Record<string, string>; // { Color: "Negro", Talla: "M" }
+  stockCantidad: number;
+  precio?: number; // si falta, hereda el del producto
+  imagen?: string; // public_id de Cloudinary, uno de los del producto
+  sku?: string;
+  activo: boolean;
+};
+
+/** Variante en la tienda: sin cantidad exacta ni sku (D-68); solo activas; etiqueta calculada en el servidor. */
+export type ProductoVariantePublica = Omit<ProductoVariante, "stockCantidad" | "sku"> & { stock: StockEstado };
+
 export type Product = {
   _id: string;
   nombre: string;
@@ -31,16 +48,23 @@ export type Product = {
   metaDescripcion?: string;
   metaImagen?: string;
   codigo?: string;
-  stockCantidad?: number;
-  stockMinimo?: number;
   activo?: boolean;
+  opciones?: ProductoOpcion[];
+  variantes?: ProductoVariantePublica[];
   ordenHome?: number;
   ordenPorCategoria?: Record<string, number>;
   createdAt?: string;
   updatedAt?: string;
 };
 
-export type ProductAdmin = Product & { precioCosto?: number; proveedor?: string };
+// La cantidad exacta de stock solo la ve el panel (D-68).
+export type ProductAdmin = Omit<Product, "variantes"> & {
+  precioCosto?: number;
+  proveedor?: string;
+  stockCantidad?: number;
+  stockMinimo?: number;
+  variantes?: ProductoVariante[];
+};
 export type ProductInput = Omit<
   ProductAdmin,
   "_id" | "slug" | "codigoUrl" | "createdAt" | "updatedAt" | "ordenHome" | "ordenPorCategoria"

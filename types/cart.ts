@@ -8,4 +8,6 @@ export type CartItem = {
   codigoUrl?: string;
   cantidad: number;
   tipo?: CartItemTipo;
+  varianteId?: string;
+  varianteEtiqueta?: string;
 };
