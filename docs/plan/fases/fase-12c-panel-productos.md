@@ -27,20 +27,21 @@ Todo dentro de `app/(admin)/admin/`.
 | Crear | `_components/ProductosLista.tsx` | Tabla, buscador, filtros, orden, paginación, acciones masivas |
 | Crear | `_components/ProductoForm.tsx` | El formulario actual de `ProductosTab`, movido tal cual y reorganizado en tarjetas (Datos básicos · Imágenes · Publicación · Categoría) |
 | Eliminar | `_components/ProductosTab.tsx` | Su contenido se reparte entre los dos nuevos |
+| Modificar | `_components/useAdminData.ts` | Añade el indicador `cargado` (la página de edición lo necesita para distinguir «cargando» de «no existe») |
 | Modificar | `_components/AdminTopbar.tsx` | El buscador de la barra superior lleva a `/admin/productos?q=…` |
 
 ## 4. Pasos de implementación
 
 1. `ProductoForm.tsx`: **mover** estado, handlers y campos de `ProductosTab` sin cambiar lógica, URLs ni textos de `alert`/`confirm`. Solo cambia el contenedor visual. Tras guardar o borrar: `router.push("/admin/productos")`.
 2. `ProductosLista.tsx`, **todo en el navegador** (la lista ya llega completa desde `/api/admin/products`; no se añade API):
-   - Búsqueda por nombre, etiquetas y código (sin distinguir mayúsculas ni tildes). El texto vive en `?q=`.
+   - Búsqueda por nombre, etiquetas y código (sin distinguir mayúsculas ni tildes). El buscador de la barra superior la abre con `?q=`; lo que se escribe después en la propia lista no se guarda en la URL.
    - Filtros: categoría (por `categoriaSlugs`), estado (activo/inactivo), stock (`Disponible`/`Limitado`/`Agotado`).
    - Orden: más recientes (`createdAt`), nombre, precio.
    - Paginación de 20 (igual que hoy).
    - Columnas: miniatura, nombre, categoría, precio, estado de stock, interruptor de activo, botón Editar.
-   - Acciones masivas con casillas: **Activar**, **Desactivar**, **Cambiar categoría**. Cada una llama al `PUT /api/products/[id]` existente, producto por producto, y muestra el resultado ("12 actualizados, 1 con error"). Sin endpoint nuevo.
+   - Acciones masivas con casillas: **Activar**, **Desactivar**, **Cambiar categoría** (desplegable; pide confirmación porque reemplaza las categorías del producto). Cada una llama al `PUT /api/products/[id]` existente, producto por producto, y muestra el resultado ("12 actualizados, 1 con error"). Sin endpoint nuevo.
    - Interruptor de activo por fila: `PUT /api/products/[id]` con `{ activo }`.
-3. `Exportar CSV` reutiliza la función de `inventario/page.tsx` **copiándola**, sin tocar ese archivo.
+3. `Exportar CSV` sigue el mismo formato de `inventario/page.tsx` (separador `;`, BOM para Excel) pero **sin columnas de costo ni proveedor**: Código, Nombre, Categoría, Precio, Stock, Activo. Sin tocar ese archivo.
 4. El buscador de la barra superior hace `router.push("/admin/productos?q=" + encodeURIComponent(q))`.
 5. Estilos con los tokens de la 12b; mismos estados vacíos y de carga que hoy.
 6. typecheck, lint, test, build, smoke. Ejecutar la fase 00.

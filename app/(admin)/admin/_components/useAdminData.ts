@@ -8,6 +8,7 @@ export function useAdminData() {
   const [banners, setBanners] = useState<BannerConPosicion[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [cargado, setCargado] = useState(false);
 
   const loadProducts = async () => {
     try { const res = await fetch("/api/admin/products"); const d = await res.json(); setProducts(Array.isArray(d) ? d : []); }
@@ -29,9 +30,10 @@ export function useAdminData() {
   useEffect(() => {
     const cargarTodo = async () => {
       await Promise.all([loadProducts(), loadBanners(), loadCategories(), loadPromotions()]);
+      setCargado(true);
     };
     cargarTodo();
   }, []);
 
-  return { products, banners, categories, promotions, loadProducts, loadBanners, loadCategories, loadPromotions };
+  return { cargado, products, banners, categories, promotions, loadProducts, loadBanners, loadCategories, loadPromotions };
 }
