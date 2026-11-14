@@ -9,3 +9,4 @@ export * from "./admin";
 export * from "./api";
 
 export * from "./popup";
+export * from "./inventory";

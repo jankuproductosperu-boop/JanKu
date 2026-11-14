@@ -11,10 +11,12 @@ import {
   X,
   Pencil,
   CheckCircle,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { invalidateCachePattern } from "@/lib/cache";
 import type { ProductAdmin, Category, StockEstado } from "@/types";
+import MovimientosModal from "@/app/(admin)/admin/_components/MovimientosModal";
 
 type ProductoInventario = ProductAdmin & { stock: StockEstado };
 
@@ -125,6 +127,7 @@ export default function InventarioPage() {
   const [guardando, setGuardando] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState("");
   const [savedFlashId, setSavedFlashId] = useState<string | null>(null);
+  const [movimientosDe, setMovimientosDe] = useState<{ _id: string; nombre: string } | null>(null);
 
   const loadData = async () => {
     try {
@@ -568,6 +571,15 @@ export default function InventarioPage() {
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                             )}
+                            {!editando && (
+                              <button
+                                onClick={() => setMovimientosDe({ _id: p._id, nombre: p.nombre })}
+                                className="p-1.5 bg-[var(--line)] text-[var(--ink)] rounded hover:opacity-80 transition"
+                                title="Movimientos"
+                              >
+                                <History className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -597,6 +609,7 @@ export default function InventarioPage() {
           </div>
         </div>
       </div>
+      {movimientosDe && <MovimientosModal producto={movimientosDe} onCerrar={() => setMovimientosDe(null)} />}
     </div>
   );
 }

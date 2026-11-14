@@ -1,9 +1,12 @@
 import "server-only";
+import mongoose from "mongoose";
 import { connectDB } from "@/server/db";
 import { conflicto, noEncontrado } from "@/server/http/errors";
 import { extractCodigoUrl } from "@/lib/productUrl";
 import { estadoDeStock } from "@/lib/stock";
 import Product from "@/models/Product";
+import StockMovement from "@/models/StockMovement";
+import { ajustarStock } from "@/server/services/inventory.service";
 import type { Product as ProductTipo, ProductAdmin, ProductInput } from "@/types";
 
 function plano<T>(doc: unknown): T {
@@ -79,52 +82,117 @@ export async function obtenerProductoPorSlug(slugParam: string): Promise<Product
   return producto ? plano<ProductAdmin>(producto) : null;
 }
 
-export async function crearProducto(datos: ProductInput): Promise<ProductAdmin> {
+export type ActorAdmin = { adminId: string };
+
+function errorDuplicado(error: unknown): never {
+  const err = error as { code?: number; keyPattern?: Record<string, unknown> };
+  if (err?.code === 11000) {
+    const campo = err.keyPattern ? Object.keys(err.keyPattern)[0] : "campo";
+    const nombreCampo = campo === "codigo" ? "código" : campo === "slug" ? "nombre/slug" : campo;
+    throw conflicto(
+      `Ya existe otro producto con ese mismo ${nombreCampo}. Usa uno diferente.`,
+      "DUPLICADO",
+    );
+  }
+  throw error;
+}
+
+export async function crearProducto(datos: ProductInput, actor?: ActorAdmin): Promise<ProductAdmin> {
   await connectDB();
-  const producto = await Product.create(datos);
-  return plano<ProductAdmin>(producto);
+  await StockMovement.init();
+  const cantidad = Number(datos.stockCantidad ?? 0);
+  const minimo = Number(datos.stockMinimo ?? 5);
+
+  const session = await mongoose.startSession();
+  try {
+    let creado: unknown;
+    await session.withTransaction(async () => {
+      // El texto `stock` lo deriva el modelo de la cantidad; nunca se toma del cliente.
+      const [producto] = await Product.create(
+        [{ ...datos, stockCantidad: cantidad, stockMinimo: minimo }],
+        { session },
+      );
+      if (cantidad > 0) {
+        await StockMovement.create(
+          [
+            {
+              productId: producto._id,
+              tipo: "entrada",
+              cantidad,
+              stockAntes: 0,
+              stockDespues: cantidad,
+              motivo: "Stock inicial",
+              adminId: actor?.adminId,
+            },
+          ],
+          { session },
+        );
+      }
+      creado = producto;
+    });
+    return plano<ProductAdmin>(creado);
+  } catch (error: unknown) {
+    return errorDuplicado(error);
+  } finally {
+    await session.endSession();
+  }
 }
 
 export async function actualizarProducto(
   id: string,
   datos: Partial<ProductInput>,
+  actor?: ActorAdmin,
 ): Promise<ProductAdmin> {
   await connectDB();
-  const cambios: Partial<ProductInput> = { ...datos };
+  await StockMovement.init();
 
-  // findByIdAndUpdate NO dispara el hook pre('validate') del modelo, así que si
-  // vienen cambios de inventario se recalcula aquí la etiqueta de stock.
-  if (datos.stockCantidad !== undefined || datos.stockMinimo !== undefined) {
-    const actual = await Product.findById(id).select("stockCantidad stockMinimo").lean();
-    const cantidad =
-      datos.stockCantidad !== undefined ? Number(datos.stockCantidad) : (actual?.stockCantidad ?? 0);
-    const minimo =
-      datos.stockMinimo !== undefined ? Number(datos.stockMinimo) : (actual?.stockMinimo ?? 5);
-    cambios.stock = estadoDeStock(cantidad, minimo);
-  }
+  const { stockCantidad, stockMinimo, ...resto } = datos;
+  const cambios: Record<string, unknown> = { ...resto };
+  // El texto `stock` jamás se escribe desde fuera: se deriva siempre de la cantidad (N1-5).
+  delete cambios.stock;
+  if (stockMinimo !== undefined) cambios.stockMinimo = Number(stockMinimo);
+  // Solo se recalcula la etiqueta si la petición toca cantidad o mínimo.
+  const tocaStock = stockCantidad !== undefined || stockMinimo !== undefined;
 
-  let actualizado;
+  const session = await mongoose.startSession();
   try {
-    actualizado = await Product.findByIdAndUpdate(
-      id,
-      { $set: cambios },
-      { new: true, runValidators: true },
-    ).lean();
-  } catch (error: unknown) {
-    const err = error as { code?: number; keyPattern?: Record<string, unknown> };
-    if (err?.code === 11000) {
-      const campo = err.keyPattern ? Object.keys(err.keyPattern)[0] : "campo";
-      const nombreCampo = campo === "codigo" ? "código" : campo === "slug" ? "nombre/slug" : campo;
-      throw conflicto(
-        `Ya existe otro producto con ese mismo ${nombreCampo}. Usa uno diferente.`,
-        "DUPLICADO",
-      );
-    }
-    throw error;
-  }
+    let resultado: unknown;
+    await session.withTransaction(async () => {
+      const existe = await Product.findById(id).select("_id").session(session).lean();
+      if (!existe) throw noEncontrado("Producto");
 
-  if (!actualizado) throw noEncontrado("Producto");
-  return plano<ProductAdmin>(actualizado);
+      if (Object.keys(cambios).length > 0) {
+        await Product.findByIdAndUpdate(id, { $set: cambios }, { runValidators: true, session });
+      }
+
+      // La cantidad solo cambia por inventory.service (deja movimiento). Si es igual, no hace nada.
+      if (stockCantidad !== undefined) {
+        await ajustarStock({
+          productId: id,
+          modo: "fijar",
+          cantidad: Number(stockCantidad),
+          motivo: "Edición desde el panel",
+          actor,
+          session,
+        });
+      }
+
+      if (tocaStock) {
+        const fin = await Product.findById(id).select("stockCantidad stockMinimo stock").session(session).lean();
+        const estado = estadoDeStock(fin?.stockCantidad ?? 0, fin?.stockMinimo ?? 5);
+        if (fin && fin.stock !== estado) {
+          await Product.updateOne({ _id: id }, { $set: { stock: estado } }).session(session);
+        }
+      }
+
+      resultado = await Product.findById(id).session(session).lean();
+    });
+    return plano<ProductAdmin>(resultado);
+  } catch (error: unknown) {
+    return errorDuplicado(error);
+  } finally {
+    await session.endSession();
+  }
 }
 
 export async function eliminarProducto(id: string): Promise<void> {

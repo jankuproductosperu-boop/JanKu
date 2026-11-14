@@ -34,8 +34,11 @@ Va antes de los pedidos porque confirmar un pedido (fase 17) descuenta stock a t
 | Modificar | `server/services/product.service.ts` | `crearProducto` y `actualizarProducto` reciben `actor`; el stock va por `inventory.service` |
 | Modificar | `server/validation/product.schema.ts` | Quitar `stock` de `productoCrearSchema` |
 | Modificar | `app/api/products/route.ts`, `app/api/products/[id]/route.ts` | Pasan `actor: { adminId: admin.id }` al servicio |
-| Modificar | `app/(admin)/admin/_components/ProductosTab.tsx` | Campos de cantidad y mínimo en lugar del selector de stock |
-| Modificar | `app/(admin)/admin/inventario/page.tsx` | Botón y modal "Movimientos" |
+| Modificar | `app/(admin)/admin/_components/ProductoForm.tsx` | Campos de cantidad y mínimo en lugar del selector de stock (antes `ProductosTab.tsx`, que la fase 12c reemplazó) |
+| Modificar | `app/(admin)/admin/inventario/page.tsx` | Botón "Movimientos" por fila |
+| Crear | `app/(admin)/admin/_components/MovimientosModal.tsx` | El modal de solo lectura |
+| Modificar | `lib/stock.ts` + `lib/__tests__/stock.test.ts` | `stockResultante` y `tipoPorDefecto` (puras, con pruebas) |
+| Modificar | `scripts/smoke.mjs` | Las dos comprobaciones de la sección 4, paso 11 |
 
 ## 4. Pasos de implementación
 
@@ -53,7 +56,7 @@ Va antes de los pedidos porque confirmar un pedido (fase 17) descuenta stock a t
    - Ninguna ruta acepta ya `stock` del cliente.
 6. Esquema: quitar `stock` de `productoCrearSchema` (al no ser `.strict()`, si el panel antiguo lo envía se descarta sin error).
 7. Rutas nuevas de inventario.
-8. `ProductosTab.tsx`: quitar el `<select name="stock">`; añadir dos `<input type="number" min="0" step="1">` con etiquetas "Cantidad en stock" y "Stock mínimo (aviso de 'Limitado')". En `form` inicial: `stockCantidad: ""`, `stockMinimo: "5"`. En `handleSelect`: cargarlos del producto. En `productData`: enviar `stockCantidad: Number(form.stockCantidad || 0)`, `stockMinimo: Number(form.stockMinimo || 5)` y **dejar de enviar** `stock`. Mostrar junto a los campos la etiqueta resultante con `estadoDeStock()` de `@/lib/stock` (solo informativa).
+8. `ProductoForm.tsx` (antes `ProductosTab.tsx`): quitar el `<select name="stock">`; añadir dos `<input type="number" min="0" step="1">` con etiquetas "Cantidad en stock" y "Stock mínimo (aviso de 'Limitado')". En `form` inicial: `stockCantidad: ""`, `stockMinimo: "5"`. En `handleSelect`: cargarlos del producto. En `productData`: enviar `stockCantidad: Number(form.stockCantidad || 0)`, `stockMinimo: Number(form.stockMinimo || 5)` y **dejar de enviar** `stock`. Mostrar junto a los campos la etiqueta resultante con `estadoDeStock()` de `@/lib/stock` (solo informativa).
 9. `inventario/page.tsx`: junto a cada producto, botón "Movimientos" que abre un modal con `GET /api/admin/inventory/movements?productId=…` (fecha, tipo, cantidad con signo, antes → después, motivo, quién). Solo lectura. La edición en línea existente sigue usando `PUT /api/products/[id]` (que ahora registra el movimiento).
 10. `002-product-defaults.mjs` con `_runner.mjs`. Probar **solo en simulación**.
 11. Smoke: `GET /api/admin/inventory/movements` y `POST /api/admin/inventory/adjust` sin cookie → 401.
@@ -163,3 +166,14 @@ export const ajusteStockSchema = z.object({
 ## 11. Modelo recomendado
 
 **Modelo superior (Opus)** para `inventory.service.ts` y los cambios de `product.service.ts` (transacciones y concurrencia). El resto (formulario, modal, migración) puede hacerlo **Sonnet** en la misma rama. En todo caso, **revisión del dueño** del servicio y de la salida simulada de la 002 antes de fusionar.
+
+---
+
+## Notas de implementación (decisiones tomadas al ejecutar)
+
+- **Transacciones:** `ajustarStock`, `crearProducto` y `actualizarProducto` usan `session.withTransaction` (reintenta solo ante conflictos transitorios). Antes de la primera transacción se llama a `StockMovement.init()` para que la colección y sus índices existan.
+- **Escritura condicional con campo ausente:** el filtro usa `stockCantidad: <valor> ?? null`, que también casa con productos antiguos a los que aún les falta el campo (antes de aplicar la migración 002).
+- **Etiqueta de stock:** se recalcula **solo si la petición trae `stockCantidad` o `stockMinimo`**. Una petición que no los trae (activar/desactivar, novedades, editar un texto) no cambia la etiqueta. El formulario de producto sí los envía siempre, de modo que guardar un producto desde el formulario recalcula su etiqueta desde la cantidad (se acepta: P13, las cantidades antiguas eran estimaciones).
+- **Libro inmutable:** además de no existir ningún `update`/`delete` en el código, el esquema de `StockMovement` lanza un error ante cualquier operación de modificación o borrado.
+- **Migración 002 creada pero no ejecutada** por el modelo (N1-8). Simulación y `--apply`: solo el dueño.
+- **C3 (producto nuevo nace «Agotado»):** confirmado por lectura del código: el modelo tiene `stockCantidad` con valor por defecto 0 y el hook `pre('validate')` deriva `stock` de esa cantidad, ignorando la etiqueta elegida. Con esta fase el producto nace con la etiqueta que corresponde a la cantidad indicada.
