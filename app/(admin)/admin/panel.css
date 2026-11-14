@@ -1,0 +1,47 @@
+/* Tokens del panel admin. Todo acotado a .panel: no afecta a la tienda (N1-1). */
+.panel {
+  --bg: #f3f4fa;
+  --surface: #ffffff;
+  --ink: #1b1e3a;
+  --muted: #5f648a;
+  --line: #e4e6f2;
+  --navy: #2c2c6c;
+  --navy-ink: #dce0ff;
+  --navy-mute: #a9aee0;
+  --accent: #4f46e5;
+  --accent-soft: #e9e8fc;
+  --ok: #15803d;
+  --ok-soft: #dcf3e4;
+  --warn: #b45309;
+  --warn-soft: #fdebc8;
+  --bad: #b91c1c;
+  --bad-soft: #fbdada;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Tema oscuro: tokens listos; el botón que lo activa llega en la fase 12d. */
+.panel[data-theme="dark"] {
+  --bg: #12142b;
+  --surface: #1b1f42;
+  --ink: #ecefff;
+  --muted: #9a9fc9;
+  --line: #2d325f;
+  --navy: #161a3e;
+  --navy-ink: #ecefff;
+  --navy-mute: #9a9fc9;
+  --accent: #8b85ff;
+  --accent-soft: #2a2d63;
+  --ok: #6ee7a0;
+  --ok-soft: #173b2a;
+  --warn: #fbbf4d;
+  --warn-soft: #44340f;
+  --bad: #fca5a5;
+  --bad-soft: #4a1d24;
+}
+
+.panel :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

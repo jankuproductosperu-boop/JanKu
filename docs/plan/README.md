@@ -48,7 +48,7 @@ Estado: **pendiente de aprobación del dueño.** Nada de este plan se ha impleme
 | 10 | [API admin y proyección pública](fases/fase-10-api-admin-y-proyeccion-publica.md) | ⚠️ Alto | Sonnet + revisión | 1 | 45 min | Inactivos ocultos en tienda |
 | 11 | [Subida a Cloudinary](fases/fase-11-subida-cloudinary.md) | Medio | Sonnet | 1 | 30 min | Panel rechaza no-imágenes |
 | 12 | [Dividir panel admin](fases/fase-12-dividir-panel-admin.md) | Medio | Sonnet | 1–2 | 45 min | Barra de navegación del panel |
-| 12b | [Panel: barra lateral derecha, estilo y Resumen](fases/fase-12b-panel-estructura.md) | Medio | Sonnet | 1 | 1 h | Panel rediseñado; catálogo en rutas propias |
+| 12b | [Panel: barra lateral izquierda, estilo y Resumen](fases/fase-12b-panel-estructura.md) | Medio | Sonnet | 1 | 1 h | Panel rediseñado; catálogo en rutas propias |
 | 12c | [Panel: lista y formulario de productos](fases/fase-12c-panel-productos.md) | Medio | Sonnet | 1–2 | 1 h | Tabla con búsqueda y filtros; formulario en página propia |
 | 12d | [Panel: restilo del resto de pantallas](fases/fase-12d-panel-restilo.md) | Bajo | Sonnet | 1–2 | 45 min | Colores y tarjetas del panel |
 | 13 | [Inventario con movimientos](fases/fase-13-inventario-movimientos.md) | ⚠️ Alto · migración 002 | Superior + Sonnet | 2 | 1 h | Formulario de stock del panel |

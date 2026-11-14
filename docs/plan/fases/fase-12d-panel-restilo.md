@@ -24,6 +24,8 @@ Va antes de la 13 porque ésta modifica la pantalla de Inventario: mejor que ya 
 | Modificar | `app/(admin)/admin/_components/PromocionesTab.tsx` | Solo clases CSS |
 | Modificar | `app/(admin)/admin/_components/BannerImageField.tsx`, `PromocionImageField.tsx`, `ImageUploader.tsx` | Solo clases CSS |
 | Modificar | `app/(admin)/admin/inventario/page.tsx`, `orden/page.tsx`, `descuentos/page.tsx` | Solo clases CSS |
+| Crear | `app/(admin)/admin/_components/useTema.ts` | Tema claro/oscuro: sigue el sistema; la elección se guarda en `localStorage` dentro de `try/catch`. Pone `data-theme` en `.panel` |
+| Modificar | `app/(admin)/admin/_components/AdminTopbar.tsx`, `AdminShell.tsx`, `panel.css` | Botón ◐ de tema; los tokens oscuros ya existen |
 | Crear | `app/(admin)/admin/_components/ui.tsx` | Piezas visuales repetidas: `Card`, `Chip`, `Switch`, `PageHeader`. Solo presentación, sin lógica |
 
 ## 4. Pasos de implementación
@@ -32,7 +34,7 @@ Va antes de la 13 porque ésta modifica la pantalla de Inventario: mejor que ya 
 2. Pantalla por pantalla, en este orden, con commit y comprobación visual tras cada una: Categorías → Banners → Promociones → Inventario → Orden → Descuentos.
 3. En cada pantalla: sustituir contenedores por `Card`, cabecera por `PageHeader`, etiquetas de estado por `Chip` y casillas de activo por `Switch`. **No tocar** handlers, estado, `fetch`, textos de `alert`/`confirm` ni lógica de cálculo (márgenes, orden, tramos).
 4. Sustituir colores sueltos (`bg-purple-600`, `from-orange-500`, degradados por pestaña) por los tokens. Un solo acento (`--accent`); los semánticos solo para estados.
-5. Revisar contraste en claro y oscuro (texto sobre fondo ≥ 4.5:1).
+5. Añadir `useTema` y el botón ◐ **al final**, cuando las seis pantallas ya usan tokens. Revisar contraste en claro y oscuro (texto sobre fondo ≥ 4.5:1).
 6. typecheck, lint, test, build, smoke. Ejecutar la fase 00.
 
 ## 5. Contratos
