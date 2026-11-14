@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, Plus, Download, Pencil, LayoutGrid, List } from "lucide-react";
 import { invalidateCachePattern } from "@/lib/cache";
 import type { ProductAdmin, Category } from "@/types";
+import { esNovedad, fechaNuevoHasta } from "@/lib/novedades";
 import { Chip, Switch } from "@/app/(admin)/admin/_components/ui";
 import { getCloudinaryUrl } from "@/app/(admin)/admin/_components/imageTypes";
 
@@ -208,6 +209,8 @@ export default function ProductosLista({ products, categories, onReload, busqued
           <b className="text-sm">{seleccion.size} seleccionado{seleccion.size !== 1 ? "s" : ""}</b>
           <button disabled={trabajando} onClick={() => aplicarMasivo({ activo: true })} className="rounded-lg bg-[var(--surface)] border border-[var(--line)] px-3 py-1 text-sm font-semibold disabled:opacity-50">Activar</button>
           <button disabled={trabajando} onClick={() => aplicarMasivo({ activo: false })} className="rounded-lg bg-[var(--surface)] border border-[var(--line)] px-3 py-1 text-sm font-semibold disabled:opacity-50">Desactivar</button>
+          <button disabled={trabajando} onClick={() => aplicarMasivo({ nuevoHasta: fechaNuevoHasta() })} className="rounded-lg bg-[var(--surface)] border border-[var(--line)] px-3 py-1 text-sm font-semibold disabled:opacity-50">Marcar como novedad</button>
+          <button disabled={trabajando} onClick={() => aplicarMasivo({ nuevoHasta: null })} className="rounded-lg bg-[var(--surface)] border border-[var(--line)] px-3 py-1 text-sm font-semibold disabled:opacity-50">Quitar novedad</button>
           <select
             aria-label="Cambiar categoría"
             disabled={trabajando}
@@ -235,10 +238,11 @@ export default function ProductosLista({ products, categories, onReload, busqued
                   <input type="checkbox" aria-label={`Seleccionar ${p.nombre}`} checked={seleccion.has(p._id)} onChange={() => alternarUno(p._id)} />
                 </label>
                 {p.activo === false && <span className="absolute top-2 right-2 z-10 rounded-none bg-gray-800/80 px-2 py-0.5 text-[11px] font-semibold text-white">Inactivo</span>}
-                <Link href={`/admin/productos/${p._id}`} className="block aspect-square bg-[var(--accent-soft)]">
+                <Link href={`/admin/productos/${p._id}`} className="relative block aspect-square bg-[var(--accent-soft)]">
                   {(p.imagenUrl || p.imagenPrincipal) && (
                     <img src={p.imagenUrl || getCloudinaryUrl(p.imagenPrincipal || "", 300)} alt={p.nombre} className="w-full h-full object-cover" />
                   )}
+                  {esNovedad(p) && <span className="absolute bottom-2 left-2 rounded-none bg-indigo-600 px-2 py-0.5 text-[11px] font-semibold text-white">Nuevo</span>}
                 </Link>
                 <div className="p-3 space-y-2">
                   <b className="block text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{p.nombre}</b>
@@ -286,6 +290,7 @@ export default function ProductosLista({ products, categories, onReload, busqued
                         <div className="min-w-0">
                           <b className="block truncate max-w-[260px]">{p.nombre}</b>
                           {p.slug && <small className="text-[var(--muted)]">/producto/{p.slug}</small>}
+                          {esNovedad(p) && <div className="mt-0.5"><Chip tono="acento">Nuevo</Chip></div>}
                         </div>
                       </div>
                     </td>

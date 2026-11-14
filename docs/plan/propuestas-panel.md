@@ -5,8 +5,8 @@ Alcance y decisiones ya acordadas con el dueño. **Aún no son fases ejecutables
 | Id | Propuesta | Riesgo | Modelo | Va después de | ¿Cambia la tienda? |
 |---|---|---|---|---|---|
 | **13b** | Variantes opcionales de producto + `padre` opcional en categoría | ⚠️ Alto | **Superior** | 13 | Solo si un producto tiene variantes |
-| **16b** | Novedades de la semana | Bajo | Sonnet | 12c | Sí: sección en el inicio y etiqueta «Nuevo» |
-| **16c** | Popup de oferta con interruptor | Medio | Sonnet | 12d | Sí: ventana al entrar, solo si está activo |
+| **12e** | Novedades de la semana | Bajo | Sonnet | 12c | Sí: sección en el inicio y etiqueta «Nuevo» |
+| **12f** | Popup de oferta con interruptor | Medio | Sonnet | 12d | Sí: ventana al entrar, solo si está activo |
 | **21b** | Visitas y productos más vistos | Medio | Sonnet | 12b | No (el registro es invisible); el Resumen gana tarjetas |
 
 ## 13b · Variantes y categorías escalables
@@ -17,14 +17,16 @@ Alcance y decisiones ya acordadas con el dueño. **Aún no son fases ejecutables
 - **Categorías** (D-57): solo la base. Campo opcional `padre` en `Category`; sin interfaz pública ni en el panel hasta que el catálogo lo pida. Atributos por categoría (capacidad, talla…) quedan descritos pero no se construyen.
 - **Migración**: aditiva (N1-3). Los campos nuevos son opcionales; no hace falta migrar datos.
 
-## 16b · Novedades de la semana
+## 12e · Novedades de la semana
+
+> **Ya tiene su archivo de fase:** [fase-12e-novedades.md](fases/fase-12e-novedades.md). Lo de abajo es el borrador original (la pantalla «Novedades» opcional no se construyó: la gestión es desde Productos).
 
 - Campo opcional `nuevoHasta` (fecha) en `Product`. Si es posterior a hoy, el producto es «novedad»: sin tareas programadas, el estado se calcula al consultar (D-58).
 - Panel: interruptor «Novedad de la semana» en el formulario de producto (rellena `nuevoHasta` = hoy + 7 días) y acción masiva «Marcar como novedad» en la lista. Pantalla «Novedades» opcional con la lista vigente.
 - Tienda: sección «Novedades» en el inicio y etiqueta «Nuevo» en la tarjeta. **El producto no se mueve de su categoría**; aparece además en Novedades.
 - La proyección pública debe exponer `nuevoHasta` (campo opcional añadido, N1-6).
 
-## 16c · Popup de oferta
+## 12f · Popup de oferta
 
 - Colección nueva con un único documento «popup» (D-59): `imagenUrl` (Cloudinary, mismas reglas de subida que los banners), `textoBoton`, `destino` (producto, categoría, promoción o enlace libre), `activo`, `desde`, `hasta` (opcionales).
 - Panel: pantalla «Popup de oferta» con vista previa, selector de destino y interruptor Activo/Inactivo.

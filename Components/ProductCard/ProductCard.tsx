@@ -7,6 +7,7 @@
   import { useCart } from "@/context/CartContext";
   import { useFavorites } from "@/context/FavoritesContext";
   import { buildProductUrl } from "@/lib/productUrl";
+  import { esNovedad } from "@/lib/novedades";
   import type { Product } from "@/types";
 
   // Función inline para no depender de la lib en el cliente directamente
@@ -166,6 +167,17 @@
               } ${getStockColor(product.stock)} text-white rounded-full font-semibold z-10`}
             >
               {product.stock}
+            </div>
+          )}
+
+          {/* Etiqueta Novedad de la semana */}
+          {esNovedad(product) && (
+            <div
+              className={`absolute ${
+                compact ? "bottom-1 left-1 text-[10px] px-1.5 py-0.5" : "bottom-2 left-2 text-xs px-2 py-1"
+              } bg-indigo-600 text-white rounded-full font-semibold z-10`}
+            >
+              Nuevo
             </div>
           )}
 

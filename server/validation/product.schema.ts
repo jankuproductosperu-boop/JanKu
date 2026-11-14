@@ -25,6 +25,7 @@ export const productoCrearSchema = z.object({
   videoUrl: urlOVacio.optional(),
   deliveryHuancayo: z.boolean().optional(),
   mostrarEnHome: z.boolean().optional(),
+  nuevoHasta: z.iso.datetime().nullable().optional(),
   envioGratis: z.boolean().optional(),
   whatsappLink: urlOVacio.optional(),
   whatsappNumero: texto(20).optional(),
