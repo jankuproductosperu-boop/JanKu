@@ -3,6 +3,7 @@
 import { useCart } from "@/context/CartContext";
 import { lineaId } from "@/lib/variantes";
 import { enlaceWhatsAppCarrito } from "@/lib/whatsapp";
+import { SITE } from "@/lib/siteConfig";
 import type { Totales } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
@@ -252,6 +253,14 @@ export default function CarritoPage() {
 
                 {/* Botones - Responsive */}
                 <div className="space-y-2 md:space-y-3">
+                  {SITE.checkoutHabilitado ? (
+                    <Link
+                      href="/checkout"
+                      className="w-full bg-[#2C2C6C] text-white py-3 md:py-4 px-4 md:px-6 rounded-lg font-bold text-base md:text-lg hover:bg-[#241B57] transition flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      Realizar Pedido
+                    </Link>
+                  ) : (
                   <a
                     href={enlaceWhatsAppCarrito({ items: cart, totales })}
                     target="_blank"
@@ -264,6 +273,7 @@ export default function CarritoPage() {
                     <span className="hidden sm:inline">Realizar Pedido</span>
                     <span className="sm:hidden">Pedir por WhatsApp</span>
                   </a>
+                  )}
 
                   <Link
                     href="/"

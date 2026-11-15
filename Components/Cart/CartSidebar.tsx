@@ -3,6 +3,7 @@
 import { useCart } from "@/context/CartContext";
 import { lineaId } from "@/lib/variantes";
 import { enlaceWhatsAppCarrito } from "@/lib/whatsapp";
+import { SITE } from "@/lib/siteConfig";
 import type { Totales } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
@@ -216,6 +217,15 @@ export default function CartSidebar() {
                 Ver Carrito Completo
               </Link>
               
+              {SITE.checkoutHabilitado ? (
+                <Link
+                  href="/checkout"
+                  onClick={toggleCart}
+                  className="w-full bg-[#2C2C6C] text-white py-3 px-4 rounded-lg font-bold hover:bg-[#241B57] transition flex items-center justify-center gap-2"
+                >
+                  Realizar Pedido
+                </Link>
+              ) : (
               <a
                 href={enlaceWhatsAppCarrito({ items: cart, totales })}
                 target="_blank"
@@ -227,6 +237,7 @@ export default function CartSidebar() {
                 </svg>
                 Realizar Pedido
               </a>
+              )}
             </div>
           </div>
         )}

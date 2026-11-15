@@ -104,6 +104,9 @@ const CHECKS = [
   { nombre: "POST /api/orders con {}", metodo: "POST", ruta: "/api/orders", cuerpo: {}, espera: estado(400) },
   { nombre: "GET /api/orders/JK-000000-XXXX?t=x", metodo: "GET", ruta: "/api/orders/JK-000000-XXXX?t=x", espera: estado(404) },
   { nombre: "GET /api/orders/mine (sin cookie)", metodo: "GET", ruta: "/api/orders/mine", espera: estado(401) },
+  // Fase 16: /checkout responde 200 (con el interruptor apagado redirige en el navegador a /carrito).
+  { nombre: "GET /checkout", metodo: "GET", ruta: "/checkout", espera: esHtml },
+  { nombre: "GET /pedido/JK-000000-XXXX (sin token)", metodo: "GET", ruta: "/pedido/JK-000000-XXXX", espera: estado(404) },
 ];
 
 async function main() {
