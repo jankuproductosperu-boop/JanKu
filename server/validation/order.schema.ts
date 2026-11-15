@@ -2,8 +2,18 @@ import "server-only";
 import { z } from "zod";
 import { ORDER_ESTADOS } from "@/lib/orderStatus";
 import { normalizarTelefono } from "@/lib/phone";
+import { esDepartamento } from "@/lib/shipping";
 import { objectId } from "@/server/validation/common";
 import type { OrderCreateInput } from "@/types";
+
+type EntregaCampo = "direccion" | "referencia" | "ciudad" | "departamento" | "provincia" | "puntoEntregaId";
+
+/** Campos que NO puede traer cada método (D-71/72/73). Si llegan, 400 aunque vengan vacíos. */
+const PROHIBIDOS: Record<"delivery_huancayo" | "punto_entrega" | "envio_provincia", EntregaCampo[]> = {
+  delivery_huancayo: ["ciudad", "departamento", "provincia", "puntoEntregaId"],
+  punto_entrega: ["direccion", "referencia", "ciudad", "departamento", "provincia"],
+  envio_provincia: ["direccion", "referencia", "puntoEntregaId"],
+};
 
 // Endpoint nuevo: .strict(). No hay campos de precio, descuento ni total (N1-5): si llegan, 400.
 export const pedidoCrearSchema = z
@@ -29,11 +39,14 @@ export const pedidoCrearSchema = z
       .strict(),
     entrega: z
       .object({
-        metodo: z.enum(["delivery_huancayo", "recojo", "envio_provincia"]),
+        // "recojo" está en el enum solo para que el tipo coincida con MetodoEntrega; se rechaza abajo.
+        metodo: z.enum(["delivery_huancayo", "punto_entrega", "envio_provincia", "recojo"]),
         direccion: z.string().trim().max(200).optional(),
         referencia: z.string().trim().max(200).optional(),
         ciudad: z.string().trim().max(100).optional(),
         departamento: z.string().trim().max(100).optional(),
+        provincia: z.string().trim().max(100).optional(),
+        puntoEntregaId: objectId.optional(),
       })
       .strict(),
     notas: z.string().trim().max(500).optional(),
@@ -44,16 +57,24 @@ export const pedidoCrearSchema = z
     if (!normalizarTelefono(d.cliente.telefono)) {
       ctx.addIssue({ code: "custom", path: ["cliente", "telefono"], message: "Ingresa un celular válido de 9 dígitos" });
     }
-    if (d.entrega.metodo !== "recojo" && !(d.entrega.direccion ?? "").length) {
-      ctx.addIssue({ code: "custom", path: ["entrega", "direccion"], message: "Ingresa tu dirección" });
+    const e = d.entrega;
+    const falta = (campo: EntregaCampo, message: string) =>
+      ctx.addIssue({ code: "custom", path: ["entrega", campo], message });
+
+    if (e.metodo === "recojo") {
+      ctx.addIssue({ code: "custom", path: ["entrega", "metodo"], message: "Este método de entrega ya no está disponible" });
+      return;
     }
-    if (d.entrega.metodo === "envio_provincia") {
-      if (!(d.entrega.ciudad ?? "").length) {
-        ctx.addIssue({ code: "custom", path: ["entrega", "ciudad"], message: "Ingresa tu ciudad" });
-      }
-      if (!(d.entrega.departamento ?? "").length) {
-        ctx.addIssue({ code: "custom", path: ["entrega", "departamento"], message: "Ingresa tu departamento" });
-      }
+    for (const campo of PROHIBIDOS[e.metodo]) {
+      if (e[campo] !== undefined) falta(campo, "No corresponde a este método de entrega");
+    }
+
+    if (e.metodo === "delivery_huancayo" && !(e.direccion ?? "").length) falta("direccion", "Ingresa tu dirección");
+    if (e.metodo === "punto_entrega" && !e.puntoEntregaId) falta("puntoEntregaId", "Elige un punto de entrega");
+    if (e.metodo === "envio_provincia") {
+      if (!esDepartamento(e.departamento ?? "")) falta("departamento", "Elige un departamento de la lista");
+      if (!(e.provincia ?? "").length) falta("provincia", "Ingresa tu provincia");
+      if (!(e.ciudad ?? "").length) falta("ciudad", "Ingresa tu ciudad");
     }
   });
 

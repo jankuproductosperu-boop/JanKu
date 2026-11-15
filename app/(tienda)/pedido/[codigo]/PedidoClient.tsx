@@ -13,6 +13,7 @@ import type { MetodoEntrega, OrderPublic } from "@/types";
 
 const ETIQUETA_ENTREGA: Record<MetodoEntrega, string> = {
   delivery_huancayo: "Delivery en Huancayo",
+  punto_entrega: "Punto de entrega",
   recojo: "Recojo en tienda",
   envio_provincia: "Envío a otra ciudad",
 };

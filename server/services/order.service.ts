@@ -6,6 +6,7 @@ import { AppError, conflicto, entradaInvalida, noEncontrado } from "@/server/htt
 import { log } from "@/server/logger";
 import { generarToken, hashearToken } from "@/server/auth/tokens";
 import { listarNivelesActivos } from "@/server/services/discount.service";
+import { obtenerPuntoActivo } from "@/server/services/deliveryPoint.service";
 import {
   asegurarColeccionMovimientos,
   descontarPorPedido,
@@ -15,6 +16,7 @@ import {
 import { redondear2 } from "@/lib/money";
 import { normalizarTelefono } from "@/lib/phone";
 import { calcularTotales } from "@/lib/pricing";
+import { entregaGratis } from "@/lib/shipping";
 import { etiquetaVariante, precioDeVariante, tieneVariantes } from "@/lib/variantes";
 import { enlaceWhatsAppPedido } from "@/lib/whatsapp";
 import { puedeTransicionar, type OrderEstado } from "@/lib/orderStatus";
@@ -87,6 +89,7 @@ type ProductoLean = {
   imagenes?: string[];
   precioCosto?: number;
   stockCantidad?: number | null;
+  deliveryHuancayo?: boolean | null;
   opciones?: { nombre: string }[];
   variantes?: VarianteLean[];
 };
@@ -129,7 +132,7 @@ export async function crearPedido(
   // 2. Productos activos; los ids restantes se buscan como promociones activas.
   const ids = [...new Set(lineas.map((l) => l.id))];
   const productos = await Product.find({ _id: { $in: ids }, activo: { $ne: false } })
-    .select("nombre precio codigo imagenPrincipal imagenUrl imagenes precioCosto stockCantidad opciones variantes")
+    .select("nombre precio codigo imagenPrincipal imagenUrl imagenes precioCosto stockCantidad deliveryHuancayo opciones variantes")
     .lean<ProductoLean[]>();
   const porProducto = new Map(productos.map((p) => [String(p._id), p]));
 
@@ -146,6 +149,8 @@ export async function crearPedido(
   const noDisponibles: Record<string, string> = {};
   const sinStock: Record<string, string> = {};
   const items: ItemConCosto[] = [];
+  // Solo para D-71: si el carrito califica al delivery gratis. No se guarda en el pedido.
+  const paraEnvio: { tipo: "producto" | "promocion"; deliveryHuancayo?: boolean | null }[] = [];
 
   for (const l of lineas) {
     const producto = porProducto.get(l.id);
@@ -196,6 +201,7 @@ export async function crearPedido(
         subtotal: redondear2(precio * l.cantidad),
         precioCosto: producto.precioCosto ?? 0,
       });
+      paraEnvio.push({ tipo: "producto", deliveryHuancayo: producto.deliveryHuancayo });
       continue;
     }
 
@@ -223,6 +229,7 @@ export async function crearPedido(
         subtotal: redondear2(promo.precio * l.cantidad),
         precioCosto: 0,
       });
+      paraEnvio.push({ tipo: "promocion" }); // las promociones nunca cuentan como delivery gratis
       continue;
     }
 
@@ -244,8 +251,45 @@ export async function crearPedido(
     costoEnvio: 0,
   });
 
-  // 7. Envío a otra ciudad: el costo se coordina por WhatsApp.
-  const envioPorCoordinar = datos.entrega.metodo === "envio_provincia";
+  // 7. Entrega (D-71/72/73). Lo decide el servidor con datos de la base (N1-5); el costo nunca llega del navegador.
+  const metodo = datos.entrega.metodo;
+  if (metodo === "recojo") {
+    // El esquema ya lo rechaza; se repite aquí por si alguien llama al servicio sin validar.
+    throw entradaInvalida({ "entrega.metodo": "Este método de entrega ya no está disponible" });
+  }
+  let puntoEntrega: { puntoId: string; nombre: string; direccion: string; referencia: string; horario: string } | null =
+    null;
+  if (metodo === "punto_entrega") {
+    const punto = datos.entrega.puntoEntregaId ? await obtenerPuntoActivo(datos.entrega.puntoEntregaId) : null;
+    if (!punto) {
+      throw new AppError(409, "El punto de entrega ya no está disponible", "PUNTO_NO_DISPONIBLE", {
+        "entrega.puntoEntregaId": "Elige otro punto de entrega",
+      });
+    }
+    puntoEntrega = {
+      puntoId: punto._id,
+      nombre: punto.nombre,
+      direccion: punto.direccion,
+      referencia: punto.referencia ?? "",
+      horario: punto.horario ?? "",
+    };
+  }
+  // Delivery en Huancayo: gratis si algún producto lo tiene; si no, el adicional se coordina por WhatsApp.
+  // Punto de entrega: sin costo ni aviso. Envío a provincia: siempre por coordinar.
+  const envioPorCoordinar =
+    metodo === "envio_provincia" ? true : metodo === "delivery_huancayo" ? !entregaGratis(paraEnvio) : false;
+
+  const entrega =
+    metodo === "delivery_huancayo"
+      ? { metodo, direccion: datos.entrega.direccion ?? "", referencia: datos.entrega.referencia ?? "" }
+      : metodo === "envio_provincia"
+        ? {
+            metodo,
+            departamento: datos.entrega.departamento ?? "",
+            provincia: datos.entrega.provincia ?? "",
+            ciudad: datos.entrega.ciudad ?? "",
+          }
+        : { metodo, puntoEntrega };
 
   // 8. Código y token. El token solo se devuelve una vez; en la base queda su hash.
   const token = generarToken();
@@ -258,13 +302,7 @@ export async function crearPedido(
     tokenAccesoHash,
     userId: ctx.userId ?? null,
     cliente: { nombre: datos.cliente.nombre, telefono, email: datos.cliente.email ?? "" },
-    entrega: {
-      metodo: datos.entrega.metodo,
-      direccion: datos.entrega.direccion ?? "",
-      referencia: datos.entrega.referencia ?? "",
-      ciudad: datos.entrega.ciudad ?? "",
-      departamento: datos.entrega.departamento ?? "",
-    },
+    entrega,
     items,
     subtotal: totales.subtotal,
     descuentoNivel:
@@ -324,7 +362,15 @@ type OrderLean = {
   codigo: string;
   estado: OrderEstado;
   cliente: { nombre: string; telefono: string; email?: string };
-  entrega: { metodo: MetodoEntrega; direccion?: string; referencia?: string; ciudad?: string; departamento?: string };
+  entrega: {
+    metodo: MetodoEntrega;
+    direccion?: string;
+    referencia?: string;
+    ciudad?: string;
+    departamento?: string;
+    provincia?: string;
+    puntoEntrega?: { puntoId?: unknown; nombre?: string; direccion?: string; referencia?: string; horario?: string } | null;
+  };
   items: {
     tipo: "producto" | "promocion";
     refId: unknown;
@@ -364,6 +410,16 @@ function aPublico(o: OrderLean): OrderPublic {
       referencia: o.entrega.referencia || undefined,
       ciudad: o.entrega.ciudad || undefined,
       departamento: o.entrega.departamento || undefined,
+      provincia: o.entrega.provincia || undefined,
+      // Copia guardada en el pedido; el id interno del punto no sale.
+      puntoEntrega: o.entrega.puntoEntrega?.nombre
+        ? {
+            nombre: o.entrega.puntoEntrega.nombre,
+            direccion: o.entrega.puntoEntrega.direccion ?? "",
+            referencia: o.entrega.puntoEntrega.referencia || undefined,
+            horario: o.entrega.puntoEntrega.horario || undefined,
+          }
+        : undefined,
     },
     items: o.items.map((i) => ({
       tipo: i.tipo,

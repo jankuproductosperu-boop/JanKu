@@ -39,11 +39,27 @@ const OrderSchema = new Schema(
       email: { type: String, default: "", lowercase: true, trim: true, maxlength: 200 },
     },
     entrega: {
-      metodo: { type: String, enum: ["delivery_huancayo", "recojo", "envio_provincia"], required: true },
+      // "recojo" se conserva solo para pedidos antiguos (D-72).
+      metodo: { type: String, enum: ["delivery_huancayo", "punto_entrega", "envio_provincia", "recojo"], required: true },
       direccion: { type: String, default: "", maxlength: 200 },
       referencia: { type: String, default: "", maxlength: 200 },
       ciudad: { type: String, default: "", maxlength: 100 },
       departamento: { type: String, default: "", maxlength: 100 },
+      provincia: { type: String, default: "", maxlength: 100 }, // fase 16b (D-73)
+      // Copia del punto al momento del pedido (D-72): editar el punto después no cambia este pedido.
+      puntoEntrega: {
+        type: new Schema(
+          {
+            puntoId: { type: Schema.Types.ObjectId, ref: "DeliveryPoint" },
+            nombre: { type: String, maxlength: 100 },
+            direccion: { type: String, maxlength: 200 },
+            referencia: { type: String, maxlength: 200 },
+            horario: { type: String, maxlength: 200 },
+          },
+          { _id: false },
+        ),
+        default: null,
+      },
     },
     items: {
       type: [ItemSchema],

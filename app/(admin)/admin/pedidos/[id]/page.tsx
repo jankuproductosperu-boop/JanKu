@@ -16,6 +16,7 @@ const CLASE_ESTADO: Record<OrderEstado, string> = {
 };
 const ETIQUETA_ENTREGA = {
   delivery_huancayo: "Delivery en Huancayo",
+  punto_entrega: "Punto de entrega",
   recojo: "Recojo en tienda",
   envio_provincia: "Envío a otra ciudad",
 } as const;
