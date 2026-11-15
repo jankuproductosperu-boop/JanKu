@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Package, FolderTree, Archive, ListOrdered,
+  LayoutDashboard, ClipboardList, Package, FolderTree, Archive, ListOrdered,
   Tag, Sparkles, Image as ImageIcon, MessageSquare, LogOut,
 } from "lucide-react";
 import type { Permiso } from "@/types";
@@ -12,6 +12,7 @@ type Item = { grupo?: string; href: string; etiqueta: string; permiso?: Permiso;
 
 const MENU: Item[] = [
   { href: "/admin", etiqueta: "Resumen", icono: LayoutDashboard },
+  { grupo: "Ventas", href: "/admin/pedidos", etiqueta: "Pedidos", permiso: "pedidos.ver", icono: ClipboardList },
   { grupo: "Catálogo", href: "/admin/productos", etiqueta: "Productos", permiso: "catalogo.editar", icono: Package },
   { href: "/admin/categorias", etiqueta: "Categorías", permiso: "catalogo.editar", icono: FolderTree },
   { href: "/admin/inventario", etiqueta: "Inventario", permiso: "inventario.ver", icono: Archive },

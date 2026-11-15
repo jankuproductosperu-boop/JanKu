@@ -106,6 +106,11 @@ const CHECKS = [
   { nombre: "GET /api/orders/mine (sin cookie)", metodo: "GET", ruta: "/api/orders/mine", espera: estado(401) },
   // Fase 16: /checkout responde 200 (con el interruptor apagado redirige en el navegador a /carrito).
   { nombre: "GET /checkout", metodo: "GET", ruta: "/checkout", espera: esHtml },
+  // Fase 17: la administración de pedidos exige sesión.
+  { nombre: "GET /api/admin/orders (sin cookie)", metodo: "GET", ruta: "/api/admin/orders", espera: estado(401) },
+  { nombre: "GET /api/admin/orders/000000000000000000000000 (sin cookie)", metodo: "GET", ruta: "/api/admin/orders/000000000000000000000000", espera: estado(401) },
+  { nombre: "PATCH /api/admin/orders/000000000000000000000000 (sin cookie)", metodo: "PATCH", ruta: "/api/admin/orders/000000000000000000000000", cuerpo: {}, espera: estado(401) },
+  { nombre: "POST /api/admin/orders/expire (sin cookie)", metodo: "POST", ruta: "/api/admin/orders/expire", cuerpo: {}, espera: estado(401) },
   { nombre: "GET /pedido/JK-000000-XXXX (sin token)", metodo: "GET", ruta: "/pedido/JK-000000-XXXX", espera: estado(404) },
 ];
 
