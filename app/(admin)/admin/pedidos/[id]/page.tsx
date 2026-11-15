@@ -18,7 +18,7 @@ const ETIQUETA_ENTREGA = {
   delivery_huancayo: "Delivery en Huancayo",
   punto_entrega: "Punto de entrega",
   recojo: "Recojo en tienda",
-  envio_provincia: "Envío a otra ciudad",
+  envio_provincia: "Envío a provincia",
 } as const;
 const METODOS: { valor: MetodoPago; etiqueta: string }[] = [
   { valor: "", etiqueta: "—" },
@@ -332,7 +332,18 @@ export default function PedidoAdminPage() {
             {pedido.cliente.email && <Dato etiqueta="Correo"><span className="break-all">{pedido.cliente.email}</span></Dato>}
             <Dato etiqueta="Entrega">{ETIQUETA_ENTREGA[e.metodo]}</Dato>
             {e.direccion && <Dato etiqueta="Dirección">{e.direccion}{e.referencia ? ` (${e.referencia})` : ""}</Dato>}
-            {(e.ciudad || e.departamento) && <Dato etiqueta="Ciudad">{[e.ciudad, e.departamento].filter(Boolean).join(", ")}</Dato>}
+            {e.puntoEntrega && (
+              <Dato etiqueta="Punto de entrega">
+                <span className="block font-medium">{e.puntoEntrega.nombre}</span>
+                <span className="block">{e.puntoEntrega.direccion}{e.puntoEntrega.referencia ? ` (${e.puntoEntrega.referencia})` : ""}</span>
+                {e.puntoEntrega.horario && <span className="block text-[var(--muted)]">{e.puntoEntrega.horario}</span>}
+              </Dato>
+            )}
+            {(e.ciudad || e.provincia || e.departamento) && (
+              <Dato etiqueta={e.provincia ? "Destino (ciudad, provincia, departamento)" : "Ciudad"}>
+                {[e.ciudad, e.provincia, e.departamento].filter(Boolean).join(", ")}
+              </Dato>
+            )}
             {pedido.notasCliente && <Dato etiqueta="Nota del cliente">{pedido.notasCliente}</Dato>}
           </dl>
         </Bloque>

@@ -1,6 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { fetchWithCache } from "@/lib/cache";
+import { carritoConEntregaGratis } from "@/lib/shipping";
+import type { Product } from "@/types";
 import { lineaId } from "@/lib/variantes";
 import { enlaceWhatsAppCarrito } from "@/lib/whatsapp";
 import { SITE } from "@/lib/siteConfig";
@@ -23,6 +27,20 @@ export default function CarritoPage() {
     proximoNivel,
     montoParaProximoNivel,
   } = useCart();
+
+  // Q1 (fase 16b): el delivery en Huancayo es gratis solo si algún producto del carrito lo tiene (D-71).
+  // Solo se muestra; el servidor decide al crear el pedido. null = cargando.
+  const [productosPublicos, setProductosPublicos] = useState<Product[] | null>(null);
+  useEffect(() => {
+    let activo = true;
+    fetchWithCache<Product[]>("/api/products").then((p) => {
+      if (activo) setProductosPublicos(p);
+    });
+    return () => {
+      activo = false;
+    };
+  }, []);
+  const deliveryGratis = productosPublicos ? carritoConEntregaGratis(cart, productosPublicos) : null;
 
   const totales: Totales = {
     subtotal: totalPrice,
@@ -243,7 +261,8 @@ export default function CarritoPage() {
 
                   <div className="flex justify-between text-xs md:text-sm text-gray-600 mb-3 md:mb-4">
                     <span>Delivery Huancayo</span>
-                    <span className="text-green-600 font-semibold">GRATIS</span>
+                    {deliveryGratis === true && <span className="text-green-600 font-semibold">GRATIS</span>}
+                    {deliveryGratis === false && <span className="font-semibold text-gray-700">Por coordinar</span>}
                   </div>
                   <div className="flex justify-between text-lg md:text-xl font-bold text-gray-900">
                     <span>Total</span>
@@ -286,6 +305,12 @@ export default function CarritoPage() {
                 </div>
 
                 {/* Info adicional - Responsive */}
+                {deliveryGratis === false && (
+                  <div className="mt-4 md:mt-6 p-3 md:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="font-bold text-gray-700 text-xs md:text-sm">El costo del delivery se coordina por WhatsApp</p>
+                  </div>
+                )}
+                {deliveryGratis === true && (
                 <div className="mt-4 md:mt-6 p-3 md:p-4 bg-green-50 rounded-lg border border-green-200">
                   <div className="flex items-start gap-2 md:gap-3">
                     <svg className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -302,6 +327,7 @@ export default function CarritoPage() {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </div>

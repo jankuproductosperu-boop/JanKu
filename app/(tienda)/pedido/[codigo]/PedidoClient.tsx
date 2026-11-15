@@ -15,7 +15,7 @@ const ETIQUETA_ENTREGA: Record<MetodoEntrega, string> = {
   delivery_huancayo: "Delivery en Huancayo",
   punto_entrega: "Punto de entrega",
   recojo: "Recojo en tienda",
-  envio_provincia: "Envío a otra ciudad",
+  envio_provincia: "Envío a provincia",
 };
 
 // Los ítems del pedido guardan la imagen como public_id o URL completa, igual que la base.
@@ -142,10 +142,23 @@ export function PedidoClient({ pedido, token, nuevo }: { pedido: OrderPublic; to
                     </dd>
                   </div>
                 )}
-                {(e.ciudad || e.departamento) && (
+                {e.puntoEntrega && (
                   <div>
-                    <dt className="font-semibold">Ciudad</dt>
-                    <dd>{[e.ciudad, e.departamento].filter(Boolean).join(", ")}</dd>
+                    <dt className="font-semibold">Punto de entrega</dt>
+                    <dd>
+                      <span className="block font-medium">{e.puntoEntrega.nombre}</span>
+                      <span className="block">
+                        {e.puntoEntrega.direccion}
+                        {e.puntoEntrega.referencia ? ` (${e.puntoEntrega.referencia})` : ""}
+                      </span>
+                      {e.puntoEntrega.horario && <span className="block text-gray-500">{e.puntoEntrega.horario}</span>}
+                    </dd>
+                  </div>
+                )}
+                {(e.ciudad || e.provincia || e.departamento) && (
+                  <div>
+                    <dt className="font-semibold">{e.provincia ? "Destino" : "Ciudad"}</dt>
+                    <dd>{[e.ciudad, e.provincia, e.departamento].filter(Boolean).join(", ")}</dd>
                   </div>
                 )}
                 <div>
