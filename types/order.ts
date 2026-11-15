@@ -1,8 +1,21 @@
 import type { OrderEstado } from "@/lib/orderStatus";
+import type { PuntoEntregaCopia } from "./deliveryPoint";
 
 export type PagoEstado = "pendiente" | "pagado" | "reembolsado";
 export type MetodoPago = "" | "yape" | "plin" | "transferencia" | "efectivo" | "otro";
-export type MetodoEntrega = "delivery_huancayo" | "recojo" | "envio_provincia";
+/** "recojo" solo existe en pedidos antiguos: ya no se acepta al crear (D-72). */
+export type MetodoEntrega = "delivery_huancayo" | "punto_entrega" | "envio_provincia" | "recojo";
+
+export type OrderEntrega = {
+  metodo: MetodoEntrega;
+  direccion?: string;
+  referencia?: string;
+  ciudad?: string;
+  departamento?: string;
+  provincia?: string;
+  /** Copia del punto de entrega al momento del pedido (solo con `punto_entrega`). */
+  puntoEntrega?: PuntoEntregaCopia;
+};
 
 export type OrderItem = {
   tipo: "producto" | "promocion";
@@ -22,7 +35,7 @@ export type OrderPublic = {
   codigo: string;
   estado: OrderEstado;
   cliente: { nombre: string; telefono: string; email?: string };
-  entrega: { metodo: MetodoEntrega; direccion?: string; referencia?: string; ciudad?: string; departamento?: string };
+  entrega: OrderEntrega;
   items: OrderItem[];
   subtotal: number;
   descuentoNivel: { nombre: string; monto: number } | null;
@@ -55,7 +68,19 @@ export type OrderCreateInput = {
   /** `id` es el del producto o promoción; `varianteId` solo si el producto tiene variantes (D-63). */
   items: { id: string; varianteId?: string; cantidad: number }[];
   cliente: { nombre: string; telefono: string; email?: string };
-  entrega: { metodo: MetodoEntrega; direccion?: string; referencia?: string; ciudad?: string; departamento?: string };
+  /**
+   * Objeto plano por compatibilidad; las reglas por método las aplica pedidoCrearSchema (D-71/72/73):
+   * "recojo" y los campos que no corresponden al método se rechazan con 400.
+   */
+  entrega: {
+    metodo: MetodoEntrega;
+    direccion?: string;
+    referencia?: string;
+    ciudad?: string;
+    departamento?: string;
+    provincia?: string;
+    puntoEntregaId?: string;
+  };
   notas?: string;
   website?: string;
 };
