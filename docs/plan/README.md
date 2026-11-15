@@ -58,6 +58,7 @@ Estado: **pendiente de aprobación del dueño.** Nada de este plan se ha impleme
 | 14 | [Precios y carrito](fases/fase-14-precios-y-carrito.md) | Medio | Sonnet + revisión de pruebas | 1 | 30 min | No |
 | 15 | [Pedidos: backend](fases/fase-15-pedidos-backend.md) | ⚠️ Alto · migración 003 | Superior + Sonnet | 2 | 45 min | No |
 | 16 | [Checkout (interfaz)](fases/fase-16-checkout-ui.md) | Medio | Sonnet | 1–2 | 45 min | Solo con el interruptor encendido |
+| 16b | [Entrega: delivery gratis por producto, puntos de entrega, envío a provincia](fases/fase-16b-entrega.md) *(propuesta)* | Medio-alto | Superior + Sonnet | 2 | 1 h | Checkout y `/carrito`; panel: Puntos de entrega |
 | 17 | [Pedidos en el panel](fases/fase-17-pedidos-admin.md) | ⚠️ Alto | Superior + Sonnet | 2 | 1 h 30 | Pantalla nueva en el panel |
 | 18 | [Cupones: backend](fases/fase-18-cupones-backend.md) | ⚠️ Alto | Superior + Sonnet | 2 | 45 min | No |
 | 19 | [Cupones (interfaz)](fases/fase-19-cupones-ui.md) | Medio | Sonnet | 1 | 30 min | Pantalla en panel; campo en checkout |
