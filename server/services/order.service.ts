@@ -6,6 +6,13 @@ import { AppError, conflicto, entradaInvalida, noEncontrado } from "@/server/htt
 import { log } from "@/server/logger";
 import { generarToken, hashearToken } from "@/server/auth/tokens";
 import { listarNivelesActivos } from "@/server/services/discount.service";
+import {
+  asegurarColeccionesCupon,
+  claveCliente,
+  consumirCupon,
+  evaluarCuponParaPedido,
+  liberarCupon,
+} from "@/server/services/coupon.service";
 import { obtenerPuntoActivo } from "@/server/services/deliveryPoint.service";
 import {
   asegurarColeccionMovimientos,
@@ -15,7 +22,7 @@ import {
 } from "@/server/services/inventory.service";
 import { redondear2 } from "@/lib/money";
 import { normalizarTelefono } from "@/lib/phone";
-import { calcularTotales } from "@/lib/pricing";
+import { calcularTotales, type Linea } from "@/lib/pricing";
 import { entregaGratis } from "@/lib/shipping";
 import { etiquetaVariante, precioDeVariante, tieneVariantes } from "@/lib/variantes";
 import { enlaceWhatsAppPedido } from "@/lib/whatsapp";
@@ -118,16 +125,23 @@ function unirLineas(items: OrderCreateInput["items"]): LineaPedido[] {
   return lineas;
 }
 
-// ── Crear pedido ──────────────────────────────────────────────────────────────────────────────────────
+// ── Resolver ítems (pasos 1-5) ─────────────────────────────────────────────────────────────────────────
 
-export async function crearPedido(
-  datos: OrderCreateInput,
-  ctx: { userId?: string; ip: string; userAgent: string },
-): Promise<OrderCreateResult> {
+export type ItemPedido = ItemConCosto;
+/** Solo para D-71: si el carrito califica al delivery gratis. No se guarda en el pedido. */
+export type ItemParaEnvio = { tipo: "producto" | "promocion"; deliveryHuancayo?: boolean | null };
+
+/**
+ * Une, resuelve contra la base, comprueba disponibilidad y construye los ítems. Precios SIEMPRE de la base
+ * (N1-5). Lo usan crearPedido y POST /api/coupons/validate. `paraEnvio` lo añade la fase 16b (D-71).
+ */
+export async function resolverItems(
+  itemsEntrada: OrderCreateInput["items"],
+): Promise<{ items: ItemPedido[]; lineas: Linea[]; paraEnvio: ItemParaEnvio[] }> {
   await connectDB();
 
   // 1. Unir ítems repetidos.
-  const lineas = unirLineas(datos.items);
+  const lineas = unirLineas(itemsEntrada);
 
   // 2. Productos activos; los ids restantes se buscan como promociones activas.
   const ids = [...new Set(lineas.map((l) => l.id))];
@@ -149,8 +163,7 @@ export async function crearPedido(
   const noDisponibles: Record<string, string> = {};
   const sinStock: Record<string, string> = {};
   const items: ItemConCosto[] = [];
-  // Solo para D-71: si el carrito califica al delivery gratis. No se guarda en el pedido.
-  const paraEnvio: { tipo: "producto" | "promocion"; deliveryHuancayo?: boolean | null }[] = [];
+  const paraEnvio: ItemParaEnvio[] = [];
 
   for (const l of lineas) {
     const producto = porProducto.get(l.id);
@@ -243,13 +256,27 @@ export async function crearPedido(
   // D-68: el error público no revela cantidades.
   if (Object.keys(sinStock).length) throw new AppError(409, "No hay stock suficiente", "SIN_STOCK", sinStock);
 
-  // 6. Totales con la misma función que el carrito (N1-5). Cupones: fase 18.
-  const niveles = await listarNivelesActivos();
-  const totales = calcularTotales({
+  return {
+    items,
     lineas: items.map((i) => ({ precio: i.precioUnitario, cantidad: i.cantidad })),
-    niveles,
-    costoEnvio: 0,
-  });
+    paraEnvio,
+  };
+}
+
+// ── Crear pedido ──────────────────────────────────────────────────────────────────────────────────────
+
+export async function crearPedido(
+  datos: OrderCreateInput,
+  ctx: { userId?: string; ip: string; userAgent: string },
+): Promise<OrderCreateResult> {
+  await connectDB();
+
+  // 1-5. Ítems con datos de la base.
+  const { items, lineas, paraEnvio } = await resolverItems(datos.items);
+
+  // 6. Totales con la misma función que el carrito (N1-5). Sin cupón; si hay cupón se recalculan en el paso 8.
+  const niveles = await listarNivelesActivos();
+  let totales = calcularTotales({ lineas, niveles, costoEnvio: 0 });
 
   // 7. Entrega (D-71/72/73). Lo decide el servidor con datos de la base (N1-5); el costo nunca llega del navegador.
   const metodo = datos.entrega.metodo;
@@ -291,11 +318,30 @@ export async function crearPedido(
           }
         : { metodo, puntoEntrega };
 
-  // 8. Código y token. El token solo se devuelve una vez; en la base queda su hash.
-  const token = generarToken();
-  const tokenAccesoHash = hashearToken(token);
   const telefono = normalizarTelefono(datos.cliente.telefono);
   if (!telefono) throw entradaInvalida({ "cliente.telefono": "Ingresa un celular válido de 9 dígitos" });
+
+  // 8. Cupón (fase 18, D-38 a D-43). Un cupón inválido NO crea el pedido: el cliente decide si sigue sin él.
+  let cupon: { couponId: string; codigo: string; monto: number } | null = null;
+  let clienteKey: string | null = null;
+  if (datos.cupon) {
+    // Siempre hay clave: el teléfono es obligatorio y ya está validado.
+    clienteKey = claveCliente({ userId: ctx.userId, telefono });
+    const ev = await evaluarCuponParaPedido({ codigo: datos.cupon, lineas, clienteKey, niveles });
+    const r = ev.resultado;
+    if (!r.valido) throw conflicto(r.mensaje, "CUPON_" + r.motivo.toUpperCase());
+    // "nivel": el descuento por monto es mayor; el pedido se crea sin cupón y no se consume.
+    if (r.aplicado !== "nivel" && ev.couponId && ev.codigo && ev.totales) {
+      totales = ev.totales;
+      cupon = { couponId: ev.couponId, codigo: ev.codigo, monto: r.descuentoCupon };
+    }
+  }
+  // El nivel solo queda guardado si de verdad se aplicó: sin cupón ("nivel") o acumulado ("ambos").
+  const nivelAplicado = totales.aplicado === "nivel" || totales.aplicado === "ambos";
+
+  // 9. Código y token. El token solo se devuelve una vez; en la base queda su hash.
+  const token = generarToken();
+  const tokenAccesoHash = hashearToken(token);
 
   const ahora = new Date();
   const base = {
@@ -306,10 +352,10 @@ export async function crearPedido(
     items,
     subtotal: totales.subtotal,
     descuentoNivel:
-      totales.nivel && totales.descuentoNivel > 0
+      nivelAplicado && totales.nivel && totales.descuentoNivel > 0
         ? { nivelId: totales.nivel._id, nombre: totales.nivel.nombre, monto: totales.descuentoNivel }
         : null,
-    cupon: null,
+    cupon,
     descuentoTotal: totales.descuentoTotal,
     costoEnvio: totales.costoEnvio,
     envioPorCoordinar,
@@ -322,12 +368,25 @@ export async function crearPedido(
     origen: { ip: ctx.ip, userAgent: ctx.userAgent.slice(0, 200) },
   };
 
-  // 9. Crear; si el código choca (muy improbable), se genera otro hasta 3 intentos en total.
+  // 10. Crear; si el código choca (muy improbable), se genera otro hasta 3 intentos en total.
+  // Con cupón: pedido y consumo en UNA transacción; si consumirCupon lanza, no queda ni pedido ni consumo.
+  if (cupon) await asegurarColeccionesCupon();
   let codigo = "";
   for (let intento = 0; ; intento++) {
     codigo = generarCodigo(ahora);
     try {
-      await Order.create({ ...base, codigo });
+      if (cupon && clienteKey) {
+        const c = cupon;
+        const k = clienteKey;
+        const orderId = new mongoose.Types.ObjectId();
+        const doc = { ...base, _id: orderId, codigo };
+        await conTransaccion(async (s) => {
+          await Order.create([doc], { session: s });
+          await consumirCupon({ couponId: c.couponId, orderId: String(orderId), clienteKey: k, monto: c.monto, session: s });
+        });
+      } else {
+        await Order.create({ ...base, codigo });
+      }
       break;
     } catch (err) {
       if (esCodigoDuplicado(err) && intento < 2) continue;
@@ -335,7 +394,7 @@ export async function crearPedido(
     }
   }
 
-  // 10. Guardar el teléfono en la cuenta si aún no tenía. Un fallo aquí no debe perder el pedido.
+  // 11. Guardar el teléfono en la cuenta si aún no tenía. Un fallo aquí no debe perder el pedido.
   if (ctx.userId) {
     try {
       await User.updateOne({ _id: ctx.userId, telefono: { $in: ["", null] } }, { $set: { telefono } });
@@ -344,15 +403,16 @@ export async function crearPedido(
     }
   }
 
-  // 11. Sin datos personales en el log.
-  log.info("pedido.creado", { codigo, total: totales.total, items: items.length });
+  // 12. Sin datos personales en el log.
+  log.info("pedido.creado", { codigo, total: totales.total, items: items.length, cupon: cupon?.codigo ?? "" });
 
-  // 12.
+  // 13.
   return {
     codigo,
     token,
     total: totales.total,
     whatsappUrl: enlaceWhatsAppPedido({ codigo, total: totales.total, nombre: datos.cliente.nombre }),
+    cuponAplicado: cupon !== null,
   };
 }
 
@@ -599,6 +659,7 @@ type PedidoParaCambio = {
   estado: OrderEstado;
   stockDescontado?: boolean;
   items: { tipo: "producto" | "promocion"; refId: unknown; varianteId?: unknown; nombre: string; cantidad: number }[];
+  cupon?: { couponId?: unknown } | null;
 };
 
 function itemsConStock(p: PedidoParaCambio): ItemStock[] {
@@ -630,7 +691,7 @@ async function cambiarEstado(
   if (!isValidObjectId(id)) throw noEncontrado("Pedido");
 
   const codigo = await conTransaccion(async (s) => {
-    const p = await Order.findById(id).select("codigo estado stockDescontado items").session(s).lean<PedidoParaCambio>();
+    const p = await Order.findById(id).select("codigo estado stockDescontado items cupon").session(s).lean<PedidoParaCambio>();
     if (!p) throw noEncontrado("Pedido");
     if (!puedeTransicionar(p.estado, destino)) {
       throw conflicto(`No se puede pasar el pedido de «${p.estado}» a «${destino}»`, "TRANSICION_INVALIDA");
@@ -693,6 +754,8 @@ export function cancelarPedido(id: string, actor: Actor | null, motivo: string):
     actor,
     nota: motivo,
     inventario: async (p, s) => {
+      // Fase 18: el cupón se libera en la misma transacción que el cambio de estado.
+      if (p.cupon) await liberarCupon({ orderId: id, session: s });
       if (!p.stockDescontado) return undefined; // nada que devolver
       await reponerPorPedido({
         items: itemsConStock(p),
