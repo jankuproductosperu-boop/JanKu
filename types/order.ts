@@ -82,7 +82,16 @@ export type OrderCreateInput = {
     puntoEntregaId?: string;
   };
   notas?: string;
+  /** Código del cupón (fase 18). Solo el código: el descuento lo calcula el servidor. */
+  cupon?: string;
   website?: string;
 };
 
-export type OrderCreateResult = { codigo: string; token: string; total: number; whatsappUrl: string };
+export type OrderCreateResult = {
+  codigo: string;
+  token: string;
+  total: number;
+  whatsappUrl: string;
+  /** Fase 18: true solo si el cupón se aplicó y se consumió. */
+  cuponAplicado: boolean;
+};

@@ -50,6 +50,8 @@ export const pedidoCrearSchema = z
       })
       .strict(),
     notas: z.string().trim().max(500).optional(),
+    // Fase 18: solo el código. El descuento lo calcula el servidor (N1-5).
+    cupon: z.string().trim().max(30).optional(),
     website: z.string().max(0).optional(), // trampa anti-bots: debe llegar vacío o no llegar
   })
   .strict()
