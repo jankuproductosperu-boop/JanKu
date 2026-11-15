@@ -1,7 +1,8 @@
 import "server-only";
 import mongoose, { type ClientSession } from "mongoose";
 import { connectDB } from "@/server/db";
-import { conflicto, entradaInvalida, noEncontrado } from "@/server/http/errors";
+import { AppError, conflicto, entradaInvalida, noEncontrado } from "@/server/http/errors";
+import { log } from "@/server/logger";
 import { estadoDeStock, stockResultante, tipoPorDefecto, type ModoAjusteStock } from "@/lib/stock";
 import { etiquetaVariante, stockTotal, tieneVariantes } from "@/lib/variantes";
 import AdminUser from "@/models/AdminUser";
@@ -260,4 +261,115 @@ export async function listarMovimientos(args: {
   }));
 
   return { items, total, page, pageSize };
+}
+
+// ── Pedidos (fase 17) ─────────────────────────────────────────────────────────────────────────────────
+
+/** Ítem de un pedido que lleva stock. `variantId` solo si el producto tiene variantes (fase 13b). Las promociones no entran (D-23). */
+export type ItemStock = { productId: string; variantId?: string; cantidad: number; nombre: string };
+
+const claveItem = (i: Pick<ItemStock, "productId" | "variantId">) =>
+  i.variantId ? `${i.productId}:${i.variantId}` : i.productId;
+
+/** Une ítems repetidos (mismo producto y variante) para validar y descontar una sola vez por clave. */
+function unirItems(items: ItemStock[]): ItemStock[] {
+  const porClave = new Map<string, ItemStock>();
+  for (const i of items) {
+    const previo = porClave.get(claveItem(i));
+    if (previo) previo.cantidad += i.cantidad;
+    else porClave.set(claveItem(i), { ...i });
+  }
+  return [...porClave.values()];
+}
+
+/**
+ * Descuenta el stock de todos los ítems o de ninguno. Debe llamarse dentro de una transacción (`session`):
+ * si algo falla después, la transacción entera se revierte.
+ * Primero LEE todo y reúne los que no alcanzan; si hay alguno, lanza 409 SIN_STOCK con `fields` y no escribe nada.
+ * Las claves de `fields` son `productId` o `productId:variantId`.
+ */
+export async function descontarPorPedido(args: {
+  items: ItemStock[];
+  codigo: string;
+  orderId: string;
+  actor: { adminId: string };
+  session: ClientSession;
+}): Promise<void> {
+  const items = unirItems(args.items);
+  if (items.length === 0) return;
+
+  const faltan: Record<string, string> = {};
+  for (const it of items) {
+    const p = await Product.findById(it.productId)
+      .select("stockCantidad variantes")
+      .session(args.session)
+      .lean<ProductoLean>();
+    const clave = claveItem(it);
+    if (!p) {
+      faltan[clave] = "El producto ya no existe";
+      continue;
+    }
+    if (it.variantId) {
+      const v = (p.variantes ?? []).find((x) => String(x._id) === it.variantId);
+      if (!v) faltan[clave] = "La variante ya no existe";
+      else if (v.activo === false) faltan[clave] = "Variante desactivada";
+      else if ((v.stockCantidad ?? 0) < it.cantidad) faltan[clave] = `Quedan ${v.stockCantidad ?? 0}`;
+    } else if (tieneVariantes(p)) {
+      faltan[clave] = "El producto ahora tiene variantes";
+    } else if ((p.stockCantidad ?? 0) < it.cantidad) {
+      faltan[clave] = `Quedan ${p.stockCantidad ?? 0}`;
+    }
+  }
+  if (Object.keys(faltan).length) {
+    throw new AppError(409, "No hay stock suficiente para confirmar el pedido", "SIN_STOCK", faltan);
+  }
+
+  for (const it of items) {
+    await ajustarStock({
+      productId: it.productId,
+      variantId: it.variantId,
+      modo: "restar",
+      cantidad: it.cantidad,
+      tipo: "pedido",
+      motivo: `Pedido ${args.codigo}`,
+      orderId: args.orderId,
+      actor: args.actor,
+      session: args.session,
+    });
+  }
+}
+
+/**
+ * Devuelve al inventario lo que descontó `descontarPorPedido`. Si un producto o variante ya no existe,
+ * se salta con un aviso en el log (no se pierde la cancelación). Cualquier otro error se propaga.
+ */
+export async function reponerPorPedido(args: {
+  items: ItemStock[];
+  codigo: string;
+  orderId: string;
+  actor?: { adminId: string };
+  session: ClientSession;
+}): Promise<void> {
+  for (const it of unirItems(args.items)) {
+    try {
+      await ajustarStock({
+        productId: it.productId,
+        variantId: it.variantId,
+        modo: "sumar",
+        cantidad: it.cantidad,
+        tipo: "devolucion",
+        motivo: `Pedido ${args.codigo}`,
+        orderId: args.orderId,
+        actor: args.actor,
+        session: args.session,
+      });
+    } catch (err) {
+      // 404 sale antes de cualquier escritura, así que saltar no deja la transacción a medias.
+      if (err instanceof AppError && err.status === 404) {
+        log.warn("stock.reponer_sin_producto", { productId: it.productId, variantId: it.variantId, orderId: args.orderId });
+        continue;
+      }
+      throw err;
+    }
+  }
 }
