@@ -8,9 +8,11 @@ import { useCart } from "@/context/CartContext";
 import { useUser } from "@/context/UserContext";
 import { SITE } from "@/lib/siteConfig";
 import { redondear2 } from "@/lib/money";
+import { fetchWithCache } from "@/lib/cache";
+import { carritoConEntregaGratis } from "@/lib/shipping";
 import { CheckoutForm } from "@/Components/Checkout/CheckoutForm";
 import { OrderSummary } from "@/Components/Checkout/OrderSummary";
-import type { MetodoEntrega } from "@/types";
+import type { MetodoEntrega, Product } from "@/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -29,6 +31,19 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!SITE.checkoutHabilitado) router.replace("/carrito");
   }, [router]);
+
+  // D-71: solo para mostrar si el delivery es gratis; el servidor vuelve a decidirlo con la base (N1-5).
+  const [productosPublicos, setProductosPublicos] = useState<Product[] | null>(null);
+  useEffect(() => {
+    if (!SITE.checkoutHabilitado) return;
+    let activo = true;
+    fetchWithCache<Product[]>("/api/products").then((p) => {
+      if (activo) setProductosPublicos(p);
+    });
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   if (!SITE.checkoutHabilitado || !listo || isChecking) return <div className="min-h-screen" />;
 
@@ -52,7 +67,10 @@ export default function CheckoutPage() {
   }
 
   // Solo una estimación para mostrar; el total definitivo lo calcula y devuelve el servidor (N1-5).
-  const envioPorCoordinar = metodo === "envio_provincia";
+  // null = aún no se sabe (cargando productos).
+  const deliveryGratis = productosPublicos ? carritoConEntregaGratis(cart, productosPublicos) : null;
+  const envioPorCoordinar =
+    metodo === "envio_provincia" || (metodo === "delivery_huancayo" && deliveryGratis !== true);
   const resumen = (
     <OrderSummary
       items={cart.map((i) => ({
@@ -102,6 +120,7 @@ export default function CheckoutPage() {
             <CheckoutForm
               metodo={metodo}
               onMetodoChange={setMetodo}
+              deliveryGratis={deliveryGratis}
               nombreInicial={user?.nombre ?? ""}
               emailInicial={user?.email ?? ""}
             />

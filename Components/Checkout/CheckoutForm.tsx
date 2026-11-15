@@ -1,22 +1,21 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { lineaId } from "@/lib/variantes";
 import { normalizarTelefono } from "@/lib/phone";
-import type { MetodoEntrega, OrderCreateInput, OrderCreateResult } from "@/types";
+import { DEPARTAMENTOS, esDepartamento } from "@/lib/shipping";
+import type { DeliveryPointPublic, MetodoEntrega, OrderCreateInput, OrderCreateResult } from "@/types";
 
 type Errores = Record<string, string>;
 type Aviso = { texto: string; productos?: { nombre: string; motivo: string }[]; volverAlCarrito?: boolean };
 
-const OPCIONES_ENTREGA: { valor: MetodoEntrega; etiqueta: string; ayuda: string }[] = [
-  { valor: "delivery_huancayo", etiqueta: "Delivery en Huancayo", ayuda: "Gratis" },
-  { valor: "recojo", etiqueta: "Recojo en tienda", ayuda: "Te indicamos el punto de recojo por WhatsApp" },
-  { valor: "envio_provincia", etiqueta: "Envío a otra ciudad", ayuda: "El costo de envío se coordina por WhatsApp" },
-];
+// Textos de la fase 16b (D-71/72/73). "recojo" ya no se ofrece.
+const AYUDA_DELIVERY_ADICIONAL = "Se cobrará un adicional por el delivery; te avisaremos el costo por WhatsApp";
+const AVISO_PROVINCIA = "La agencia de envío, tu DNI y el resto de datos los coordinamos por WhatsApp.";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_NOTAS = 500;
@@ -46,11 +45,13 @@ function Campo(props: { id: string; etiqueta: string; error?: string; ayuda?: st
 type Props = {
   metodo: MetodoEntrega;
   onMetodoChange: (metodo: MetodoEntrega) => void;
+  /** Solo para mostrar (D-71); null mientras se calcula. El servidor decide. */
+  deliveryGratis: boolean | null;
   nombreInicial?: string;
   emailInicial?: string;
 };
 
-export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", emailInicial = "" }: Props) {
+export function CheckoutForm({ metodo, onMetodoChange, deliveryGratis, nombreInicial = "", emailInicial = "" }: Props) {
   const router = useRouter();
   const { cart } = useCart();
 
@@ -60,7 +61,9 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
   const [direccion, setDireccion] = useState("");
   const [referencia, setReferencia] = useState("");
   const [ciudad, setCiudad] = useState("");
+  const [provincia, setProvincia] = useState("");
   const [departamento, setDepartamento] = useState("");
+  const [puntoId, setPuntoId] = useState("");
   const [notas, setNotas] = useState("");
   const [website, setWebsite] = useState(""); // trampa anti-bots: un humano nunca lo ve ni lo llena
 
@@ -69,8 +72,41 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
   const [enviando, setEnviando] = useState(false);
   const enviandoRef = useRef(false); // el estado llega tarde para un doble clic muy rápido
 
-  const pideDireccion = metodo !== "recojo";
+  // Puntos de entrega activos, sin caché: lo que se edita en el panel se ve al momento. null = cargando.
+  const [puntos, setPuntos] = useState<DeliveryPointPublic[] | null>(null);
+  const [recargaPuntos, setRecargaPuntos] = useState(0);
+  useEffect(() => {
+    let activo = true;
+    fetch("/api/delivery-points", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: unknown) => {
+        if (activo) setPuntos(Array.isArray(d) ? (d as DeliveryPointPublic[]) : []);
+      })
+      .catch(() => {
+        if (activo) setPuntos([]);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [recargaPuntos]);
+
+  const esDelivery = metodo === "delivery_huancayo";
+  const esPunto = metodo === "punto_entrega";
   const esProvincia = metodo === "envio_provincia";
+  const puntoElegido = puntos?.find((p) => p._id === puntoId);
+
+  const opciones: { valor: MetodoEntrega; etiqueta: string; ayuda: string }[] = [
+    {
+      valor: "delivery_huancayo",
+      etiqueta: "Delivery en Huancayo",
+      ayuda: deliveryGratis === null ? "" : deliveryGratis ? "Gratis" : AYUDA_DELIVERY_ADICIONAL,
+    },
+    // Sin puntos activos la opción no se ofrece.
+    ...(puntos && puntos.length
+      ? [{ valor: "punto_entrega" as const, etiqueta: "Puntos de entrega", ayuda: "Sin costo adicional" }]
+      : []),
+    { valor: "envio_provincia", etiqueta: "Envío a provincia", ayuda: "El costo de envío se coordina por WhatsApp" },
+  ];
 
   function validar(): Errores {
     const e: Errores = {};
@@ -78,13 +114,30 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
     if (n.length < 2 || n.length > 100) e["cliente.nombre"] = "Ingresa tu nombre completo (2 a 100 letras)";
     if (!normalizarTelefono(telefono)) e["cliente.telefono"] = "Ingresa un celular válido de 9 dígitos que empiece en 9";
     if (email.trim() && !EMAIL_VALIDO.test(email.trim())) e["cliente.email"] = "Ingresa un correo válido";
-    if (pideDireccion && !direccion.trim()) e["entrega.direccion"] = "Ingresa tu dirección";
-    if (direccion.trim().length > 200) e["entrega.direccion"] = "Máximo 200 caracteres";
-    if (referencia.trim().length > 200) e["entrega.referencia"] = "Máximo 200 caracteres";
-    if (esProvincia && !ciudad.trim()) e["entrega.ciudad"] = "Ingresa tu ciudad";
-    if (esProvincia && !departamento.trim()) e["entrega.departamento"] = "Ingresa tu departamento";
+    if (esDelivery) {
+      if (!direccion.trim()) e["entrega.direccion"] = "Ingresa tu dirección";
+      if (direccion.trim().length > 200) e["entrega.direccion"] = "Máximo 200 caracteres";
+      if (referencia.trim().length > 200) e["entrega.referencia"] = "Máximo 200 caracteres";
+    }
+    if (esPunto && !puntoElegido) e["entrega.puntoEntregaId"] = "Elige un punto de entrega";
+    if (esProvincia) {
+      if (!esDepartamento(departamento)) e["entrega.departamento"] = "Elige tu departamento";
+      if (!provincia.trim()) e["entrega.provincia"] = "Ingresa tu provincia";
+      if (!ciudad.trim()) e["entrega.ciudad"] = "Ingresa tu ciudad";
+    }
     if (notas.trim().length > MAX_NOTAS) e["notas"] = `Máximo ${MAX_NOTAS} caracteres`;
     return e;
+  }
+
+  // Solo se envían los campos del método elegido: el servidor rechaza los demás (esquema estricto).
+  function datosEntrega(): OrderCreateInput["entrega"] {
+    if (esPunto) return { metodo, puntoEntregaId: puntoId };
+    if (esProvincia) return { metodo, departamento, provincia: provincia.trim(), ciudad: ciudad.trim() };
+    return {
+      metodo,
+      direccion: direccion.trim(),
+      ...(referencia.trim() ? { referencia: referencia.trim() } : {}),
+    };
   }
 
   async function enviar(ev: FormEvent) {
@@ -112,12 +165,7 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
           telefono: telefono.trim(),
           ...(email.trim() ? { email: email.trim() } : {}),
         },
-        entrega: {
-          metodo,
-          ...(pideDireccion ? { direccion: direccion.trim() } : {}),
-          ...(referencia.trim() ? { referencia: referencia.trim() } : {}),
-          ...(esProvincia ? { ciudad: ciudad.trim(), departamento: departamento.trim() } : {}),
-        },
+        entrega: datosEntrega(),
         ...(notas.trim() ? { notas: notas.trim() } : {}),
         website,
       };
@@ -161,7 +209,12 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
           }
         }
         setErrores(campos);
-        if (productos.length) {
+        if (res.status === 409 && campos["entrega.puntoEntregaId"]) {
+          // El punto se desactivó mientras el cliente llenaba el formulario: se recarga la lista.
+          setPuntoId("");
+          setRecargaPuntos((n) => n + 1);
+          setAviso({ texto: "El punto de entrega que elegiste ya no está disponible. Elige otro." });
+        } else if (productos.length) {
           setAviso({
             texto:
               res.status === 409
@@ -265,7 +318,7 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
       <fieldset>
         <legend className="block text-sm font-semibold text-gray-700 mb-2">¿Cómo quieres recibirlo?</legend>
         <div className="space-y-2">
-          {OPCIONES_ENTREGA.map((o) => (
+          {opciones.map((o) => (
             <label
               key={o.valor}
               className={`flex items-start gap-3 border-2 rounded-lg p-3 cursor-pointer transition ${
@@ -282,14 +335,14 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
               />
               <span>
                 <span className="block font-semibold text-gray-800">{o.etiqueta}</span>
-                <span className="block text-sm text-gray-500">{o.ayuda}</span>
+                {o.ayuda && <span className="block text-sm text-gray-500">{o.ayuda}</span>}
               </span>
             </label>
           ))}
         </div>
       </fieldset>
 
-      {pideDireccion && (
+      {esDelivery && (
         <>
           <Campo id="direccion" etiqueta="Dirección" error={err("entrega.direccion")}>
             <input
@@ -317,35 +370,90 @@ export function CheckoutForm({ metodo, onMetodoChange, nombreInicial = "", email
         </>
       )}
 
+      {esPunto && (
+        <Campo id="puntoEntrega" etiqueta="Punto de entrega" error={err("entrega.puntoEntregaId")}>
+          {puntos && puntos.length ? (
+            <select
+              id="puntoEntrega"
+              value={puntoId}
+              onChange={(e) => setPuntoId(e.target.value)}
+              aria-invalid={!!err("entrega.puntoEntregaId")}
+              aria-describedby={err("entrega.puntoEntregaId") ? "puntoEntrega-error" : undefined}
+              className={`${clase(err("entrega.puntoEntregaId"))} bg-white`}
+            >
+              <option value="">Elige un punto…</option>
+              {puntos.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="text-sm text-gray-500">
+              {puntos === null ? "Cargando puntos de entrega…" : "No hay puntos de entrega disponibles ahora."}
+            </p>
+          )}
+          {puntoElegido && (
+            <div className="mt-2 rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm text-gray-700">
+              <p>
+                {puntoElegido.direccion}
+                {puntoElegido.referencia ? ` (${puntoElegido.referencia})` : ""}
+              </p>
+              {puntoElegido.horario && <p className="text-gray-500 mt-0.5">{puntoElegido.horario}</p>}
+            </div>
+          )}
+        </Campo>
+      )}
+
       {esProvincia && (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Campo id="ciudad" etiqueta="Ciudad" error={err("entrega.ciudad")}>
-            <input
-              id="ciudad"
-              type="text"
-              autoComplete="address-level2"
-              maxLength={100}
-              value={ciudad}
-              onChange={(e) => setCiudad(e.target.value)}
-              aria-invalid={!!err("entrega.ciudad")}
-              aria-describedby={err("entrega.ciudad") ? "ciudad-error" : undefined}
-              className={clase(err("entrega.ciudad"))}
-            />
-          </Campo>
+        <>
           <Campo id="departamento" etiqueta="Departamento" error={err("entrega.departamento")}>
-            <input
+            <select
               id="departamento"
-              type="text"
               autoComplete="address-level1"
-              maxLength={100}
               value={departamento}
               onChange={(e) => setDepartamento(e.target.value)}
               aria-invalid={!!err("entrega.departamento")}
               aria-describedby={err("entrega.departamento") ? "departamento-error" : undefined}
-              className={clase(err("entrega.departamento"))}
-            />
+              className={`${clase(err("entrega.departamento"))} bg-white`}
+            >
+              <option value="">Elige tu departamento…</option>
+              {DEPARTAMENTOS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
           </Campo>
-        </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Campo id="provincia" etiqueta="Provincia" error={err("entrega.provincia")}>
+              <input
+                id="provincia"
+                type="text"
+                maxLength={100}
+                value={provincia}
+                onChange={(e) => setProvincia(e.target.value)}
+                aria-invalid={!!err("entrega.provincia")}
+                aria-describedby={err("entrega.provincia") ? "provincia-error" : undefined}
+                className={clase(err("entrega.provincia"))}
+              />
+            </Campo>
+            <Campo id="ciudad" etiqueta="Ciudad" error={err("entrega.ciudad")}>
+              <input
+                id="ciudad"
+                type="text"
+                autoComplete="address-level2"
+                maxLength={100}
+                value={ciudad}
+                onChange={(e) => setCiudad(e.target.value)}
+                aria-invalid={!!err("entrega.ciudad")}
+                aria-describedby={err("entrega.ciudad") ? "ciudad-error" : undefined}
+                className={clase(err("entrega.ciudad"))}
+              />
+            </Campo>
+          </div>
+          <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-3">{AVISO_PROVINCIA}</p>
+        </>
       )}
 
       <Campo id="notas" etiqueta="Notas para tu pedido (opcional)" error={err("notas")}>
@@ -402,5 +510,7 @@ const CLAVES_VISIBLES = new Set([
   "entrega.referencia",
   "entrega.ciudad",
   "entrega.departamento",
+  "entrega.provincia",
+  "entrega.puntoEntregaId",
   "notas",
 ]);

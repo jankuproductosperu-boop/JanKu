@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { DEPARTAMENTOS, entregaGratis, esDepartamento } from "@/lib/shipping";
+import { DEPARTAMENTOS, carritoConEntregaGratis, entregaGratis, esDepartamento } from "@/lib/shipping";
+
+describe("carritoConEntregaGratis", () => {
+  const productos = [
+    { _id: "a", deliveryHuancayo: true },
+    { _id: "b", deliveryHuancayo: false },
+    { _id: "c" },
+  ];
+  it("gratis si algún producto del carrito lo tiene", () => {
+    expect(carritoConEntregaGratis([{ _id: "b" }, { _id: "a", tipo: "producto" }], productos)).toBe(true);
+  });
+  it("no gratis si ninguno lo tiene o el campo falta", () => {
+    expect(carritoConEntregaGratis([{ _id: "b" }, { _id: "c" }], productos)).toBe(false);
+  });
+  it("una promoción no cuenta aunque comparta id con un producto marcado", () => {
+    expect(carritoConEntregaGratis([{ _id: "a", tipo: "promocion" }], productos)).toBe(false);
+  });
+  it("un id desconocido (promoción sin tipo) no cuenta; carrito vacío tampoco", () => {
+    expect(carritoConEntregaGratis([{ _id: "zzz" }], productos)).toBe(false);
+    expect(carritoConEntregaGratis([], productos)).toBe(false);
+  });
+});
 
 describe("DEPARTAMENTOS", () => {
   it("tiene 24 departamentos más Callao, sin repetidos", () => {

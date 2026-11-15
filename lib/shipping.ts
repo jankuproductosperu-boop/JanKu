@@ -44,3 +44,18 @@ export function entregaGratis(
 ): boolean {
   return items.some((i) => i.tipo === "producto" && i.deliveryHuancayo === true);
 }
+
+/**
+ * Para el navegador (solo mostrar; decide el servidor): cruza el carrito con los productos públicos.
+ * Un ítem sin `tipo` (carritos antiguos) se trata como producto; si su id no está entre los productos
+ * (p. ej. es una promoción), no cuenta.
+ */
+export function carritoConEntregaGratis(
+  carrito: { _id: string; tipo?: "producto" | "promocion" }[],
+  productos: { _id: string; deliveryHuancayo?: boolean | null }[],
+): boolean {
+  const porId = new Map(productos.map((p) => [p._id, p.deliveryHuancayo]));
+  return entregaGratis(
+    carrito.map((i) => ({ tipo: i.tipo ?? "producto", deliveryHuancayo: porId.get(i._id) ?? null })),
+  );
+}
