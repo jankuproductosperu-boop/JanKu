@@ -4,7 +4,7 @@
 //
 // No modifica documentos, así que no hace copia en backups/. Es idempotente: createIndex con la misma
 // definición no hace nada. Las opciones deben coincidir con las de los modelos (mismo nombre automático).
-// La fase 18 añadirá aquí los índices de cupones.
+// Fase 18: añade los índices de coupons y couponredemptions (reaplicar en dev y luego en prod).
 
 import mongoose from "mongoose";
 import { cargarUri, destino, mensajeSeguro, preguntar } from "./_runner.mjs";
@@ -20,6 +20,10 @@ const INDICES = [
   { coleccion: "ratelimits", key: { expiresAt: 1 }, opciones: { expireAfterSeconds: 0 } },
   { coleccion: "products", key: { categoriaSlugs: 1, stock: 1, precio: 1 }, opciones: {} },
   { coleccion: "products", key: { activo: 1, mostrarEnHome: 1 }, opciones: {} },
+  // Fase 18: cupones (02-datos.md §3.4 y §3.5).
+  { coleccion: "coupons", key: { codigo: 1 }, opciones: { unique: true } },
+  { coleccion: "couponredemptions", key: { orderId: 1 }, opciones: { unique: true } },
+  { coleccion: "couponredemptions", key: { couponId: 1, clienteKey: 1, estado: 1 }, opciones: {} },
 ];
 
 const firma = (key) => JSON.stringify(Object.entries(key));
@@ -33,7 +37,7 @@ try {
   const uri = cargarUri();
   const { host, base } = destino(uri);
   console.log("Migración: 003-indices");
-  console.log("  Crea los índices nuevos de orders, stockmovements, ratelimits y products.");
+  console.log("  Crea los índices nuevos de orders, stockmovements, ratelimits, products, coupons y couponredemptions.");
   console.log(`Host:      ${host}`);
   console.log(`Base:      ${base}`);
   console.log(`Modo:      ${apply ? "APLICAR" : "SIMULACIÓN"}\n`);

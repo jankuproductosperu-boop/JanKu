@@ -120,6 +120,9 @@ const CHECKS = [
     nombre: "PUT /api/admin/delivery-points/000000000000000000000000 (sin cookie)", metodo: "PUT",
     ruta: "/api/admin/delivery-points/000000000000000000000000", cuerpo: {}, espera: estado(401),
   },
+  // Fase 18: cupones. Ojo: validate cuenta 1 intento del límite de 10 / 10 min por IP aunque el cuerpo sea inválido.
+  { nombre: "POST /api/coupons/validate con {}", metodo: "POST", ruta: "/api/coupons/validate", cuerpo: {}, espera: estado(400) },
+  { nombre: "GET /api/admin/coupons (sin cookie)", metodo: "GET", ruta: "/api/admin/coupons", espera: estado(401) },
 ];
 
 async function main() {
