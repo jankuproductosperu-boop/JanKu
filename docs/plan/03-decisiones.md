@@ -155,7 +155,7 @@ pendiente ──► confirmado ──► enviado ──► entregado
 
 **D-32 · Código de pedido** `JK-AAMMDD-XXXX` (4 caracteres de `23456789ABCDEFGHJKLMNPQRSTUVWXYZ`), único, con reintento ante colisión. **Token de acceso** aleatorio de 32 bytes: va en la URL (`/pedido/JK-…?t=…`), en la base se guarda su hash SHA-256. Sin token válido (y sin ser el dueño con sesión) la página responde 404: el pedido contiene datos personales.
 
-**D-33 · Envío.** `costoEnvio` existe en el modelo. En esta versión: Huancayo y recojo = 0; provincia = 0 con `envioPorCoordinar: true` y aviso "el costo de envío se coordina por WhatsApp". *Depende de P6.*
+**D-33 · Envío.** `costoEnvio` existe en el modelo. En esta versión: Huancayo y recojo = 0; provincia = 0 con `envioPorCoordinar: true` y aviso "el costo de envío se coordina por WhatsApp". *Depende de P6.* *Desde la fase 16b, lo de Huancayo y recojo lo sustituyen D-71 y D-72; lo de provincia sigue vigente (D-73).*
 
 **D-34 · Teléfono solo Perú**: 9 dígitos que empiezan en 9, guardado como `51` + 9 dígitos. *Depende de P8.*
 
@@ -256,3 +256,15 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-69 · Las variantes existentes no se pueden omitir al guardar.** Si `PUT /api/products/[id]` trae `variantes` y falta alguna de las ya guardadas, o trae un `_id` que no existe en el producto → 400. Se desactivan, nunca se borran (D-64).
 
 **D-70 · Retoque visual del panel** (pedido por el dueño durante la 13b). Solo estilo, sin reestructurar: tarjetas, botones e iconos de sección con el azul de la tienda (`#2C2C6C`) y el acento índigo, y un modo oscuro con más contraste y profundidad. Se hace con los tokens de `.panel` (D-49); no se toca `app/globals.css` fuera de ese bloque, ni la tienda, ni el CSP.
+
+---
+
+## Entrega (fase 16b)
+
+*Aprobadas por el dueño el 2026-11-14 (Q1 sí, Q2 enterado, Q3 solo departamentos). Sustituyen lo que D-33 decía sobre Huancayo y recojo.*
+
+**D-71 · Delivery gratis por carrito.** Con método `delivery_huancayo`: si **algún** ítem de tipo producto tiene `deliveryHuancayo` verdadero → `costoEnvio = 0`, `envioPorCoordinar = false`. Si ninguno → `costoEnvio = 0` y `envioPorCoordinar = true` (aviso: "Se cobrará un adicional por el delivery; te avisaremos el costo por WhatsApp"). Las **promociones nunca cuentan**. Lo decide el servidor (N1-5) con `entregaGratis()` de `lib/shipping.ts`; el navegador solo lo muestra (checkout y `/carrito`). Se interpreta igual que `ProductCard`: solo el valor `true` cuenta (un producto sin el campo guardado no califica).
+
+**D-72 · Puntos de entrega.** Entidad administrable (`DeliveryPoint`, pantalla Panel → Puntos de entrega, permiso `catalogo.editar`). Elegir uno = método `punto_entrega`: sin costo ni aviso de adicional. El pedido guarda una **copia** del punto (nombre, dirección, referencia, horario), así que editarlo después no cambia pedidos ya hechos. Un punto inactivo o inexistente al crear el pedido → 409 `PUNTO_NO_DISPONIBLE`. Nunca se borran: se desactivan (N1-3). `recojo` se conserva en el enum solo para pedidos antiguos; al crear un pedido se rechaza con 400.
+
+**D-73 · Envío a provincia.** Datos: departamento (lista cerrada de 25: 24 departamentos + Callao, sin "Lima Provincias"), provincia y ciudad (texto libre). Sin dirección ni referencia; si llegan → 400 (cada método rechaza los campos que no le corresponden). Aviso fijo: "La agencia de envío, tu DNI y el resto de datos los coordinamos por WhatsApp." Sigue con `envioPorCoordinar = true`. Sin campo distrito salvo que el dueño lo pida.
