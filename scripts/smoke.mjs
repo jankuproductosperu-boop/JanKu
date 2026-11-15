@@ -112,6 +112,14 @@ const CHECKS = [
   { nombre: "PATCH /api/admin/orders/000000000000000000000000 (sin cookie)", metodo: "PATCH", ruta: "/api/admin/orders/000000000000000000000000", cuerpo: {}, espera: estado(401) },
   { nombre: "POST /api/admin/orders/expire (sin cookie)", metodo: "POST", ruta: "/api/admin/orders/expire", cuerpo: {}, espera: estado(401) },
   { nombre: "GET /pedido/JK-000000-XXXX (sin token)", metodo: "GET", ruta: "/pedido/JK-000000-XXXX", espera: estado(404) },
+  // Fase 16b: puntos de entrega. El público devuelve un arreglo; el admin exige sesión.
+  { nombre: "GET /api/delivery-points", metodo: "GET", ruta: "/api/delivery-points", espera: esArregloJson },
+  { nombre: "GET /api/admin/delivery-points (sin cookie)", metodo: "GET", ruta: "/api/admin/delivery-points", espera: estado(401) },
+  { nombre: "POST /api/admin/delivery-points (sin cookie)", metodo: "POST", ruta: "/api/admin/delivery-points", cuerpo: {}, espera: estado(401) },
+  {
+    nombre: "PUT /api/admin/delivery-points/000000000000000000000000 (sin cookie)", metodo: "PUT",
+    ruta: "/api/admin/delivery-points/000000000000000000000000", cuerpo: {}, espera: estado(401),
+  },
 ];
 
 async function main() {
