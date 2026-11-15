@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { ORDER_ESTADOS } from "@/lib/orderStatus";
 import { normalizarTelefono } from "@/lib/phone";
 import { objectId } from "@/server/validation/common";
 import type { OrderCreateInput } from "@/types";
@@ -55,6 +56,31 @@ export const pedidoCrearSchema = z
       }
     }
   });
+
+// ── Administración (fase 17) ─────────────────────────────────────────────────────────────────────────
+
+export const pedidoAccionSchema = z.discriminatedUnion("accion", [
+  z.object({ accion: z.literal("confirmar") }).strict(),
+  z.object({ accion: z.literal("enviar"), nota: z.string().trim().max(200).optional() }).strict(),
+  z.object({ accion: z.literal("entregar") }).strict(),
+  z.object({ accion: z.literal("cancelar"), motivo: z.string().trim().min(3).max(200) }).strict(),
+  z
+    .object({
+      accion: z.literal("pago"),
+      estado: z.enum(["pendiente", "pagado", "reembolsado"]),
+      metodo: z.enum(["", "yape", "plin", "transferencia", "efectivo", "otro"]),
+      referencia: z.string().trim().max(100).optional(),
+    })
+    .strict(),
+  z.object({ accion: z.literal("nota"), nota: z.string().trim().min(1).max(500) }).strict(),
+]);
+
+export const pedidoListaQuerySchema = z.object({
+  estado: z.enum(ORDER_ESTADOS).optional(),
+  q: z.string().trim().max(100).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+});
 
 // Comprobación de compilación: types/order.ts debe coincidir con el esquema.
 type Esquema = z.infer<typeof pedidoCrearSchema>;

@@ -1,16 +1,24 @@
 import "server-only";
 import crypto from "crypto";
+import mongoose, { isValidObjectId, type ClientSession } from "mongoose";
 import { connectDB } from "@/server/db";
-import { AppError, entradaInvalida, noEncontrado } from "@/server/http/errors";
+import { AppError, conflicto, entradaInvalida, noEncontrado } from "@/server/http/errors";
 import { log } from "@/server/logger";
 import { generarToken, hashearToken } from "@/server/auth/tokens";
 import { listarNivelesActivos } from "@/server/services/discount.service";
+import {
+  asegurarColeccionMovimientos,
+  descontarPorPedido,
+  reponerPorPedido,
+  type ItemStock,
+} from "@/server/services/inventory.service";
 import { redondear2 } from "@/lib/money";
 import { normalizarTelefono } from "@/lib/phone";
 import { calcularTotales } from "@/lib/pricing";
 import { etiquetaVariante, precioDeVariante, tieneVariantes } from "@/lib/variantes";
 import { enlaceWhatsAppPedido } from "@/lib/whatsapp";
-import type { OrderEstado } from "@/lib/orderStatus";
+import { puedeTransicionar, type OrderEstado } from "@/lib/orderStatus";
+import AdminUser from "@/models/AdminUser";
 import Order from "@/models/Order";
 import Product from "@/models/Product";
 import Promotion from "@/models/Promotion";
@@ -20,8 +28,10 @@ import type {
   MetodoPago,
   OrderCreateInput,
   OrderCreateResult,
+  Order as PedidoAdmin,
   OrderItem,
   OrderPublic,
+  Paginated,
   PagoEstado,
 } from "@/types";
 
@@ -407,4 +417,316 @@ export async function listarPedidosDeUsuario(userId: string): Promise<OrderPubli
   await connectDB();
   const docs = await Order.find({ userId }).sort({ createdAt: -1 }).limit(50).lean<OrderLean[]>();
   return docs.map(aPublico);
+}
+
+// ── Administración de pedidos (fase 17) ───────────────────────────────────────────────────────────────
+
+type Actor = { adminId: string };
+
+type OrderAdminLean = Omit<OrderLean, "items" | "pago" | "historial"> & {
+  _id: unknown;
+  items: (OrderLean["items"][number] & { precioCosto?: number })[];
+  pago: OrderLean["pago"] & { referencia?: string; fecha?: Date | null };
+  historial: { estado: OrderEstado; fecha: Date; adminId?: unknown; nota?: string }[];
+  notasInternas?: string;
+  stockDescontado?: boolean;
+  origen?: { ip?: string; userAgent?: string };
+};
+
+async function nombresDeAdmins(ids: unknown[]): Promise<Map<string, string>> {
+  const unicos = [...new Set(ids.filter(Boolean).map(String))];
+  if (!unicos.length) return new Map();
+  const admins = await AdminUser.find({ _id: { $in: unicos } })
+    .select("nombre")
+    .lean<{ _id: unknown; nombre?: string }[]>();
+  return new Map(admins.map((a) => [String(a._id), a.nombre ?? ""]));
+}
+
+function aAdmin(
+  o: OrderAdminLean,
+  opts: { incluirCostos: boolean; incluirOrigen: boolean; nombres?: Map<string, string> },
+): PedidoAdmin {
+  const base = aPublico({ ...o, historial: o.historial.map((h) => ({ estado: h.estado, fecha: h.fecha })) });
+  return {
+    ...base,
+    _id: String(o._id),
+    userId: o.userId ? String(o.userId) : undefined,
+    // El costo solo sale si quien pide tiene `costos.ver`.
+    items: base.items.map((it, i) => (opts.incluirCostos ? { ...it, precioCosto: o.items[i].precioCosto ?? 0 } : it)),
+    historial: o.historial.map((h) => ({
+      estado: h.estado,
+      fecha: h.fecha.toISOString(),
+      nota: h.nota || undefined,
+      adminNombre: h.adminId ? opts.nombres?.get(String(h.adminId)) || undefined : undefined,
+    })),
+    notasInternas: o.notasInternas || undefined,
+    stockDescontado: o.stockDescontado === true,
+    origen: opts.incluirOrigen ? o.origen : undefined,
+    pago: {
+      ...base.pago,
+      referencia: o.pago.referencia || undefined,
+      fecha: o.pago.fecha ? o.pago.fecha.toISOString() : undefined,
+    },
+  };
+}
+
+/** Quita el costo de los ítems (para quien no tiene `costos.ver`). */
+export function sinCostos(p: PedidoAdmin): PedidoAdmin {
+  return { ...p, items: p.items.map((it) => ({ ...it, precioCosto: undefined })) };
+}
+
+const escaparRegex = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export async function listarPedidosAdmin(q: {
+  estado?: OrderEstado;
+  q?: string;
+  page: number;
+  pageSize: number;
+}): Promise<Paginated<PedidoAdmin>> {
+  await connectDB();
+  const filtro: Record<string, unknown> = {};
+  if (q.estado) filtro.estado = q.estado;
+
+  const texto = (q.q ?? "").trim();
+  if (texto) {
+    // Todo lo que llega del navegador se escapa antes de armar la expresión regular.
+    const condiciones: Record<string, unknown>[] = [
+      { codigo: { $regex: `^${escaparRegex(texto.toUpperCase())}` } },
+      { "cliente.nombre": { $regex: escaparRegex(texto), $options: "i" } },
+    ];
+    const digitos = texto.replace(/\D/g, "");
+    if (digitos.length >= 3) condiciones.push({ "cliente.telefono": { $regex: digitos } });
+    filtro.$or = condiciones;
+  }
+
+  const [docs, total] = await Promise.all([
+    Order.find(filtro)
+      .sort({ createdAt: -1 })
+      .skip((q.page - 1) * q.pageSize)
+      .limit(q.pageSize)
+      .lean<OrderAdminLean[]>(),
+    Order.countDocuments(filtro),
+  ]);
+  // La lista nunca lleva costos ni origen.
+  const items = docs.map((d) => aAdmin(d, { incluirCostos: false, incluirOrigen: false }));
+  return { items, total, page: q.page, pageSize: q.pageSize };
+}
+
+export async function obtenerPedidoAdmin(id: string, opts: { incluirCostos: boolean }): Promise<PedidoAdmin> {
+  await connectDB();
+  if (!isValidObjectId(id)) throw noEncontrado("Pedido");
+  const o = await Order.findById(id).lean<OrderAdminLean>();
+  if (!o) throw noEncontrado("Pedido");
+  const nombres = await nombresDeAdmins(o.historial.map((h) => h.adminId));
+  return aAdmin(o, { incluirCostos: opts.incluirCostos, incluirOrigen: true, nombres });
+}
+
+/** Abre una transacción y la reintenta solo ante conflictos transitorios; `fn` debe poder repetirse. */
+async function conTransaccion<T>(fn: (s: ClientSession) => Promise<T>): Promise<T> {
+  await connectDB();
+  await asegurarColeccionMovimientos();
+  const session = await mongoose.startSession();
+  try {
+    let resultado: { valor: T } | undefined;
+    await session.withTransaction(async () => {
+      resultado = { valor: await fn(session) };
+    });
+    if (!resultado) throw new Error("La transacción del pedido no devolvió resultado");
+    return resultado.valor;
+  } finally {
+    await session.endSession();
+  }
+}
+
+type PedidoParaCambio = {
+  codigo: string;
+  estado: OrderEstado;
+  stockDescontado?: boolean;
+  items: { tipo: "producto" | "promocion"; refId: unknown; varianteId?: unknown; nombre: string; cantidad: number }[];
+};
+
+function itemsConStock(p: PedidoParaCambio): ItemStock[] {
+  return p.items
+    .filter((i) => i.tipo === "producto") // las promociones no llevan stock (D-23)
+    .map((i) => ({
+      productId: String(i.refId),
+      variantId: i.varianteId ? String(i.varianteId) : undefined,
+      cantidad: i.cantidad,
+      nombre: i.nombre,
+    }));
+}
+
+/**
+ * Cambio de estado: estado, historial y stock en UNA transacción. El filtro por el estado anterior
+ * impide que dos administradores apliquen la misma acción a la vez.
+ */
+async function cambiarEstado(
+  id: string,
+  destino: OrderEstado,
+  opts: {
+    actor: Actor | null;
+    nota?: string;
+    /** Efectos de inventario; devuelve el nuevo valor de `stockDescontado` si cambia. */
+    inventario?: (p: PedidoParaCambio, s: ClientSession) => Promise<boolean | undefined>;
+  },
+): Promise<PedidoAdmin> {
+  await connectDB();
+  if (!isValidObjectId(id)) throw noEncontrado("Pedido");
+
+  const codigo = await conTransaccion(async (s) => {
+    const p = await Order.findById(id).select("codigo estado stockDescontado items").session(s).lean<PedidoParaCambio>();
+    if (!p) throw noEncontrado("Pedido");
+    if (!puedeTransicionar(p.estado, destino)) {
+      throw conflicto(`No se puede pasar el pedido de «${p.estado}» a «${destino}»`, "TRANSICION_INVALIDA");
+    }
+
+    const stockDescontado = opts.inventario ? await opts.inventario(p, s) : undefined;
+
+    const res = await Order.updateOne(
+      { _id: id, estado: p.estado },
+      {
+        $set: { estado: destino, ...(stockDescontado !== undefined ? { stockDescontado } : {}) },
+        $push: {
+          historial: {
+            estado: destino,
+            fecha: new Date(),
+            ...(opts.actor ? { adminId: opts.actor.adminId } : {}),
+            ...(opts.nota ? { nota: opts.nota } : {}),
+          },
+        },
+      },
+    ).session(s);
+    if (res.modifiedCount !== 1) {
+      throw conflicto("El pedido cambió mientras lo editabas. Recarga.", "PEDIDO_MODIFICADO");
+    }
+    return p.codigo;
+  });
+
+  log.info("pedido.estado", { codigo, estado: destino, adminId: opts.actor?.adminId ?? "sistema" });
+  return obtenerPedidoAdmin(id, { incluirCostos: true });
+}
+
+export function confirmarPedido(id: string, actor: Actor): Promise<PedidoAdmin> {
+  return cambiarEstado(id, "confirmado", {
+    actor,
+    inventario: async (p, s) => {
+      if (p.stockDescontado) return undefined; // ya descontado: nunca dos veces
+      await descontarPorPedido({
+        items: itemsConStock(p),
+        codigo: p.codigo,
+        orderId: id,
+        actor,
+        session: s,
+      });
+      return true;
+    },
+  });
+}
+
+export function marcarEnviado(id: string, actor: Actor, nota?: string): Promise<PedidoAdmin> {
+  return cambiarEstado(id, "enviado", { actor, nota: nota || undefined });
+}
+
+export function marcarEntregado(id: string, actor: Actor): Promise<PedidoAdmin> {
+  return cambiarEstado(id, "entregado", { actor });
+}
+
+/** `actor` null = el sistema (caducidad). */
+export function cancelarPedido(id: string, actor: Actor | null, motivo: string): Promise<PedidoAdmin> {
+  return cambiarEstado(id, "cancelado", {
+    actor,
+    nota: motivo,
+    inventario: async (p, s) => {
+      if (!p.stockDescontado) return undefined; // nada que devolver
+      await reponerPorPedido({
+        items: itemsConStock(p),
+        codigo: p.codigo,
+        orderId: id,
+        actor: actor ?? undefined,
+        session: s,
+      });
+      return false;
+    },
+  });
+}
+
+export async function registrarPago(
+  id: string,
+  actor: Actor,
+  pago: { estado: PagoEstado; metodo: MetodoPago; referencia?: string },
+): Promise<PedidoAdmin> {
+  await connectDB();
+  if (!isValidObjectId(id)) throw noEncontrado("Pedido");
+  const o = await Order.findById(id).select("codigo pago").lean<{ codigo: string; pago: { estado: PagoEstado } }>();
+  if (!o) throw noEncontrado("Pedido");
+
+  const set: Record<string, unknown> = {
+    "pago.estado": pago.estado,
+    "pago.metodo": pago.metodo,
+    "pago.referencia": pago.referencia ?? "",
+  };
+  if (pago.estado === "pagado" && o.pago.estado !== "pagado") set["pago.fecha"] = new Date();
+  if (pago.estado === "pendiente") set["pago.fecha"] = null;
+
+  await Order.updateOne({ _id: id }, { $set: set });
+  log.info("pedido.pago", { codigo: o.codigo, pago: pago.estado, adminId: actor.adminId });
+  return obtenerPedidoAdmin(id, { incluirCostos: true });
+}
+
+const LIMITE_NOTAS = 2000; // maxlength de `notasInternas` en el modelo
+
+/** AÑADE una línea `[fecha · admin] texto`; nunca reemplaza lo anterior. */
+export async function agregarNota(id: string, actor: Actor, nota: string): Promise<PedidoAdmin> {
+  await connectDB();
+  if (!isValidObjectId(id)) throw noEncontrado("Pedido");
+  const o = await Order.findById(id).select("codigo notasInternas").lean<{ codigo: string; notasInternas?: string }>();
+  if (!o) throw noEncontrado("Pedido");
+
+  const nombres = await nombresDeAdmins([actor.adminId]);
+  const fecha = new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date());
+  const linea = `[${fecha} · ${nombres.get(actor.adminId) || "admin"}] ${nota}`;
+  const previo = o.notasInternas ?? "";
+  const nuevo = previo ? `${previo}\n${linea}` : linea;
+  if (nuevo.length > LIMITE_NOTAS) {
+    throw conflicto(`Las notas internas llegaron al límite de ${LIMITE_NOTAS} caracteres`, "NOTAS_LLENAS");
+  }
+
+  // Solo se escribe si nadie añadió otra nota entretanto (no se pierden notas ajenas).
+  const res = await Order.updateOne(
+    { _id: id, notasInternas: previo === "" ? { $in: ["", null] } : previo },
+    { $set: { notasInternas: nuevo } },
+  );
+  if (res.modifiedCount !== 1) {
+    throw conflicto("El pedido cambió mientras lo editabas. Recarga.", "PEDIDO_MODIFICADO");
+  }
+  log.info("pedido.nota", { codigo: o.codigo, adminId: actor.adminId });
+  return obtenerPedidoAdmin(id, { incluirCostos: true });
+}
+
+const HORAS_CADUCIDAD = 72;
+
+/** Cancela (como sistema) los pedidos pendientes de más de 72 h; un fallo en uno no detiene los demás. */
+export async function caducarPendientes(): Promise<{ cancelados: number }> {
+  await connectDB();
+  const limite = new Date(Date.now() - HORAS_CADUCIDAD * 60 * 60 * 1000);
+  const viejos = await Order.find({ estado: "pendiente", createdAt: { $lt: limite } })
+    .sort({ createdAt: 1 })
+    .limit(100)
+    .select("_id")
+    .lean<{ _id: unknown }[]>();
+
+  let cancelados = 0;
+  for (const v of viejos) {
+    try {
+      await cancelarPedido(String(v._id), null, `Caducado: sin confirmar en ${HORAS_CADUCIDAD} h`);
+      cancelados++;
+    } catch (err) {
+      log.warn("pedido.caducidad_fallo", { id: String(v._id), mensaje: err instanceof Error ? err.message : "error" });
+    }
+  }
+  return { cancelados };
 }

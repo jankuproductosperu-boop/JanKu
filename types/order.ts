@@ -37,10 +37,12 @@ export type OrderPublic = {
   createdAt: string;
 };
 
-export type Order = OrderPublic & {
+export type Order = Omit<OrderPublic, "items" | "historial" | "pago"> & {
   _id: string;
   userId?: string;
   items: (OrderItem & { precioCosto?: number })[];
+  /** Solo en la vista de administración (fase 17): nota/motivo del cambio y quién lo hizo. */
+  historial: { estado: OrderEstado; fecha: string; nota?: string; adminNombre?: string }[];
   notasInternas?: string;
   stockDescontado: boolean;
   origen?: { ip?: string; userAgent?: string };
