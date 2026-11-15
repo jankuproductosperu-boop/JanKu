@@ -114,11 +114,15 @@ Cómo sabe el checkout si el carrito califica: lee los productos públicos que l
 
 `git revert` de la fusión. Los pedidos hechos con los métodos nuevos quedan en la base con campos que el código viejo ignora. Interruptor del checkout apagado en Render.
 
-## 10. Preguntas abiertas
+## 10. Preguntas (resueltas salvo la última)
 
-- **Q1.** `/carrito` dice hoy "Delivery Huancayo GRATIS" y "Envío gratis en Huancayo" para cualquier carrito (sitio público, existe ya). ¿Lo ajusto para que diga gratis solo si el carrito califica y, si no, "El costo del delivery se coordina por WhatsApp"? Por defecto: **sí**, solo con la lógica de `entregaGratis`.
-- **Q2.** ¿Revisar con el dueño qué productos tienen hoy marcada la casilla? El valor por defecto es "marcado", así que casi todos salen gratis hasta que se desmarquen.
-- **Q3.** ¿Incluir "Lima Provincias" además de los 24 departamentos y el Callao? Por defecto: no.
+Respondidas por el dueño:
+
+- **Q1 · Sí.** `/carrito` dice hoy "Delivery Huancayo GRATIS" y "Envío gratis en Huancayo" para cualquier carrito. Se ajusta: gratis solo si el carrito califica (`entregaGratis`); si no, "El costo del delivery se coordina por WhatsApp". Es el único cambio al sitio público de esta fase.
+- **Q2 · Enterado.** El campo `deliveryHuancayo` viene marcado por defecto; el dueño desmarcará los productos que no ofrezcan delivery gratis.
+- **Q3 · Solo departamentos.** El desplegable lleva únicamente departamentos (24 + Callao, sin "Lima Provincias"). Los demás datos del destino los escribe el cliente.
+
+Pendiente de confirmar con el dueño: ¿además de **provincia** y **ciudad** quiere un campo **distrito**? Por defecto: solo departamento (desplegable), provincia y ciudad (D-73).
 
 ## 11. Qué NO tocar
 
