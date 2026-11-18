@@ -42,3 +42,29 @@ Fecha: 2026-11-13 · Rama `fase-03-reorganizar-lib`
 Los 21 errores de `no-require-imports` desaparecen (scripts a `scripts/legacy/`, excluido del lint). Un error más desaparece: `react-hooks/set-state-in-effect` baja de 4 a 3 al borrar el `ImageUploader.tsx` muerto.
 
 **Referencia de N1-10 desde ahora:** ninguna fase puede superar 18 errores de lint.
+
+---
+
+## Cierre · Fase 21
+
+Fecha: 2026-11-17 · Rama `fase-21-cierre`
+
+| Comando | Resultado |
+|---|---|
+| `npm run typecheck` | 0 errores |
+| `npm test` | 15 archivos, 253 pruebas, pasan |
+| `npm run lint` | **3 errores**, 12 avisos (antes 40 / 38 en la fase 01) |
+| `npm run build` | Compila sin errores (15 s en local) |
+| `npm run smoke` | Ver `cierre.md` (lo ejecuta el dueño con su servidor local) |
+
+### Lint por regla
+
+| Severidad | Regla | Cantidad | Dónde |
+|---|---|---:|---|
+| error | react-hooks/set-state-in-effect | 3 | `app/(tienda)/busqueda/page.tsx`, `context/CartContext.tsx`, `context/FavoritesContext.tsx` |
+| aviso | @next/next/no-img-element | 11 | Componentes de la tienda y del panel |
+| aviso | react-hooks/exhaustive-deps | 1 | `Components/Header/Header.tsx` |
+
+`no-unused-vars`, `prefer-const`, `no-unescaped-entities`, `no-explicit-any`, `no-require-imports` y `no-html-link-for-pages`: **0**.
+
+**Referencia de N1-10 desde ahora:** ninguna tarea puede superar 3 errores de lint.
