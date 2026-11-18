@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ipDesdeCabeceras, sanearIP } from "@/lib/clientIp";
+import { diagnosticoIP, ipDesdeCabeceras, sanearIP } from "@/lib/clientIp";
 
 const REAL = "190.12.34.56"; // cliente en Huancayo
 const BORDE = "104.22.17.40"; // borde de Cloudflare de Render
@@ -59,5 +59,14 @@ describe("el límite se aplica igual aunque se falsifiquen cabeceras", () => {
 
     expect(Object.keys(contador)).toEqual([`login-admin:ip:${REAL}`]);
     expect(resultados).toEqual([true, true, false, false]);
+  });
+});
+
+describe("diagnosticoIP (temporal)", () => {
+  it("devuelve la cadena saneada y limitada, sin decidir nada", () => {
+    const h = new Headers({ "x-forwarded-for": "1.1.1.1, <x>, 2.2.2.2", "cf-connecting-ip": "3.3.3.3;" });
+    expect(diagnosticoIP(h)).toEqual({ xff: ["1.1.1.1", "2.2.2.2"], cf: "3.3.3.3", realIp: "" });
+    const larga = new Headers({ "x-forwarded-for": Array(20).fill("9.9.9.9").join(",") });
+    expect(diagnosticoIP(larga).xff).toHaveLength(10);
   });
 });

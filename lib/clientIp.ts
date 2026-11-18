@@ -29,3 +29,20 @@ export function ipDesdeCabeceras(headers: LectorCabeceras): string {
   const indice = Math.max(0, entradas.length - 1 - ENTRADAS_DE_PROXY);
   return sanearIP(entradas[indice]) || "unknown";
 }
+
+/**
+ * DIAGNÓSTICO TEMPORAL (P3): cadena saneada de cabeceras de IP, solo para el log de un login de admin correcto.
+ * Sirve para ajustar ENTRADAS_DE_PROXY en producción; se quita en cuanto quede ajustado. No decide nada.
+ */
+export function diagnosticoIP(headers: LectorCabeceras): { xff: string[]; cf: string; realIp: string } {
+  const xff = (headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((e) => sanearIP(e.trim()))
+    .filter(Boolean)
+    .slice(-10); // las de la derecha son las de la infraestructura
+  return {
+    xff,
+    cf: sanearIP(headers.get("cf-connecting-ip") ?? ""),
+    realIp: sanearIP(headers.get("x-real-ip") ?? ""),
+  };
+}

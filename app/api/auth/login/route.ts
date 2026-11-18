@@ -5,6 +5,7 @@ import AdminUser from "@/models/AdminUser";
 import bcrypt from "bcryptjs";
 import { firmarAdmin, ponerCookieAdmin } from "@/server/auth/session";
 import { obtenerIP } from "@/server/auth/ip";
+import { diagnosticoIP } from "@/lib/clientIp";
 import { consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { log } from "@/server/logger";
@@ -117,7 +118,8 @@ export async function POST(request: Request) {
     });
     await ponerCookieAdmin(token);
 
-    log.info("login_admin.ok", { ip: clientIP });
+    // DIAGNÓSTICO TEMPORAL (P3): cadena de IPs para ajustar ENTRADAS_DE_PROXY. Se quita al ajustarlo.
+    log.info("login_admin.ok", { ip: clientIP, diagnosticoIP: diagnosticoIP(headersList) });
 
     return NextResponse.json(
       { success: true, username: user.username },
