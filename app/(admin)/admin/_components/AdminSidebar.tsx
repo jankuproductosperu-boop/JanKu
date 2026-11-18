@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, ClipboardList, Package, FolderTree, Archive, ListOrdered,
-  Tag, Sparkles, Image as ImageIcon, MessageSquare, LogOut, MapPin,
+  Tag, Ticket, Sparkles, Image as ImageIcon, MessageSquare, LogOut, MapPin,
 } from "lucide-react";
 import type { Permiso } from "@/types";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
@@ -19,10 +19,11 @@ const MENU: Item[] = [
   { href: "/admin/inventario", etiqueta: "Inventario", permiso: "inventario.ver", icono: Archive },
   { href: "/admin/orden", etiqueta: "Orden", permiso: "catalogo.editar", icono: ListOrdered },
   { grupo: "Marketing", href: "/admin/descuentos", etiqueta: "Descuentos", permiso: "descuentos.gestionar", icono: Tag },
+  { href: "/admin/cupones", etiqueta: "Cupones", permiso: "cupones.gestionar", icono: Ticket },
   { href: "/admin/promociones", etiqueta: "Promociones", permiso: "catalogo.editar", icono: Sparkles },
   { href: "/admin/banners", etiqueta: "Banners", permiso: "catalogo.editar", icono: ImageIcon },
   { href: "/admin/popup", etiqueta: "Popup de oferta", permiso: "catalogo.editar", icono: MessageSquare },
-  // fase 13b: Variantes · 17: Pedidos · 19: Cupones · 21: Usuarios · 21b: Estadísticas
+  // fase 13b: Variantes · 17: Pedidos · 21: Usuarios · 21b: Estadísticas
 ];
 
 export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
