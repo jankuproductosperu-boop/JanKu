@@ -1,11 +1,13 @@
 import "server-only";
 // server/email/auth-emails.ts
+import { escapeHtml } from "@/lib/html";
 import { sendEmail, SITE_URL } from "./send";
 
 // ── Email de verificación ─────────────────────────────────────────────────────
 
 export async function enviarEmailVerificacion(email: string, nombre: string, token: string) {
   const enlace = `${SITE_URL}/auth/verificar-email?token=${token}`;
+  const nombreHtml = escapeHtml(nombre);
 
   await sendEmail({
     to: email,
@@ -16,7 +18,7 @@ export async function enviarEmailVerificacion(email: string, nombre: string, tok
           <h1 style="color: white; margin: 0;">JANKU</h1>
         </div>
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
-          <h2 style="color: #2C2C6C;">Hola ${nombre} 👋</h2>
+          <h2 style="color: #2C2C6C;">Hola ${nombreHtml} 👋</h2>
           <p style="color: #555;">Gracias por registrarte en Janku. Verifica tu email haciendo clic en el botón:</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${enlace}" 
@@ -41,6 +43,7 @@ export async function enviarEmailVerificacion(email: string, nombre: string, tok
 
 export async function enviarEmailResetPassword(email: string, nombre: string, token: string) {
   const enlace = `${SITE_URL}/auth/nueva-contrasena?token=${token}`;
+  const nombreHtml = escapeHtml(nombre);
 
   await sendEmail({
     to: email,
@@ -51,7 +54,7 @@ export async function enviarEmailResetPassword(email: string, nombre: string, to
           <h1 style="color: white; margin: 0;">JANKU</h1>
         </div>
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
-          <h2 style="color: #2C2C6C;">Hola ${nombre} 🔒</h2>
+          <h2 style="color: #2C2C6C;">Hola ${nombreHtml} 🔒</h2>
           <p style="color: #555;">Recibimos una solicitud para restablecer tu contraseña.</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${enlace}" 
@@ -75,9 +78,10 @@ export async function enviarEmailResetPassword(email: string, nombre: string, to
 // ── Email de bienvenida tras verificar ───────────────────────────────────────
 
 export async function enviarEmailBienvenida(email: string, nombre: string) {
+  const nombreHtml = escapeHtml(nombre);
   await sendEmail({
     to: email,
-    subject: `¡Bienvenido a Janku, ${nombre}! 🎉`,
+    subject: `¡Bienvenido a Janku, ${nombreHtml}! 🎉`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: #2C2C6C; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
@@ -85,7 +89,7 @@ export async function enviarEmailBienvenida(email: string, nombre: string) {
         </div>
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
           <h2 style="color: #2C2C6C;">¡Tu cuenta está verificada! 🎉</h2>
-          <p style="color: #555;">Hola ${nombre}, ya puedes disfrutar de todas las ventajas de Janku.</p>
+          <p style="color: #555;">Hola ${nombreHtml}, ya puedes disfrutar de todas las ventajas de Janku.</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${SITE_URL}" 
                style="background: #2C2C6C; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">

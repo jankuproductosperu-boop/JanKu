@@ -6,6 +6,7 @@ import { SECURITY_HEADERS, handle } from "@/server/http/respond";
 import { requireUser } from "@/server/auth/guards";
 import { borrarCookieUser } from "@/server/auth/session";
 import { log } from "@/server/logger";
+import { normalizarTelefono } from "@/lib/phone";
 
 // requireUser() va fuera del try: su 401 lo responde handle().
 
@@ -15,7 +16,7 @@ export const GET = handle(async () => {
   try {
     await connectDB();
     const user = await User.findById(userId).select(
-      "nombre email emailVerificado direccion createdAt ultimoAcceso"
+      "nombre email emailVerificado telefono direccion createdAt ultimoAcceso"
     );
 
     if (!user) {
@@ -35,6 +36,7 @@ export const PUT = handle(async (request: NextRequest) => {
   try {
     let body: {
       nombre?: string;
+      telefono?: unknown;
       direccion?: {
         calle?: string;
         ciudad?: string;
@@ -49,7 +51,7 @@ export const PUT = handle(async (request: NextRequest) => {
       return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
     }
 
-    // Solo permitir actualizar nombre y dirección — no email ni password desde aquí
+    // Solo permitir actualizar nombre, celular y dirección — no email ni password desde aquí
     const updateData: Record<string, unknown> = {};
 
     if (body.nombre) {
@@ -60,6 +62,20 @@ export const PUT = handle(async (request: NextRequest) => {
         );
       }
       updateData.nombre = body.nombre.trim();
+    }
+
+    // Celular (fase 20): ausente = no se toca; "" = se borra; si no, debe ser un móvil peruano válido.
+    if (body.telefono !== undefined) {
+      const entrada = typeof body.telefono === "string" ? body.telefono.trim() : null;
+      const normalizado = entrada === "" ? "" : entrada === null || entrada.length > 20 ? null : normalizarTelefono(entrada);
+      if (normalizado === null) {
+        const mensaje = "Ingresa un celular válido de 9 dígitos";
+        return NextResponse.json(
+          { error: mensaje, code: "ENTRADA_INVALIDA", fields: { telefono: mensaje } },
+          { status: 400, headers: SECURITY_HEADERS }
+        );
+      }
+      updateData.telefono = normalizado;
     }
 
     await connectDB();
@@ -78,7 +94,7 @@ export const PUT = handle(async (request: NextRequest) => {
     }
 
     const updated = await User.findByIdAndUpdate(userId, updateData, { new: true }).select(
-      "nombre email emailVerificado direccion"
+      "nombre email emailVerificado telefono direccion"
     );
 
     return NextResponse.json({ user: updated }, { headers: SECURITY_HEADERS });

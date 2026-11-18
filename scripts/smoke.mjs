@@ -45,6 +45,8 @@ const CHECKS = [
   ...paginas.map((ruta) => ({ nombre: `GET ${ruta}`, metodo: "GET", ruta, espera: esHtml })),
   { nombre: "GET /admin (sin cookie)", metodo: "GET", ruta: "/admin", espera: redirige("/login-admin") },
   { nombre: "GET /auth/perfil (sin cookie)", metodo: "GET", ruta: "/auth/perfil", espera: redirige("/auth/login") },
+  // Fase 20
+  { nombre: "GET /auth/pedidos (sin cookie)", metodo: "GET", ruta: "/auth/pedidos", espera: redirige("/auth/login") },
   ...["products", "categories", "banners", "promotions", "discounts"].map((n) => ({
     nombre: `GET /api/${n}`, metodo: "GET", ruta: `/api/${n}`, espera: esArregloJson,
   })),

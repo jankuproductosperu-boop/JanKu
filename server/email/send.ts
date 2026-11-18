@@ -25,10 +25,12 @@ export async function sendEmail({
       subject,
       html,
     }),
+    // Sin respuesta en 10 s se aborta (TimeoutError) en vez de colgar la petición.
+    signal: AbortSignal.timeout(10_000),
   });
 
+  // Solo el código: el cuerpo de Resend puede repetir datos del envío.
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Error enviando email: ${error.message}`);
+    throw new Error("Resend respondió " + response.status);
   }
 }

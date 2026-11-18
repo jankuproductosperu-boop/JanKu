@@ -19,7 +19,7 @@ const ADMIN_ONLY_API_ROUTES = ["/api/admin"];
 const PROTECTED_PAGE_ROUTES = ["/admin"];
 
 // Rutas de usuario que requieren sesión de usuario
-const PROTECTED_USER_ROUTES = ["/auth/perfil"];
+const PROTECTED_USER_ROUTES = ["/auth/perfil", "/auth/pedidos"];
 
 // Primer filtro barato: solo verifica la firma del token (sin base de datos).
 // La autoridad es el guard dentro de cada handler (requireAdmin / requireUser).
@@ -96,5 +96,6 @@ export const config = {
     "/api/((?!auth).*)",
     "/admin/:path*",
     "/auth/perfil/:path*",
+    "/auth/pedidos/:path*",
   ],
 };

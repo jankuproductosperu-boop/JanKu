@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Mail, MapPin, LogOut, Save, AlertCircle, CheckCircle, ShoppingBag, Heart, Trash2, X } from "lucide-react";
+import { User, Mail, MapPin, LogOut, Save, AlertCircle, CheckCircle, ShoppingBag, Heart, Trash2, X, Package, Phone } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
 type Perfil = {
   nombre: string;
   email: string;
   emailVerificado: boolean;
+  telefono?: string;
   direccion?: {
     calle?: string;
     ciudad?: string;
@@ -19,12 +20,18 @@ type Perfil = {
   createdAt: string;
 };
 
+// El servidor guarda "51" + 9 dígitos; en el formulario se muestran solo los 9.
+function celularParaMostrar(t?: string): string {
+  return t && /^519\d{8}$/.test(t) ? t.slice(2) : t || "";
+}
+
 export default function PerfilPage() {
   const router = useRouter();
   const { isChecking, isAuthenticated, logout, setUser } = useUser();
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [form, setForm] = useState({
     nombre: "",
+    telefono: "",
     calle: "",
     ciudad: "",
     departamento: "",
@@ -58,6 +65,7 @@ export default function PerfilPage() {
           setPerfil(data.user);
           setForm({
             nombre: data.user.nombre || "",
+            telefono: celularParaMostrar(data.user.telefono),
             calle: data.user.direccion?.calle || "",
             ciudad: data.user.direccion?.ciudad || "",
             departamento: data.user.direccion?.departamento || "",
@@ -86,6 +94,7 @@ export default function PerfilPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nombre: form.nombre,
+          telefono: form.telefono,
           direccion: {
             calle: form.calle,
             ciudad: form.ciudad,
@@ -99,6 +108,7 @@ export default function PerfilPage() {
 
       if (res.ok) {
         setPerfil(data.user);
+        setForm((f) => ({ ...f, telefono: celularParaMostrar(data.user.telefono) }));
         setExito(true);
         setTimeout(() => setExito(false), 3000);
       } else {
@@ -186,13 +196,22 @@ export default function PerfilPage() {
               )}
             </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-          >
-            <LogOut className="w-4 h-4" />
-            Salir
-          </button>
+          <div className="flex flex-col sm:flex-row items-stretch gap-2">
+            <Link
+              href="/auth/pedidos"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+            >
+              <Package className="w-4 h-4" />
+              Mis pedidos
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+            >
+              <LogOut className="w-4 h-4" />
+              Salir
+            </button>
+          </div>
         </div>
 
         {/* Links rápidos */}
@@ -252,6 +271,26 @@ export default function PerfilPage() {
                   value={perfil?.email || ""}
                   disabled
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {/* Celular */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Celular <span className="text-gray-400 font-normal">(opcional)</span>
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={form.telefono}
+                  onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                  placeholder="987 654 321"
+                  maxLength={20}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2C2C6C] focus:border-transparent outline-none text-sm"
                 />
               </div>
             </div>
