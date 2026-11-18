@@ -4,6 +4,7 @@ import User from "@/models/User";
 import { hashearToken } from "@/server/auth/tokens";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { enviarEmailBienvenida } from "@/server/email/auth-emails";
+import { log } from "@/server/logger";
 
 // ── GET: solo COMPRUEBA que el token es válido, NO verifica la cuenta ───────
 // Esto evita que escáneres de seguridad de email (Outlook Safe Links, Gmail,
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       console.error("Error enviando email de bienvenida");
     }
 
-    console.log(`✅ Email verificado: ${user.email}`);
+    log.info("usuario.email_verificado");
 
     return NextResponse.json(
       { message: "Email verificado correctamente. Ya puedes iniciar sesión." },

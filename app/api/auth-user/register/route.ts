@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     // ── 8. Enviar email de verificación ───────────────────────────────────
     await enviarEmailVerificacion(email, nombre.trim(), token);
 
-    console.log(`✅ Nuevo usuario registrado desde IP: ${clientIP}`);
+    log.info("usuario.registrado");
 
     return NextResponse.json(
       { message: "Te enviamos un email de verificación. Revisa tu bandeja." },

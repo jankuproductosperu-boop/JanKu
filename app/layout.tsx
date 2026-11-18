@@ -36,7 +36,6 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://jan-ku.com"),
 
   icons: {
-    icon: "/icon.png",
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
