@@ -1,5 +1,18 @@
 # Fase 20 · Correos de pedido y "Mis pedidos"
 
+> **Alcance reducido por el dueño (2026-11-17).** Por ahora **no** se hacen los correos de pedido.
+>
+> **SÍ se hace:**
+> - `lib/html.ts` + prueba (`escapeHtml`).
+> - `server/email/auth-emails.ts`: solo aplicar `escapeHtml` a `nombre` (cuerpo y asunto), con el mismo texto y aspecto. **Sin** `plantillaBase`.
+> - `server/email/send.ts`: tiempo máximo de 10 s y error tipado sin volcar la respuesta (paso 4).
+> - Perfil con `telefono` (paso 7; `types/user.ts`; el campo ya existe en `models/User.ts`, así que no hay migración).
+> - `/auth/pedidos` (paso 8), enlace y campo en el perfil (paso 9), `proxy.ts` (paso 10) y el caso del smoke.
+>
+> **NO se hace:** `server/email/layout.ts`, `server/email/order-emails.ts`, los cambios en `order.service.ts`, `ADMIN_NOTIFY_EMAIL` ni `.env.example`.
+>
+> Las filas, los pasos, los criterios y el checklist de correos de pedido de este archivo quedan como referencia para cuando el dueño los pida. P9 deja de bloquear esta fase.
+
 ## 1. Objetivo y por qué va en este orden
 
 1. Enviar correo al cliente (si dejó email) cuando registra un pedido y cuando cambia a confirmado, enviado o cancelado; y un aviso al negocio por cada pedido nuevo (D-36).
