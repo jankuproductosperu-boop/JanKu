@@ -10,15 +10,32 @@ import { SITE } from "@/lib/siteConfig";
 import { redondear2 } from "@/lib/money";
 import { fetchWithCache } from "@/lib/cache";
 import { carritoConEntregaGratis } from "@/lib/shipping";
+import { lineaId } from "@/lib/variantes";
+import { normalizarTelefono } from "@/lib/phone";
 import { CheckoutForm } from "@/Components/Checkout/CheckoutForm";
 import { OrderSummary } from "@/Components/Checkout/OrderSummary";
-import type { MetodoEntrega, Product } from "@/types";
+import type { CouponValidateResult, MetodoEntrega, Product } from "@/types";
+
+type CuponValido = Extract<CouponValidateResult, { valido: true }>;
+/** `firma` = carrito + teléfono con los que el servidor validó el cupón. Si cambian, el cupón deja de valer. */
+type CuponEstado = { codigo: string; resultado: CuponValido; firma: string };
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, totalPrice, nivelDescuentoAplicado, montoDescuento, totalFinal } = useCart();
   const { user, isChecking } = useUser();
   const [metodo, setMetodo] = useState<MetodoEntrega>("delivery_huancayo");
+  const [telefono, setTelefono] = useState("");
+  const [cupon, setCupon] = useState<CuponEstado | null>(null);
+
+  // Firma del carrito (líneas y cantidades) y del teléfono normalizado: el cupón aplicado solo vale para ella.
+  // Se deriva en cada render, así un cambio en otra pestaña (o en el teléfono) lo invalida sin efectos.
+  const firma = `${cart
+    .map((i) => `${lineaId(i._id, i.varianteId)}x${i.cantidad}`)
+    .sort()
+    .join("|")}#${normalizarTelefono(telefono) ?? ""}`;
+  const cuponVigente = cupon && cupon.firma === firma ? cupon : null;
+  const cuponCaducado = !!cupon && !cuponVigente;
 
   // El carrito se lee de localStorage en un efecto del proveedor: se espera un ciclo para no mostrar «vacío» de más.
   const [listo, setListo] = useState(false);
@@ -71,6 +88,13 @@ export default function CheckoutPage() {
   const deliveryGratis = productosPublicos ? carritoConEntregaGratis(cart, productosPublicos) : null;
   const envioPorCoordinar =
     metodo === "envio_provincia" || (metodo === "delivery_huancayo" && deliveryGratis !== true);
+
+  // N1-5: sin cupón, los totales del carrito (como en la fase 16); con cupón, los importes que devolvió el servidor.
+  // Solo se muestran los descuentos que el servidor dice haber aplicado.
+  const r = cuponVigente?.resultado;
+  const nivelAplicado = r ? r.aplicado === "nivel" || r.aplicado === "ambos" : !!nivelDescuentoAplicado;
+  const montoNivel = r ? r.descuentoNivel : montoDescuento;
+  const totalMostrado = r ? r.total : totalFinal;
   const resumen = (
     <OrderSummary
       items={cart.map((i) => ({
@@ -82,10 +106,15 @@ export default function CheckoutPage() {
         imagenUrl: i.imagenUrl,
       }))}
       subtotal={totalPrice}
-      descuentoNivel={nivelDescuentoAplicado ? { nombre: nivelDescuentoAplicado.nombre, monto: montoDescuento } : null}
+      descuentoNivel={
+        nivelAplicado ? { nombre: nivelDescuentoAplicado?.nombre ?? "por monto", monto: montoNivel } : null
+      }
+      cupon={
+        r && (r.aplicado === "cupon" || r.aplicado === "ambos") ? { codigo: r.codigo, monto: r.descuentoCupon } : null
+      }
       costoEnvio={0}
       envioPorCoordinar={envioPorCoordinar}
-      total={totalFinal}
+      total={totalMostrado}
     />
   );
 
@@ -109,7 +138,7 @@ export default function CheckoutPage() {
                 Resumen del pedido ({cart.reduce((s, i) => s + i.cantidad, 0)})
               </span>
               <span className="flex items-center gap-2 text-[#2C2C6C]">
-                S/ {totalFinal.toFixed(2)}
+                S/ {totalMostrado.toFixed(2)}
                 <ChevronDown className="w-5 h-5 transition group-open:rotate-180" />
               </span>
             </summary>
@@ -121,6 +150,12 @@ export default function CheckoutPage() {
               metodo={metodo}
               onMetodoChange={setMetodo}
               deliveryGratis={deliveryGratis}
+              telefono={telefono}
+              onTelefonoChange={setTelefono}
+              cupon={cuponVigente ? { codigo: cuponVigente.codigo, resultado: cuponVigente.resultado } : null}
+              cuponCaducado={cuponCaducado}
+              onCuponAplicar={(res) => setCupon({ codigo: res.codigo, resultado: res, firma })}
+              onCuponQuitar={() => setCupon(null)}
               nombreInicial={user?.nombre ?? ""}
               emailInicial={user?.email ?? ""}
             />

@@ -8,7 +8,16 @@ import { useCart } from "@/context/CartContext";
 import { lineaId } from "@/lib/variantes";
 import { normalizarTelefono } from "@/lib/phone";
 import { DEPARTAMENTOS, esDepartamento } from "@/lib/shipping";
-import type { DeliveryPointPublic, MetodoEntrega, OrderCreateInput, OrderCreateResult } from "@/types";
+import { CouponField } from "@/Components/Checkout/CouponField";
+import type {
+  CouponValidateResult,
+  DeliveryPointPublic,
+  MetodoEntrega,
+  OrderCreateInput,
+  OrderCreateResult,
+} from "@/types";
+
+type CuponValido = Extract<CouponValidateResult, { valido: true }>;
 
 type Errores = Record<string, string>;
 type Aviso = { texto: string; productos?: { nombre: string; motivo: string }[]; volverAlCarrito?: boolean };
@@ -49,14 +58,34 @@ type Props = {
   deliveryGratis: boolean | null;
   nombreInicial?: string;
   emailInicial?: string;
+  /** El teléfono vive en la página: el cupón aplicado depende de él (fase 19). */
+  telefono: string;
+  onTelefonoChange: (telefono: string) => void;
+  /** Cupón validado por el servidor para el carrito y teléfono actuales; null si no hay. */
+  cupon: { codigo: string; resultado: CuponValido } | null;
+  /** Había un cupón, pero cambió el carrito o el teléfono: hay que volver a aplicarlo. */
+  cuponCaducado: boolean;
+  onCuponAplicar: (r: CuponValido) => void;
+  onCuponQuitar: () => void;
 };
 
-export function CheckoutForm({ metodo, onMetodoChange, deliveryGratis, nombreInicial = "", emailInicial = "" }: Props) {
+export function CheckoutForm({
+  metodo,
+  onMetodoChange,
+  deliveryGratis,
+  nombreInicial = "",
+  emailInicial = "",
+  telefono,
+  onTelefonoChange: setTelefono,
+  cupon,
+  cuponCaducado,
+  onCuponAplicar,
+  onCuponQuitar,
+}: Props) {
   const router = useRouter();
   const { cart } = useCart();
 
   const [nombre, setNombre] = useState(nombreInicial);
-  const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState(emailInicial);
   const [direccion, setDireccion] = useState("");
   const [referencia, setReferencia] = useState("");
@@ -69,6 +98,7 @@ export function CheckoutForm({ metodo, onMetodoChange, deliveryGratis, nombreIni
 
   const [errores, setErrores] = useState<Errores>({});
   const [aviso, setAviso] = useState<Aviso | null>(null);
+  const [errorCupon, setErrorCupon] = useState("");
   const [enviando, setEnviando] = useState(false);
   const enviandoRef = useRef(false); // el estado llega tarde para un doble clic muy rápido
 
@@ -145,6 +175,7 @@ export function CheckoutForm({ metodo, onMetodoChange, deliveryGratis, nombreIni
     if (enviandoRef.current) return;
 
     setAviso(null);
+    setErrorCupon("");
     const locales = validar();
     setErrores(locales);
     if (Object.keys(locales).length) return;
@@ -167,6 +198,8 @@ export function CheckoutForm({ metodo, onMetodoChange, deliveryGratis, nombreIni
         },
         entrega: datosEntrega(),
         ...(notas.trim() ? { notas: notas.trim() } : {}),
+        // Solo el código (N1-5). Con cuponAplicado: false en la respuesta se sigue igual: el pedido muestra lo aplicado.
+        ...(cupon ? { cupon: cupon.codigo } : {}),
         website,
       };
 
@@ -190,7 +223,16 @@ export function CheckoutForm({ metodo, onMetodoChange, deliveryGratis, nombreIni
           ? (datos.fields as Errores)
           : {};
 
-      if (res.status === 429) {
+      const code = datos && typeof datos === "object" && "code" in datos ? String(datos.code) : "";
+      if (res.status === 409 && code.startsWith("CUPON_")) {
+        // El cupón dejó de valer entre la validación y el pedido: se quita y el cliente decide si confirma sin él.
+        const mensaje =
+          datos && typeof datos === "object" && "error" in datos && typeof datos.error === "string"
+            ? datos.error
+            : "Este cupón no es válido.";
+        onCuponQuitar();
+        setErrorCupon(`${mensaje} Quitamos el cupón; puedes confirmar tu pedido sin él.`);
+      } else if (res.status === 429) {
         setAviso({ texto: "Has hecho demasiados pedidos seguidos. Intenta más tarde o escríbenos por WhatsApp." });
       } else if (res.status === 409 || res.status === 400) {
         // Las claves que son líneas del carrito (producto o producto:variante) se muestran con el nombre del producto.
@@ -469,6 +511,37 @@ export function CheckoutForm({ metodo, onMetodoChange, deliveryGratis, nombreIni
           {notas.length}/{MAX_NOTAS}
         </p>
       </Campo>
+
+      <div>
+        <CouponField
+          items={cart.map((i) => ({
+            id: i._id,
+            ...(i.varianteId ? { varianteId: i.varianteId } : {}),
+            cantidad: i.cantidad,
+          }))}
+          telefono={telefono}
+          aplicado={
+            cupon
+              ? { codigo: cupon.codigo, mensaje: cupon.resultado.mensaje, aplicado: cupon.resultado.aplicado }
+              : null
+          }
+          onAplicar={(r) => {
+            setErrorCupon("");
+            onCuponAplicar(r);
+          }}
+          onQuitar={onCuponQuitar}
+        />
+        {cuponCaducado && !errorCupon && (
+          <p role="status" className="text-sm text-amber-700 mt-1">
+            Cambió tu carrito o tu celular. Vuelve a aplicar tu cupón.
+          </p>
+        )}
+        {errorCupon && (
+          <p role="alert" className="text-sm text-red-600 mt-1">
+            {errorCupon}
+          </p>
+        )}
+      </div>
 
       {/* Trampa anti-bots: fuera de pantalla, sin foco, ignorada por lectores de pantalla. */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
