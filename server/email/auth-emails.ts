@@ -81,7 +81,7 @@ export async function enviarEmailBienvenida(email: string, nombre: string) {
   const nombreHtml = escapeHtml(nombre);
   await sendEmail({
     to: email,
-    subject: `¡Bienvenido a Janku, ${nombreHtml}! 🎉`,
+    subject: `¡Bienvenido a Janku, ${nombre}! 🎉`, // el asunto es texto plano: no se escapa,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: #2C2C6C; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
