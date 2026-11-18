@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { diagnosticoIP, ipDesdeCabeceras, sanearIP } from "@/lib/clientIp";
+import { esIPPrivada, ipDesdeCabeceras, sanearIP } from "@/lib/clientIp";
 
 const REAL = "190.12.34.56"; // cliente en Huancayo
-const BORDE = "104.22.17.40"; // borde de Cloudflare de Render
+const BORDE = "172.71.151.63"; // borde de Cloudflare de Render
+const INTERNA = "10.27.70.5"; // balanceador interno de Render
 
-/** Lo que llega a la app: Render añade "<cliente>, <borde>" a lo que mande el visitante. */
+/** Lo que llega a la app (medido en producción): Render añade "<cliente>, <borde>, <interna>". */
 function peticion(falsas: Record<string, string> = {}): Headers {
   const h = new Headers(falsas);
   const previo = falsas["x-forwarded-for"];
-  h.set("x-forwarded-for", [previo, REAL, BORDE].filter(Boolean).join(", "));
+  h.set("x-forwarded-for", [previo, REAL, BORDE, INTERNA].filter(Boolean).join(", "));
   return h;
 }
 
@@ -27,8 +28,27 @@ describe("ipDesdeCabeceras", () => {
     expect(ipDesdeCabeceras(peticion(falsas))).toBe(REAL);
   });
 
-  it("nunca devuelve la IP del borde de Cloudflare", () => {
+  it("nunca devuelve la IP del borde de Cloudflare ni la interna", () => {
     expect(ipDesdeCabeceras(peticion())).not.toBe(BORDE);
+    expect(ipDesdeCabeceras(peticion())).not.toBe(INTERNA);
+  });
+
+  it("la cadena real de producción da la IP del dueño", () => {
+    const h = new Headers({ "x-forwarded-for": "38.25.29.31, 172.71.151.63, 10.27.70.5" });
+    expect(ipDesdeCabeceras(h)).toBe("38.25.29.31");
+  });
+
+  it("si Render quitara su salto interno, sigue acertando", () => {
+    expect(ipDesdeCabeceras(new Headers({ "x-forwarded-for": `9.9.9.9, ${REAL}, ${BORDE}` }))).toBe(REAL);
+  });
+
+  it("varios saltos internos a la derecha también se saltan", () => {
+    const h = new Headers({ "x-forwarded-for": `1.1.1.1, ${REAL}, ${BORDE}, 10.0.0.1, 192.168.1.1` });
+    expect(ipDesdeCabeceras(h)).toBe(REAL);
+  });
+
+  it("una IP privada falsificada a la izquierda no cambia nada", () => {
+    expect(ipDesdeCabeceras(peticion({ "x-forwarded-for": "10.0.0.1, 127.0.0.1" }))).toBe(REAL);
   });
 
   it("con una sola entrada (local) usa esa", () => {
@@ -62,11 +82,13 @@ describe("el límite se aplica igual aunque se falsifiquen cabeceras", () => {
   });
 });
 
-describe("diagnosticoIP (temporal)", () => {
-  it("devuelve la cadena saneada y limitada, sin decidir nada", () => {
-    const h = new Headers({ "x-forwarded-for": "1.1.1.1, <x>, 2.2.2.2", "cf-connecting-ip": "3.3.3.3;" });
-    expect(diagnosticoIP(h)).toEqual({ xff: ["1.1.1.1", "2.2.2.2"], cf: "3.3.3.3", realIp: "" });
-    const larga = new Headers({ "x-forwarded-for": Array(20).fill("9.9.9.9").join(",") });
-    expect(diagnosticoIP(larga).xff).toHaveLength(10);
-  });
+describe("esIPPrivada", () => {
+  it.each(["10.27.70.5", "127.0.0.1", "172.16.0.1", "172.31.255.255", "192.168.1.1", "169.254.1.1", "100.64.0.1", "::1", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:10.0.0.1"])(
+    "%s es privada",
+    (ip) => expect(esIPPrivada(ip)).toBe(true),
+  );
+  it.each(["38.25.29.31", "172.71.151.63", "104.22.17.40", "172.15.0.1", "172.32.0.1", "190.12.34.56", "2800:200::1"])(
+    "%s es pública",
+    (ip) => expect(esIPPrivada(ip)).toBe(false),
+  );
 });
