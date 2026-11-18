@@ -128,7 +128,6 @@ El orden recomendado es lineal. Dependencias **estrictas** (por si hubiera que r
 |---|---|---|
 | Antes de la fase 01 | Capturas de referencia; resolver el cambio pendiente de `next.config.ts` | Local |
 | Fase 07 | Confirmar a qué base apunta `.env.local` | Atlas |
-| **Pendiente tras desplegar la fase 07** | Entrar al panel en jan-ku.com y buscar en los logs de Render la línea `login_admin.ok`: su `ip` debe ser tu IP real (la de "cuál es mi IP"). Si sale una de Cloudflare (104.x, 172.64–71.x), ajustar `ENTRADAS_DE_PROXY` en `lib/clientIp.ts`. Recordárselo al dueño en cuanto haga push a `main`. | Render |
 | Fase 09 | Simular y aplicar **001** (roles) — antes de desplegar | Dev → Prod |
 | Fase 13 | Simular y aplicar **002** (campos de producto) — antes de desplegar | Dev → Prod |
 | Fase 15 | Simular y aplicar **003** (índices) — antes de desplegar | Dev → Prod |
