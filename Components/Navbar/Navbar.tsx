@@ -183,9 +183,6 @@ export default function Navbar() {
             <Link href="/contacto" className="flex items-center gap-1 hover:text-gray-300 transition duration-150">
               Contáctanos
             </Link>
-            <Link href="/nosotros" className="flex items-center gap-1 hover:text-gray-300 transition duration-150">
-              Nosotros
-            </Link>
           </nav>
 
           {/* Sección usuario desktop */}
@@ -313,9 +310,6 @@ export default function Navbar() {
               </Link>
               <Link href="/contacto" className="flex justify-between items-center py-3 border-b border-white/20" onClick={() => setOpenMobile(false)}>
                 Contáctanos <ChevronDown className="rotate-[-90deg]" />
-              </Link>
-              <Link href="/nosotros" className="flex justify-between items-center py-3 border-b border-white/20" onClick={() => setOpenMobile(false)}>
-                Sobre Nosotros <ChevronDown className="rotate-[-90deg]" />
               </Link>
 
               {/* Usuario en móvil */}
