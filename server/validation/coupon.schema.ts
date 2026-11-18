@@ -78,7 +78,12 @@ export const cuponValidarSchema = z
   .object({
     codigo: z.string().trim().min(1).max(30),
     items: z
-      .array(z.object({ id: objectId, cantidad: z.coerce.number().int().min(1).max(99) }).strict())
+      // varianteId igual que en POST /api/orders (fase 19, aprobado por el dueño): el precio sale de la variante.
+      .array(
+        z
+          .object({ id: objectId, varianteId: objectId.optional(), cantidad: z.coerce.number().int().min(1).max(99) })
+          .strict(),
+      )
       .min(1)
       .max(50),
     telefono: z.string().trim().max(20).optional(),

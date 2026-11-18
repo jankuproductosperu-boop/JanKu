@@ -123,6 +123,12 @@ const CHECKS = [
   // Fase 18: cupones. Ojo: validate cuenta 1 intento del límite de 10 / 10 min por IP aunque el cuerpo sea inválido.
   { nombre: "POST /api/coupons/validate con {}", metodo: "POST", ruta: "/api/coupons/validate", cuerpo: {}, espera: estado(400) },
   { nombre: "GET /api/admin/coupons (sin cookie)", metodo: "GET", ruta: "/api/admin/coupons", espera: estado(401) },
+  // Fase 19: validate acepta varianteId; un producto inexistente llega a resolverItems (409), no a la validación (400).
+  {
+    nombre: "POST /api/coupons/validate con varianteId (producto inexistente)", metodo: "POST", ruta: "/api/coupons/validate",
+    cuerpo: { codigo: "PRUEBA", items: [{ id: "000000000000000000000000", varianteId: "000000000000000000000000", cantidad: 1 }] },
+    espera: estado(409),
+  },
 ];
 
 async function main() {
