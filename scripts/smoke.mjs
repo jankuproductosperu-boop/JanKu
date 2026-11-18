@@ -37,7 +37,7 @@ const cabeceras = (res) => {
 
 const paginas = [
   "/", "/promociones", "/carrito", "/favoritos", "/busqueda?q=a", "/contacto",
-  "/nosotros", "/auth/login", "/auth/registro", "/auth/recuperar-contrasena", "/login-admin",
+  "/auth/login", "/auth/registro", "/auth/recuperar-contrasena", "/login-admin",
 ];
 
 // Las fases siguientes solo añaden elementos a este arreglo.
