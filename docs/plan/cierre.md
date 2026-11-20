@@ -75,7 +75,7 @@ Migraciones en producción (`jankuDB`): 001, 002 y 003 al día desde el 2026-11-
 | Typecheck | 0 errores | 0 errores |
 | Pruebas | 1 archivo, 1 prueba | 15 archivos, 253 pruebas |
 | Build | compila | compila (15 s en local) |
-| Smoke | 23 comprobaciones | ver §6 |
+| Smoke | 23 comprobaciones | 57 comprobaciones, todas OK |
 | Lint: errores / avisos | 40 / 38 | **3 / 12** |
 
 | Regla de lint | Inicial | Final |
@@ -161,5 +161,5 @@ Detalle por archivo en `linea-base.md`.
 | `npm run build` | Compila; incluye `/admin/usuarios` |
 | `grep -rn "console.log" app server Components context hooks lib` | Solo `server/logger.ts` (ver §2) |
 | `server/auth/legacyLimiters.ts` e imports de `jsonwebtoken` | No existen |
-| `npm run smoke` | Pendiente: lo corre el dueño con su servidor local |
+| `npm run smoke` | 57 comprobaciones, todas OK (2026-11-19) |
 | Fase 00 completa y checklist §8 de la fase 21 | Pendiente: dueño |

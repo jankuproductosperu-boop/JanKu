@@ -55,7 +55,7 @@ Fecha: 2026-11-17 · Rama `fase-21-cierre`
 | `npm test` | 15 archivos, 253 pruebas, pasan |
 | `npm run lint` | **3 errores**, 12 avisos (antes 40 / 38 en la fase 01) |
 | `npm run build` | Compila sin errores (15 s en local) |
-| `npm run smoke` | Ver `cierre.md` (lo ejecuta el dueño con su servidor local) |
+| `npm run smoke` | 57 comprobaciones, todas OK (2026-11-19) |
 
 ### Lint por regla
 
