@@ -9,8 +9,8 @@
   --navy: #2c2c6c;
   --navy-ink: #dce0ff;
   --navy-mute: #a9aee0;
-  --accent: #4f46e5;
-  --accent-soft: #e9e8fc;
+  --accent: #3552ad;
+  --accent-soft: #e6ecf9;
   --ok: #0a8a5c;
   --ok-soft: #daf4e9;
   --warn: #b45309;
@@ -18,19 +18,19 @@
   --bad: #c0392b;
   --bad-soft: #fbe0dc;
   --navy-soft: #e9eaf7;
-  --navy-tint: #2c2c6c;
+  --navy-tint: #263070;
   --field: #ffffff;
   --sombra: rgb(56 65 74 / 0.10);
   --brillo: transparent;
   /* Barra lateral: la cambian data-sidebar-color y data-sidebar-size. */
   --sb-w: 250px;
-  --sb-bg: linear-gradient(180deg, #2c2c6c, #1f1f52);
+  --sb-bg: linear-gradient(180deg, #263070, #1b2257);
   --sb-ink: #dce0ff;
   --sb-mute: #a9aee0;
   --sb-hover: rgb(255 255 255 / 0.08);
   --sb-active-bg: #ffffff;
-  --sb-active-ink: #2c2c6c;
-  --sb-active-icon: #4f46e5;
+  --sb-active-ink: #263070;
+  --sb-active-icon: #3552ad;
   --sb-borde: transparent;
   --sb-logo-bg: #ffffff;
   background: var(--bg);
@@ -47,10 +47,10 @@
   --navy: #14173b;
   --navy-ink: #eef0ff;
   --navy-mute: #a6abd8;
-  --accent: #6f6af5;
-  --accent-soft: #2b2d52;
+  --accent: #5d7fe6;
+  --accent-soft: #223056;
   --navy-soft: #2a2f34;
-  --navy-tint: #a5a3ff;
+  --navy-tint: #9fb4ff;
   --field: #262a2f;
   --sombra: rgb(0 0 0 / 0.45);
   --ok: #4fd1a1;
@@ -63,11 +63,40 @@
   --sb-ink: #ced4da;
   --sb-mute: #878a99;
   --sb-hover: rgb(255 255 255 / 0.05);
-  --sb-active-bg: rgb(111 106 245 / 0.18);
+  --sb-active-bg: rgb(93 127 230 / 0.18);
   --sb-active-ink: #ffffff;
-  --sb-active-icon: #a5a3ff;
+  --sb-active-icon: #9fb4ff;
   --sb-borde: #32383e;
 }
+
+/* Fase 23a: la escala "indigo" de Tailwind se redefine como azul Janku dentro del panel.
+   Así los botones y textos indigo-* de todas las pantallas dejan de verse violetas, sin tocar cada archivo. */
+.panel {
+  --color-indigo-50: #eef2fb;
+  --color-indigo-100: #dde5f7;
+  --color-indigo-200: #bccbef;
+  --color-indigo-300: #93a9e3;
+  --color-indigo-400: #6884d4;
+  --color-indigo-500: #4766c4;
+  --color-indigo-600: #3552ad;
+  --color-indigo-700: #2c4392;
+  --color-indigo-800: #263876;
+  --color-indigo-900: #222f5e;
+  --color-purple-600: #3552ad;
+}
+
+/* Barra de desplazamiento de la barra lateral: fina y del color de la barra; se aviva al pasar el cursor. */
+.panel .panel-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.panel .panel-sidebar:hover {
+  scrollbar-color: color-mix(in srgb, var(--sb-mute) 45%, transparent) transparent;
+}
+.panel .panel-sidebar::-webkit-scrollbar { width: 6px; }
+.panel .panel-sidebar::-webkit-scrollbar-track { background: transparent; }
+.panel .panel-sidebar::-webkit-scrollbar-thumb { background: transparent; border-radius: 6px; }
+.panel .panel-sidebar:hover::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--sb-mute) 45%, transparent); }
 
 /* Color de la barra lateral (personalizador). "azul" es el valor de arriba. */
 .panel[data-sidebar-color="blanca"] {
@@ -82,20 +111,20 @@
   --sb-logo-bg: var(--navy-soft);
 }
 .panel[data-sidebar-color="degradado"] {
-  --sb-bg: linear-gradient(165deg, #2c2c6c 0%, #3b3a9a 55%, #4f46e5 100%);
+  --sb-bg: linear-gradient(165deg, #263070 0%, #2c4392 55%, #3552ad 100%);
   --sb-ink: #e6e8ff;
   --sb-mute: #b8bdf0;
   --sb-hover: rgb(255 255 255 / 0.1);
   --sb-active-bg: #ffffff;
-  --sb-active-ink: #2c2c6c;
-  --sb-active-icon: #4f46e5;
+  --sb-active-ink: #263070;
+  --sb-active-icon: #3552ad;
   --sb-borde: transparent;
 }
 .panel[data-theme="dark"][data-sidebar-color="degradado"] {
-  --sb-bg: linear-gradient(165deg, #1f2149 0%, #2a2b70 60%, #3a35a8 100%);
+  --sb-bg: linear-gradient(165deg, #1b2250 0%, #22336f 60%, #2c4392 100%);
   --sb-active-bg: rgb(255 255 255 / 0.14);
   --sb-active-ink: #ffffff;
-  --sb-active-icon: #c3c0ff;
+  --sb-active-icon: #b9c8ff;
 }
 
 /* Tamaño de la barra: solo en escritorio; en móvil siempre se abre completa. */
@@ -176,7 +205,7 @@
   --color-yellow-50: #33290e; --color-yellow-100: #44340f; --color-yellow-200: #6b5416;
   --color-amber-50: #33290e;  --color-amber-100: #44340f;  --color-amber-200: #6b5416;
   --color-blue-100: #1e2f5c;  --color-blue-200: #2f4a8a;
-  --color-indigo-50: #23264f; --color-indigo-100: #2a2d63; --color-indigo-200: #3a3f8a;
+  --color-indigo-50: #1f2740; --color-indigo-100: #232d4d; --color-indigo-200: #2f3d68;
   --color-orange-100: #44301a; --color-pink-100: #4a1d3a;  --color-purple-100: #35205c;
 }
 /* Texto de color sobre esos fondos: tonos claros legibles en oscuro. */
@@ -243,13 +272,14 @@
   background-color: color-mix(in srgb, var(--navy-soft) 70%, var(--surface));
 }
 .panel[data-theme="dark"] tbody tr:hover {
-  background-color: rgb(145 140 255 / 0.06);
+  background-color: rgb(93 127 230 / 0.07);
 }
 
 /* Botón principal índigo: un poco más vivo en oscuro. */
 .panel[data-theme="dark"] {
-  --color-indigo-600: #5d56f2;
-  --color-indigo-700: #4c45e0;
+  --color-indigo-500: #5d7fe6;
+  --color-indigo-600: #4d6fd8;
+  --color-indigo-700: #3f5fc4;
 }
 /* Colores sueltos que no estaban adaptados al oscuro. */
 .panel[data-theme="dark"] :is(.text-blue-700, .text-pink-600, .text-purple-600, .text-orange-600) { color: var(--navy-tint); }

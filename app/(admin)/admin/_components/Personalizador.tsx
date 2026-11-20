@@ -15,7 +15,7 @@ type Opcion<T extends string> = { valor: T; etiqueta: string; muestra: React.Rea
 
 /** Miniatura del panel: barra lateral a la izquierda y contenido a la derecha. */
 function Mini({
-  barra = "#2c2c6c",
+  barra = "#263070",
   fondo = "#f3f3f9",
   tarjeta = "#ffffff",
   anchoBarra = 26,
@@ -130,7 +130,7 @@ export default function Personalizador({ abierto, onCerrar }: { abierto: boolean
   const colores: Opcion<ColorBarra>[] = [
     { valor: "azul", etiqueta: "Azul Janku", muestra: <Mini /> },
     { valor: "blanca", etiqueta: "Blanca", muestra: <Mini barra="#ffffff" /> },
-    { valor: "degradado", etiqueta: "Degradado", muestra: <Mini barra="linear-gradient(165deg,#2c2c6c,#4f46e5)" /> },
+    { valor: "degradado", etiqueta: "Degradado", muestra: <Mini barra="linear-gradient(165deg,#263070,#3552ad)" /> },
   ];
   const anchos: Opcion<AnchoPanel>[] = [
     { valor: "completo", etiqueta: "Completo", muestra: <Mini /> },
@@ -146,7 +146,7 @@ export default function Personalizador({ abierto, onCerrar }: { abierto: boolean
         aria-labelledby="personalizador-titulo"
         className="fixed inset-y-0 right-0 z-50 w-full max-w-[380px] bg-[var(--surface)] text-[var(--ink)] shadow-2xl flex flex-col"
       >
-        <div className="flex items-center justify-between px-5 h-[70px] flex-none bg-gradient-to-r from-[#2c2c6c] to-[#4f46e5] text-white">
+        <div className="flex items-center justify-between px-5 h-[70px] flex-none bg-gradient-to-r from-[#263070] to-[#3552ad] text-white">
           <h2 id="personalizador-titulo" className="text-lg font-semibold">Personalizar el panel</h2>
           <button onClick={onCerrar} aria-label="Cerrar" className="w-9 h-9 grid place-items-center rounded-full hover:bg-white/15">
             <X className="w-5 h-5" />

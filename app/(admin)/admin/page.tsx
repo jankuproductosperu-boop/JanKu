@@ -142,7 +142,7 @@ export default function AdminResumenPage() {
                 <div key={c.nombre}>
                   <div className="flex justify-between text-sm mb-1"><span className="truncate pr-2">{c.nombre}</span><b>{c.total}</b></div>
                   <div className="h-2 rounded-full bg-[var(--line)] overflow-hidden">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#3B3A9A] to-[var(--accent)]" style={{ width: `${(c.total / maxCategoria) * 100}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-[#263070] to-[var(--accent)]" style={{ width: `${(c.total / maxCategoria) * 100}%` }} />
                   </div>
                 </div>
               ))}
@@ -188,7 +188,7 @@ export default function AdminResumenPage() {
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {ACCESOS.map((a) => (
           <Link key={a.href} href={a.href} className="group flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition">
-            <span className="w-10 h-10 rounded-xl grid place-items-center text-white bg-gradient-to-br from-[#2C2C6C] to-[#4F46E5] shadow-md transition group-hover:scale-105"><a.icono className="w-5 h-5" /></span>
+            <span className="w-10 h-10 rounded-xl grid place-items-center text-white bg-gradient-to-br from-[#263070] to-[var(--accent)] shadow-md transition group-hover:scale-105"><a.icono className="w-5 h-5" /></span>
             <span className="font-semibold text-sm">{a.texto}</span>
             <ArrowRight className="w-4 h-4 ml-auto text-[var(--muted)] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition" />
           </Link>
