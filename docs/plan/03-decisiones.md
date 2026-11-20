@@ -284,3 +284,17 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-77 · Política de cambios:** revisión al recibir; sin devoluciones por cambio de opinión; 3 días para fallas de fábrica no visibles (cambio, reparación o devolución del dinero); en provincia, video de desempaque y aviso en 24 h. No limita los derechos del consumidor.
 
 **D-78 · Sin plazos de entrega fijos** en los textos públicos.
+
+---
+
+## Libro de Reclamaciones (fase 22b)
+
+*Aprobadas por el dueño el 2026-11-19 (Q5, Q6 y Q7 por defecto).*
+
+**D-79 · Libro de Reclamaciones propio**, en la base (`complaints`), con correlativo anual `LR-AAAA-NNNNNN` (año en hora de Lima, contador atómico en `counters`) y copia de los datos del proveedor (`LEGAL`) en cada hoja, que no cambia aunque `LEGAL` cambie. La copia y el aviso se envían sin `await` dentro de la petición; un fallo de correo no impide registrar la hoja y queda `copiaEnviada: false`. El aviso a la tienda va a `LEGAL.correo` (Q6) y no lleva DNI ni domicilio.
+
+**D-80 · Las hojas no se borran y la respuesta es inmutable** (N1-3 y valor de registro). Solo se responde una hoja `pendiente`; la segunda respuesta → 409 `YA_RESPONDIDO`.
+
+**D-81 · Plazo mostrado** = 15 días hábiles contando solo sábados y domingos como no hábiles (nunca más permisivo que el real: los feriados no se descuentan).
+
+**D-82 · Permisos de reclamos** = los de pedidos (Q5): ven la lista y la hoja quienes tienen `pedidos.ver`; responden quienes tienen `pedidos.gestionar`. Sin permiso nuevo. La tarjeta "Reclamos por responder" del Resumen solo aparece con `pedidos.ver` (Q7).

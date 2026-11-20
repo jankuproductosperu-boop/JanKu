@@ -39,6 +39,7 @@ const paginas = [
   "/", "/promociones", "/carrito", "/favoritos", "/busqueda?q=a", "/contacto",
   "/terminos", "/privacidad", "/cambios-y-devoluciones", "/envios", "/cookies",
   "/auth/login", "/auth/registro", "/auth/recuperar-contrasena", "/login-admin",
+  "/libro-de-reclamaciones", // Fase 22b
 ];
 
 // Las fases siguientes solo añaden elementos a este arreglo.
@@ -131,6 +132,14 @@ const CHECKS = [
     nombre: "POST /api/coupons/validate con varianteId (producto inexistente)", metodo: "POST", ruta: "/api/coupons/validate",
     cuerpo: { codigo: "PRUEBA", items: [{ id: "000000000000000000000000", varianteId: "000000000000000000000000", cantidad: 1 }] },
     espera: estado(409),
+  },
+  // Fase 22b: Libro de Reclamaciones. Ojo: el POST cuenta 1 intento del límite de 5/h por IP aunque el cuerpo sea inválido.
+  { nombre: "POST /api/complaints con {}", metodo: "POST", ruta: "/api/complaints", cuerpo: {}, espera: estado(400) },
+  { nombre: "GET /api/admin/complaints (sin cookie)", metodo: "GET", ruta: "/api/admin/complaints", espera: estado(401) },
+  { nombre: "GET /api/admin/complaints/000000000000000000000000 (sin cookie)", metodo: "GET", ruta: "/api/admin/complaints/000000000000000000000000", espera: estado(401) },
+  {
+    nombre: "PATCH /api/admin/complaints/000000000000000000000000 (sin cookie)", metodo: "PATCH",
+    ruta: "/api/admin/complaints/000000000000000000000000", cuerpo: {}, espera: estado(401),
   },
 ];
 

@@ -18,6 +18,8 @@ Modelos de MongoDB nuevos y modificados, campo por campo, índices y scripts de 
 | `orders` | `Order` | **Nuevo** | 15 |
 | `coupons` | `Coupon` | **Nuevo** | 18 |
 | `couponredemptions` | `CouponRedemption` | **Nuevo** | 18 |
+| `complaints` | `Complaint` | **Nuevo** | 22b |
+| `counters` | `Counter` | **Nuevo** | 22b |
 | `categories`, `banners`, `promotions`, `discounttiers` | — | Sin cambios de esquema | — |
 | `loginblocks`, `userloginblocks` | — | Dejan de usarse; **se conservan** | 07 |
 
@@ -193,6 +195,39 @@ Los cupones **no se borran**: se desactivan (los pedidos los referencian).
 
 Índices: `{ orderId: 1 }` único · `{ couponId: 1, clienteKey: 1, estado: 1 }`.
 
+### 3.6 `Complaint` (`models/Complaint.ts`) — fase 22b
+
+Hoja del Libro de Reclamaciones (D-79, D-80). Con `timestamps`. **Nunca se borra** (el modelo lo impide con un `pre` en las operaciones de borrado y reemplazo) y la respuesta, una vez puesta, no cambia. Se conservan al menos 2 años.
+
+| Campo | Tipo | Req. | Notas |
+|---|---|:-:|---|
+| `codigo` | `String` único | ✔ | `LR-AAAA-NNNNNN`; año en hora de Lima, correlativo de `counters` |
+| `proveedor` | `{ nombreComercial, titular, ruc, domicilio, correo }` | ✔ | Copia de `LEGAL` al crear |
+| `consumidor` | `{ nombre, tipoDocumento: "DNI"|"CE"|"PASAPORTE", numeroDocumento, domicilio, telefono, email }` | ✔ | `telefono` normalizado con `lib/phone` (`51…`) |
+| `representante` | `{ nombre, tipoDocumento, numeroDocumento }` | | Padre, madre o apoderado si el consumidor es menor |
+| `bien` | `{ tipo: "producto"|"servicio", descripcion, montoReclamado? }` | ✔ | `montoReclamado` en soles con `redondear2` |
+| `pedidoCodigo` | `String` | | Texto tal como lo escribió el consumidor; no se comprueba |
+| `tipo` | `String` enum `["reclamo","queja"]` | ✔ | |
+| `detalle` | `String` (20–3000) | ✔ | |
+| `pedidoConsumidor` | `String` (5–1000) | ✔ | |
+| `fechaLimite` | `Date` | ✔ | +15 días hábiles (D-81), final del día en Lima |
+| `estado` | `String` enum `["pendiente","respondido"]` | ✔ | |
+| `respuesta` | `{ texto, fecha, adminId, adminNombre }` | | Inmutable una vez puesta |
+| `copiaEnviada` · `respuestaEnviada` | `Boolean` | ✔ | `false` hasta que Resend confirma el envío |
+| `ip` | `String` | | Solo para abuso; se ve solo en el panel |
+| `createdAt`, `updatedAt` | `Date` | ✔ | |
+
+Índices (migración 004): `{ codigo: 1 }` único · `{ estado: 1, fechaLimite: 1 }` · `{ createdAt: -1 }`.
+
+### 3.7 `Counter` (`models/Counter.ts`) — fase 22b
+
+| Campo | Tipo | Req. | Notas |
+|---|---|:-:|---|
+| `_id` | `String` | ✔ | Nombre del contador: `reclamos-AAAA` |
+| `seq` | `Number` | ✔ | Último número usado; solo `$inc` atómico con `upsert` |
+
+Sin índices propios (solo `_id`). No se reinicia ni se borra.
+
 ---
 
 ## 4. Scripts de migración
@@ -232,6 +267,7 @@ Los scripts usan el driver nativo a través de `mongoose.connection.db.collectio
 | 001 | `001-admin-roles.mjs` | 09 | `adminusers` | `{ rol: { $exists: false } }` | `$set: { rol: "superadmin", tokenVersion: 0 }` | Bajo. Sin ella el código ya trata "sin rol" como `superadmin` |
 | 002 | `002-product-defaults.mjs` | 13 | `products` | documentos a los que les falte `activo`, `stockCantidad`, `stockMinimo`, `imagenes` o `tags` | `$set` **solo de los campos que falten**: `activo: true`, `stockMinimo: 5`, `imagenes: []`, `tags: []`. Para `stockCantidad` ausente usa la tabla de abajo. **No recalcula `stock`** | Medio. Revisar la simulación: debería afectar a muy pocos o ningún producto (ya se corrió `migrate-inventory.js`) |
 | 003 | `003-indices.mjs` | 15 | `orders`, `stockmovements`, `ratelimits`, `products` | — | `createIndex` de los índices nuevos listados en este documento. **Nunca** `dropIndex` ni `syncIndexes` | Bajo |
+| 004 | `004-reclamos-indices.mjs` | 22b | `complaints` | — | `createIndex` de los 3 índices de §3.6. Simula por defecto; idempotente; sin copia en `backups/` porque no toca documentos | Bajo. Se aplica en `janku-dev` y luego en producción **antes** de desplegar |
 
 Tabla para `stockCantidad` ausente en la 002 (la misma que usó `scripts/legacy/migrate-inventory.js`): `stock "Disponible"` → 20 · `"Limitado"` → 3 · `"Agotado"` → 0 · sin valor → 10.
 
@@ -247,4 +283,4 @@ Cada migración se aplica **antes** de desplegar el código de su fase, en este 
 
 ### 4.4 Reversa
 
-Las tres migraciones solo añaden campos o índices. Revertir el código basta: los campos extra son ignorados por el código anterior. Si aun así hay que restaurar, la copia en `backups/` contiene los documentos originales.
+Las migraciones solo añaden campos o índices. Revertir el código basta: los campos extra son ignorados por el código anterior. Si aun así hay que restaurar, la copia en `backups/` contiene los documentos originales.
