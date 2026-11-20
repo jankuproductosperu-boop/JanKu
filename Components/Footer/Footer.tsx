@@ -1,5 +1,14 @@
 import Link from "next/link";
-import { SITE } from "@/lib/siteConfig";
+import { LEGAL, SITE } from "@/lib/siteConfig";
+import PreferenciasCookies from "@/Components/CookieBanner/PreferenciasCookies";
+
+const ENLACES_LEGALES = [
+  { href: "/terminos", texto: "Términos y condiciones" },
+  { href: "/privacidad", texto: "Política de privacidad" },
+  { href: "/cambios-y-devoluciones", texto: "Cambios y devoluciones" },
+  { href: "/envios", texto: "Envíos y entregas" },
+  { href: "/cookies", texto: "Cookies" },
+];
 
 export default function Footer() {
   return (
@@ -53,7 +62,7 @@ export default function Footer() {
             <li>📍 Huancayo, Perú</li>
             <li>📞 +51 970 189 208</li>
             <li>Asesor de ventas: 960 668 851</li>
-            <li>📧 productos@janku.com</li>
+            <li>📧 {LEGAL.correo}</li>
           </ul>
 
           <a
@@ -73,7 +82,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm">
             <li>
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/jankuproductos/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-gray-300"
@@ -83,42 +92,12 @@ export default function Footer() {
             </li>
             <li>
               <a
-                href="https://tiktok.com"
+                href="https://www.tiktok.com/@jankuproductos"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-gray-300"
               >
                 TikTok
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-300"
-              >
-                Instagram
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-300"
-              >
-                X / Twitter
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-300"
-              >
-                YouTube
               </a>
             </li>
           </ul>
@@ -127,6 +106,29 @@ export default function Footer() {
 
       {/* Línea divisoria */}
       <hr className="border-gray-400/30 mt-12 mb-4" />
+
+      {/* Legal */}
+      <nav aria-label="Información legal" className="max-w-7xl mx-auto mb-4">
+        <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-gray-300">
+          {ENLACES_LEGALES.map((e) => (
+            <li key={e.href}>
+              <Link href={e.href} className="hover:text-white underline-offset-2 hover:underline">
+                {e.texto}
+              </Link>
+            </li>
+          ))}
+          <li>
+            <PreferenciasCookies className="hover:text-white underline-offset-2 hover:underline" />
+          </li>
+        </ul>
+      </nav>
+
+      <p className="max-w-7xl mx-auto mb-3 text-center text-xs text-gray-300">
+        {LEGAL.nombreComercial} es el nombre comercial de {LEGAL.titular} · RUC {LEGAL.ruc} · {LEGAL.domicilio} ·{" "}
+        <a href={`mailto:${LEGAL.correo}`} className="hover:text-white">
+          {LEGAL.correo}
+        </a>
+      </p>
 
       {/* Derechos */}
       <p className="text-center text-xs text-gray-300">

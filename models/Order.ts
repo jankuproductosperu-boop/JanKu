@@ -108,6 +108,9 @@ const OrderSchema = new Schema(
     stockDescontado: { type: Boolean, required: true, default: false },
     notasCliente: { type: String, default: "", maxlength: 500 },
     notasInternas: { type: String, default: "", maxlength: 2000 },
+    // Fase 22a (D-76): aceptación de términos al crear el pedido. Opcionales.
+    terminosVersion: { type: String },
+    terminosAceptadosEn: { type: Date },
     historial: { type: [HistorialSchema], required: true },
     origen: {
       ip: { type: String },

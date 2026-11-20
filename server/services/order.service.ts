@@ -32,6 +32,7 @@ import Order from "@/models/Order";
 import Product from "@/models/Product";
 import Promotion from "@/models/Promotion";
 import User from "@/models/User";
+import { LEGAL } from "@/lib/siteConfig";
 import type {
   MetodoEntrega,
   MetodoPago,
@@ -364,6 +365,8 @@ export async function crearPedido(
     pago: { estado: "pendiente" as PagoEstado, metodo: "" as MetodoPago },
     stockDescontado: false,
     notasCliente: datos.notas ?? "",
+    // Fase 22a (D-76): versión de los textos y fecha del servidor, nunca del navegador.
+    ...(datos.aceptaTerminos ? { terminosVersion: LEGAL.version, terminosAceptadosEn: ahora } : {}),
     historial: [{ estado: "pendiente" as OrderEstado, fecha: ahora }],
     origen: { ip: ctx.ip, userAgent: ctx.userAgent.slice(0, 200) },
   };

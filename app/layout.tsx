@@ -5,6 +5,7 @@ import { CartProvider } from "@/context/CartContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import ErrorBoundary from "@/Components/ErrorBoundary/ErrorBoundary";
 import GoogleAnalytics from "@/Components/GoogleAnalytics/GoogleAnalytics";
+import CookieBanner from "@/Components/CookieBanner/CookieBanner";
 import { UserProvider } from "@/context/UserContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,6 +83,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <GoogleAnalytics />
+        <CookieBanner />
         <ErrorBoundary>
           <UserProvider>
             <CartProvider>

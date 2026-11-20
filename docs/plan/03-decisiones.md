@@ -268,3 +268,19 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-72 · Puntos de entrega.** Entidad administrable (`DeliveryPoint`, pantalla Panel → Puntos de entrega, permiso `catalogo.editar`). Elegir uno = método `punto_entrega`: sin costo ni aviso de adicional. El pedido guarda una **copia** del punto (nombre, dirección, referencia, horario), así que editarlo después no cambia pedidos ya hechos. Un punto inactivo o inexistente al crear el pedido → 409 `PUNTO_NO_DISPONIBLE`. Nunca se borran: se desactivan (N1-3). `recojo` se conserva en el enum solo para pedidos antiguos; al crear un pedido se rechaza con 400.
 
 **D-73 · Envío a provincia.** Datos: departamento (lista cerrada de 25: 24 departamentos + Callao, sin "Lima Provincias"), provincia y ciudad (texto libre). Sin dirección ni referencia; si llegan → 400 (cada método rechaza los campos que no le corresponden). Aviso fijo: "La agencia de envío, tu DNI y el resto de datos los coordinamos por WhatsApp." Sigue con `envioPorCoordinar = true`. Sin campo distrito salvo que el dueño lo pida.
+
+---
+
+## Legal y cookies (fase 22a)
+
+*Aprobadas por el dueño el 2026-11-19 (Q1: correo productosjanku@gmail.com; Q2–Q4 por defecto).*
+
+**D-74 · Datos del titular en un solo sitio** (`LEGAL` en `lib/siteConfig.ts`). Janku es el nombre comercial de una persona natural con RUC 10 en el Nuevo RUS: tienda virtual, solo boleta de venta electrónica, precios finales.
+
+**D-75 · Google Analytics solo con consentimiento** y sin consulta en `page_location` (el token del pedido no sale). "Rechazar" igual de visible que "Aceptar"; rechazar desactiva GA y borra `_ga*`.
+
+**D-76 · Aceptación de términos** con casilla sin marcar en registro y checkout. En la API es un campo opcional (N1-6); si llega, el servidor guarda `LEGAL.version` y su propia fecha.
+
+**D-77 · Política de cambios:** revisión al recibir; sin devoluciones por cambio de opinión; 3 días para fallas de fábrica no visibles (cambio, reparación o devolución del dinero); en provincia, video de desempaque y aviso en 24 h. No limita los derechos del consumidor.
+
+**D-78 · Sin plazos de entrega fijos** en los textos públicos.

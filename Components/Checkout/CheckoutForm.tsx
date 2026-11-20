@@ -9,6 +9,7 @@ import { lineaId } from "@/lib/variantes";
 import { normalizarTelefono } from "@/lib/phone";
 import { DEPARTAMENTOS, esDepartamento } from "@/lib/shipping";
 import { CouponField } from "@/Components/Checkout/CouponField";
+import { LEGAL } from "@/lib/siteConfig";
 import type {
   CouponValidateResult,
   DeliveryPointPublic,
@@ -100,6 +101,7 @@ export function CheckoutForm({
   const [aviso, setAviso] = useState<Aviso | null>(null);
   const [errorCupon, setErrorCupon] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [acepta, setAcepta] = useState(false); // sin marcar por defecto (fase 22a)
   const enviandoRef = useRef(false); // el estado llega tarde para un doble clic muy rápido
 
   // Puntos de entrega activos, sin caché: lo que se edita en el panel se ve al momento. null = cargando.
@@ -201,6 +203,7 @@ export function CheckoutForm({
         // Solo el código (N1-5). Con cuponAplicado: false en la respuesta se sigue igual: el pedido muestra lo aplicado.
         ...(cupon ? { cupon: cupon.codigo } : {}),
         website,
+        ...(acepta ? { aceptaTerminos: true as const } : {}),
       };
 
       const res = await fetch("/api/orders", {
@@ -557,10 +560,34 @@ export function CheckoutForm({
         />
       </div>
 
+      <label className="flex items-start gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={acepta}
+          onChange={(e) => setAcepta(e.target.checked)}
+          className="mt-0.5 h-4 w-4 flex-none accent-[#2C2C6C]"
+        />
+        <span>
+          Acepto los{" "}
+          <Link href="/terminos" target="_blank" className="text-[#2C2C6C] font-semibold underline">
+            Términos y condiciones
+          </Link>{" "}
+          y la{" "}
+          <Link href="/cambios-y-devoluciones" target="_blank" className="text-[#2C2C6C] font-semibold underline">
+            Política de cambios y devoluciones
+          </Link>
+          , y que mis datos se usen para gestionar mi pedido según la{" "}
+          <Link href="/privacidad" target="_blank" className="text-[#2C2C6C] font-semibold underline">
+            Política de privacidad
+          </Link>
+          . Tengo {LEGAL.edadMinima} años o más.
+        </span>
+      </label>
+
       <div>
         <button
           type="submit"
-          disabled={enviando}
+          disabled={enviando || !acepta}
           className="w-full bg-[#2C2C6C] text-white py-3 md:py-4 px-6 rounded-lg font-bold text-base md:text-lg hover:bg-[#241B57] transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {enviando ? "Enviando…" : "Confirmar pedido"}

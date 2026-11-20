@@ -37,6 +37,7 @@ const cabeceras = (res) => {
 
 const paginas = [
   "/", "/promociones", "/carrito", "/favoritos", "/busqueda?q=a", "/contacto",
+  "/terminos", "/privacidad", "/cambios-y-devoluciones", "/envios", "/cookies",
   "/auth/login", "/auth/registro", "/auth/recuperar-contrasena", "/login-admin",
 ];
 

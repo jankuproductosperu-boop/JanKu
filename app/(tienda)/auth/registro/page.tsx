@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LEGAL } from "@/lib/siteConfig";
 import { Eye, EyeOff, User, Mail, Lock, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function RegistroPage() {
@@ -10,6 +11,7 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [exito, setExito] = useState(false);
+  const [acepta, setAcepta] = useState(false);
 
   const requisitos = [
     { label: "Al menos 8 caracteres", cumple: form.password.length >= 8 },
@@ -36,6 +38,7 @@ export default function RegistroPage() {
           nombre: form.nombre,
           email: form.email,
           password: form.password,
+          aceptaTerminos: acepta,
         }),
       });
 
@@ -173,6 +176,27 @@ export default function RegistroPage() {
             </div>
           )}
 
+          {/* Aceptación (sin marcar por defecto) */}
+          <label className="flex items-start gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={acepta}
+              onChange={(e) => setAcepta(e.target.checked)}
+              className="mt-0.5 h-4 w-4 flex-none accent-[#2C2C6C]"
+            />
+            <span>
+              Tengo {LEGAL.edadMinima} años o más y acepto los{" "}
+              <Link href="/terminos" target="_blank" className="text-[#2C2C6C] font-semibold underline">
+                Términos y condiciones
+              </Link>{" "}
+              y la{" "}
+              <Link href="/privacidad" target="_blank" className="text-[#2C2C6C] font-semibold underline">
+                Política de privacidad
+              </Link>
+              .
+            </span>
+          </label>
+
           {/* Error */}
           {error && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -183,7 +207,7 @@ export default function RegistroPage() {
 
           <button
             type="submit"
-            disabled={loading || !requisitos.every(r => r.cumple)}
+            disabled={loading || !acepta || !requisitos.every(r => r.cumple)}
             className="w-full bg-[#2C2C6C] text-white py-3 rounded-lg font-semibold hover:bg-[#241B57] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Creando cuenta..." : "Crear cuenta"}

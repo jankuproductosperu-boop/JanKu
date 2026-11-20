@@ -1,6 +1,6 @@
 # Fase 22a · Páginas legales, datos del titular, aviso de cookies y casillas de aceptación
 
-> **PROPUESTA pendiente de aprobación del dueño** (redactada el 2026-11-19). Hasta que la apruebe y responda las preguntas de la sección 2 no se escribe código.
+> **Aprobada por el dueño el 2026-11-19.** Q1: el correo bueno es **productosjanku@gmail.com**. Q2, Q3 y Q4: por defecto. D-74 a D-78 ya están en `03-decisiones.md`.
 
 > Los textos legales de esta fase son una base práctica hecha a partir de cómo funciona el sitio. **No son asesoría legal**: conviene que un abogado los revise una vez antes de darlos por definitivos.
 

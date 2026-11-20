@@ -24,6 +24,7 @@ export interface IUser extends Document {
     departamento?: string;
     codigoPostal?: string;
   };
+  terminos?: { version?: string; aceptadoEn?: Date };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,6 +59,11 @@ const UserSchema = new Schema<IUser>(
       ciudad: { type: String, default: "" },
       departamento: { type: String, default: "" },
       codigoPostal: { type: String, default: "" },
+    },
+    // Aceptación de términos y privacidad (fase 22a, D-76): versión de los textos y fecha del servidor.
+    terminos: {
+      version: { type: String },
+      aceptadoEn: { type: Date },
     },
   },
   { timestamps: true }

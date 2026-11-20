@@ -10,6 +10,7 @@ import { SECURITY_HEADERS } from "@/server/http/respond";
 import { obtenerIP } from "@/server/auth/ip";
 import { enviarEmailVerificacion } from "@/server/email/auth-emails";
 import { headers } from "next/headers";
+import { LEGAL } from "@/lib/siteConfig";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 2. Parsear body ───────────────────────────────────────────────────
-    let body: { nombre?: string; email?: string; password?: string };
+    let body: { nombre?: string; email?: string; password?: string; aceptaTerminos?: unknown };
     try {
       body = await request.json();
     } catch {
@@ -124,6 +125,8 @@ export async function POST(request: NextRequest) {
       password: passwordHash,
       tokenVerificacion: tokenHash,
       tokenVerificacionExpira: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+      // Campo opcional (N1-6): se guarda solo si llega aceptado; versión y fecha del servidor (D-76).
+      ...(body.aceptaTerminos === true ? { terminos: { version: LEGAL.version, aceptadoEn: new Date() } } : {}),
     });
 
     // ── 8. Enviar email de verificación ───────────────────────────────────

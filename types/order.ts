@@ -85,6 +85,8 @@ export type OrderCreateInput = {
   /** Código del cupón (fase 18). Solo el código: el descuento lo calcula el servidor. */
   cupon?: string;
   website?: string;
+  /** Casilla de términos marcada (fase 22a, D-76). Opcional en la API (N1-6). */
+  aceptaTerminos?: true;
 };
 
 export type OrderCreateResult = {

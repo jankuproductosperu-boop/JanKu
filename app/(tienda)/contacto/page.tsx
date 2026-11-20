@@ -1,5 +1,5 @@
 import { Phone, Facebook, Mail } from "lucide-react";
-import { SITE } from "@/lib/siteConfig";
+import { LEGAL, SITE } from "@/lib/siteConfig";
 
 export default function ContactSection() {
   return (
@@ -48,11 +48,11 @@ export default function ContactSection() {
 
             {/* Email */}
             <a
-              href="mailto:productosjanku@gmail.com"
+              href={`mailto:${LEGAL.correo}`}
               className="flex items-center gap-4 hover:opacity-80 transition"
             >
               <Mail className="w-10 h-10 text-red-500" />
-              <p className="font-semibold">productosjanku@gmail.com</p>
+              <p className="font-semibold">{LEGAL.correo}</p>
             </a>
           </div>
         </div>
@@ -76,6 +76,10 @@ export default function ContactSection() {
           </div>
         </div>
       </div>
+
+      <p className="max-w-5xl mx-auto mt-8 text-center text-xs text-white/80">
+        {LEGAL.nombreComercial} es el nombre comercial de {LEGAL.titular} · RUC {LEGAL.ruc} · {LEGAL.domicilio}
+      </p>
     </section>
   );
 }
