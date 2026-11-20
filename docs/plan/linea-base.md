@@ -68,3 +68,20 @@ Fecha: 2026-11-17 · Rama `fase-21-cierre`
 `no-unused-vars`, `prefer-const`, `no-unescaped-entities`, `no-explicit-any`, `no-require-imports` y `no-html-link-for-pages`: **0**.
 
 **Referencia de N1-10 desde ahora:** ninguna tarea puede superar 3 errores de lint.
+
+---
+
+## Actualización · react-hooks/set-state-in-effect
+
+Fecha: 2026-11-19 · Rama `lint-set-state-in-effect` (pedido del dueño, después de la fase 21)
+
+| Comando | Resultado |
+|---|---|
+| `npm run typecheck` | 0 errores |
+| `npm test` | 15 archivos, 253 pruebas, pasan |
+| `npm run lint` | **0 errores**, 12 avisos (11 `no-img-element`, 1 `exhaustive-deps`) |
+| `npm run build` | Compila sin errores |
+
+Carrito y favoritos leen `localStorage` con `useSyncExternalStore` (`hooks/useAlmacenLocal.ts`); la búsqueda calcula la lista filtrada con `useMemo`.
+
+**Referencia de N1-10 desde ahora:** 0 errores de lint.

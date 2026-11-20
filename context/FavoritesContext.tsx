@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import type { Product } from "@/types";
+import { crearAlmacenLocal, useAlmacenLocal } from "@/hooks/useAlmacenLocal";
 
 export type FavoriteProduct = Pick<Product, "_id" | "nombre" | "precio" | "imagenUrl" | "slug" | "codigoUrl">;
 
@@ -16,30 +17,25 @@ type FavoritesContextType = {
 
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
+const SIN_FAVORITOS: FavoriteProduct[] = [];
+
+// Si lo guardado está roto, se borra y se empieza sin favoritos.
+function leerFavoritos(texto: string): FavoriteProduct[] {
+  try {
+    return JSON.parse(texto);
+  } catch (error) {
+    console.error("Error cargando favoritos:", error);
+    localStorage.removeItem("janku-favorites");
+    return SIN_FAVORITOS;
+  }
+}
+
+// Favoritos en localStorage ("janku-favorites"); cada cambio se guarda al momento.
+const almacenFavoritos = crearAlmacenLocal<FavoriteProduct[]>("janku-favorites", leerFavoritos, SIN_FAVORITOS);
+const setFavorites = almacenFavoritos.set;
+
 export function FavoritesProvider({ children }: { children: ReactNode }) {
-  const [favorites, setFavorites] = useState<FavoriteProduct[]>([]);
-  const [isClient, setIsClient] = useState(false);
-
-  // Cargar favoritos del localStorage al montar
-  useEffect(() => {
-    setIsClient(true);
-    const stored = localStorage.getItem("janku-favorites");
-    if (stored) {
-      try {
-        setFavorites(JSON.parse(stored));
-      } catch (error) {
-        console.error("Error cargando favoritos:", error);
-        localStorage.removeItem("janku-favorites");
-      }
-    }
-  }, []);
-
-  // Guardar favoritos en localStorage cuando cambien
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem("janku-favorites", JSON.stringify(favorites));
-    }
-  }, [favorites, isClient]);
+  const favorites = useAlmacenLocal(almacenFavoritos);
 
   const addToFavorites = (product: FavoriteProduct) => {
     setFavorites((prev) => {
@@ -61,7 +57,6 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   const clearFavorites = () => {
     setFavorites([]);
-    localStorage.removeItem("janku-favorites");
   };
 
   const value = {

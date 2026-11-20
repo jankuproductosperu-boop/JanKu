@@ -35,7 +35,7 @@ El plan de reestructuración (fases 01–21) está cerrado; el acta es `docs/pla
 | **N1-9** | **No cambiar mayúsculas/minúsculas de rutas.** `Components/` se queda con C mayúscula; `Infosection.tsx` conserva su nombre. |
 | **N1-10** | **Cerrar en verde.** `npm run typecheck`, `npm run lint` (sin errores nuevos respecto a la línea base), `npm test` y `npm run build` pasan antes de dar una fase por terminada. Si algo falla, se reporta con la salida; no se oculta. |
 
-Línea base de lint vigente: **3 errores** (`react-hooks/set-state-in-effect`), ver `docs/plan/linea-base.md`.
+Línea base de lint vigente: **0 errores** (12 avisos), ver `docs/plan/linea-base.md`.
 
 ## 4. Mapa de carpetas
 
@@ -47,7 +47,7 @@ app/
   api/             rutas públicas + api/admin/** (solo administradores)
 Components/        componentes React de la tienda (C mayúscula, no renombrar)
 context/           CartContext, FavoritesContext, UserContext
-hooks/             useAuth, useScrollDirection
+hooks/             useAuth, useScrollDirection, useAlmacenLocal (estado en localStorage)
 lib/               funciones PURAS (navegador y servidor), pruebas en lib/__tests__/
 server/            SOLO servidor; todo archivo empieza con import "server-only"
   db.ts · logger.ts · cloudinary.ts

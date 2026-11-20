@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useMemo, ReactNode } fr
 import type { CartItem, DiscountTier } from "@/types";
 import { lineaId } from "@/lib/variantes";
 import { calcularTotales, proximoNivel as calcularProximoNivel } from "@/lib/pricing";
+import { crearAlmacenLocal, useAlmacenLocal } from "@/hooks/useAlmacenLocal";
 
 type CartContextType = {
   cart: CartItem[];
@@ -53,30 +54,17 @@ function leerCarritoGuardado(texto: string): CartItem[] {
 }
 
 const MAX_CANTIDAD = 99;
+const CARRITO_VACIO: CartItem[] = [];
+
+// Carrito en localStorage ("janku-cart"). Un JSON roto o con ítems inválidos nunca rompe la tienda;
+// sin almacenamiento, el carrito sigue funcionando en memoria. Cada cambio se guarda al momento.
+const almacenCarrito = crearAlmacenLocal<CartItem[]>("janku-cart", leerCarritoGuardado, CARRITO_VACIO);
+const setCart = almacenCarrito.set;
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const cart = useAlmacenLocal(almacenCarrito);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [nivelesDescuento, setNivelesDescuento] = useState<DiscountTier[]>([]);
-
-  // Cargar carrito del localStorage al iniciar. Un JSON roto o con ítems inválidos nunca rompe la tienda.
-  useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("janku-cart");
-      if (savedCart) setCart(leerCarritoGuardado(savedCart));
-    } catch {
-      // localStorage no disponible: se sigue con el carrito vacío
-    }
-  }, []);
-
-  // Guardar carrito en localStorage cada vez que cambie
-  useEffect(() => {
-    try {
-      localStorage.setItem("janku-cart", JSON.stringify(cart));
-    } catch {
-      // sin almacenamiento: el carrito sigue funcionando en memoria
-    }
-  }, [cart]);
 
   // Cargar los niveles de descuento configurados desde el admin — una vez,
   // se recalculan automáticamente contra el carrito cada vez que este cambia

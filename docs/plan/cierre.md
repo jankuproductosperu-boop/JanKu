@@ -76,14 +76,14 @@ Migraciones en producción (`jankuDB`): 001, 002 y 003 al día desde el 2026-11-
 | Pruebas | 1 archivo, 1 prueba | 15 archivos, 253 pruebas |
 | Build | compila | compila (15 s en local) |
 | Smoke | 23 comprobaciones | 57 comprobaciones, todas OK |
-| Lint: errores / avisos | 40 / 38 | **3 / 12** |
+| Lint: errores / avisos | 40 / 38 | **0 / 12** |
 
 | Regla de lint | Inicial | Final |
 |---|---:|---:|
 | error · @typescript-eslint/no-require-imports | 21 | 0 |
 | error · @typescript-eslint/no-explicit-any | 7 | 0 |
 | error · @next/next/no-html-link-for-pages | 5 | 0 |
-| error · react-hooks/set-state-in-effect | 4 | **3** |
+| error · react-hooks/set-state-in-effect | 4 | 0 |
 | error · react/no-unescaped-entities | 2 | 0 |
 | error · prefer-const | 1 | 0 |
 | aviso · @typescript-eslint/no-unused-vars | 24 | 0 |
@@ -98,7 +98,7 @@ Detalle por archivo en `linea-base.md`.
 
 | Severidad | Qué | Nota |
 |---|---|---|
-| 🟠 Media | `react-hooks/set-state-in-effect` (3 errores): `busqueda/page.tsx`, `CartContext.tsx`, `FavoritesContext.tsx` | Fase propia del dueño. Riesgo de hidratación; de paso puede arreglar el destello de "carrito vacío" en `/checkout` |
+| ✅ Resuelta | `react-hooks/set-state-in-effect` (3 errores): `busqueda/page.tsx`, `CartContext.tsx`, `FavoritesContext.tsx` | Corregida el 2026-11-19 en la rama `lint-set-state-in-effect` (`useSyncExternalStore` y `useMemo`) |
 | 🟢 Baja | `react-hooks/exhaustive-deps` (1), `@next/next/no-img-element` (11) | Corregirlas cambia render o carga de imágenes: requiere verificación visual propia |
 | 🟢 Baja | `@next/next/no-html-link-for-pages` | Hoy a 0; se mantiene en la lista de reglas que no se corrigen sin revisión visual |
 | 🟠 Media | Catálogo público resuelto en el navegador (M6): cada página descarga todos los productos | Paginación y filtros en servidor fuera del plan |
@@ -157,7 +157,7 @@ Detalle por archivo en `linea-base.md`.
 |---|---|
 | `npm run typecheck` | 0 errores |
 | `npm test` | 253 pruebas, pasan |
-| `npm run lint` | 3 errores (solo `set-state-in-effect`), 12 avisos |
+| `npm run lint` | 0 errores, 12 avisos (tras `lint-set-state-in-effect`) |
 | `npm run build` | Compila; incluye `/admin/usuarios` |
 | `grep -rn "console.log" app server Components context hooks lib` | Solo `server/logger.ts` (ver §2) |
 | `server/auth/legacyLimiters.ts` e imports de `jsonwebtoken` | No existen |

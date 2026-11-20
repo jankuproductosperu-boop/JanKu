@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, SlidersHorizontal, X } from "lucide-react";
@@ -18,7 +18,6 @@ function BusquedaContent() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -49,8 +48,8 @@ function BusquedaContent() {
     loadData();
   }, []);
 
-  // Aplicar búsqueda y filtros
-  useEffect(() => {
+  // Aplicar búsqueda y filtros (se calcula en el render, sin estado aparte)
+  const filteredProducts = useMemo(() => {
     let result = [...products];
 
     // Búsqueda por texto
@@ -89,7 +88,7 @@ function BusquedaContent() {
         break;
     }
 
-    setFilteredProducts(result);
+    return result;
   }, [products, query, selectedCategory, priceRange, stockFilter, sortBy]);
 
   const hasActiveFilters = selectedCategory !== "all" || 
