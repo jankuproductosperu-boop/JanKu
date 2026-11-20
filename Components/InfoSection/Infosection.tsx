@@ -80,8 +80,8 @@ export default function NosotrosSection({
             desc: 'Cada compra está respaldada por un equipo comprometido contigo.',
           },{
             Icon: Star,
-            title: 'Calidad garantizada',
-            desc: 'Seleccionamos cuidadosamente nuestros productos para ti.',
+            title: 'Productos revisados',
+            desc: 'Revisamos cada producto antes de entregártelo.',
           }].map((item, i) => (
             <motion.div
               key={i}

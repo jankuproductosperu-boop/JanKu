@@ -50,7 +50,7 @@ export default function IntroJanKuSection({
           {/* Beneficios sin cards */}
           <ul className="space-y-4">
             {[
-              { Icon: ShieldCheck, text: 'Pagos y procesos 100% seguros' },
+              { Icon: ShieldCheck, text: 'Pago coordinado por WhatsApp: Yape, Plin, transferencia o efectivo' },
               { Icon: TrendingUp, text: 'Precios justos y productos verificados' },
               { Icon: Users, text: 'Atención humana y personalizada' },
             ].map((item, i) => (
