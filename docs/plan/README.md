@@ -65,7 +65,7 @@ Estado: **pendiente de aprobación del dueño.** Nada de este plan se ha impleme
 | 20 | [Correos y "Mis pedidos"](fases/fase-20-emails-y-mis-pedidos.md) | Medio | Sonnet | 1 | 45 min | Enlace y campo en el perfil |
 | 21 | [Usuarios admin y cierre](fases/fase-21-usuarios-admin-y-cierre.md) | Bajo | Sonnet | 1 | 1 h | Pantalla nueva en el panel |
 | 22a | [Páginas legales, datos del titular, cookies y casillas](fases/fase-22a-legal-y-cookies.md) | Medio | Sonnet | 1 | 1 h | Pie, aviso de cookies, casillas, 5 páginas nuevas |
-| 22b | [Libro de Reclamaciones](fases/fase-22b-libro-de-reclamaciones.md) *(propuesta)* | ⚠️ Medio-alto · migración 004 | Superior + Sonnet | 2 | 1 h | Página nueva; enlace en el pie; Panel → Reclamos |
+| 22b | [Libro de Reclamaciones](fases/fase-22b-libro-de-reclamaciones.md) | ⚠️ Medio-alto · migración 004 | Superior + Sonnet | 2 | 1 h | Página nueva; enlace en el pie; Panel → Reclamos |
 
 **Total estimado:** 25–30 sesiones de modelo y unas 14–16 horas del dueño repartidas en las 21 fases.
 

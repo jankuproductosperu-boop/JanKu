@@ -1,6 +1,6 @@
 # Fase 22b · Libro de Reclamaciones virtual
 
-> **PROPUESTA pendiente de aprobación del dueño** (redactada el 2026-11-19). Requiere la fase 22a fusionada.
+> **Aprobada por el dueño el 2026-11-19.** Q5, Q6 y Q7: por defecto. Requiere la fase 22a fusionada. Al empezar, pasar D-79 a D-82 a `03-decisiones.md`.
 
 > ⚠️ **Riesgo medio-alto:** modelo y colección nuevos, endpoint público de escritura, correo a clientes con Resend real y migración 004 (índices). Datos personales con DNI.
 
