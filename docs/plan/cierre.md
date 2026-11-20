@@ -139,7 +139,7 @@ Detalle por archivo en `linea-base.md`.
 | P14 | Delivery Huancayo, puntos de entrega y envío a provincia; "recojo" no se ofrece (16b) |
 | P15 | 72 h; la caducidad se ejecuta al abrir Panel → Pedidos |
 | P16 | Eliminar `icon: "/icon.png"` del layout (hecho en la fase 21; ver §2: no había 404) |
-| P17 | `scripts/create-admin.js` quedó obsoleto en la fase 09; los administradores se crean con `scripts/admin/` o Panel → Usuarios. **Sin confirmación registrada** de que se cambió la contraseña antigua: confírmalo |
+| P17 | Resuelta: el dueño confirmó el 2026-11-19 que la contraseña inicial `admin123` del usuario `admin` ya estaba cambiada. `scripts/create-admin.js` quedó obsoleto en la fase 09; los administradores se crean con `scripts/admin/` o Panel → Usuarios |
 | P18 | Por defecto: `ADMIN_PASSWORD` y `MONGODB_DB` no figuran en `.env.example`; retirarlas de Render queda a cargo del dueño |
 | P19 | No se pide DNI ni RUC |
 | P20 | No se enlaza nada; pendiente del dueño (§4) |
