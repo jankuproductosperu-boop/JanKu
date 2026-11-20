@@ -2,7 +2,7 @@ import "server-only";
 import { connectDB } from "@/server/db";
 import RateLimit from "@/models/RateLimit";
 
-export type Politica = "login-admin" | "login-user" | "register" | "resend-verif" | "forgot" | "order" | "coupon";
+export type Politica = "login-admin" | "login-user" | "register" | "resend-verif" | "forgot" | "order" | "coupon" | "reclamo";
 export type TipoClave = "ip" | "email" | "user";
 
 type Regla = { max: number; ventanaMs: number; bloqueoMs?: number };
@@ -18,6 +18,8 @@ const POLITICAS: Record<string, Regla> = {
   "forgot:ip": { max: 10, ventanaMs: 3_600_000 },
   "order:ip": { max: 5, ventanaMs: 3_600_000 },
   "coupon:ip": { max: 10, ventanaMs: 600_000 },
+  // Fase 22b: Libro de Reclamaciones.
+  "reclamo:ip": { max: 5, ventanaMs: 3_600_000 },
 };
 
 export type EstadoLimite = {

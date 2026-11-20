@@ -13,3 +13,4 @@ export * from "./api";
 export * from "./popup";
 export * from "./inventory";
 export * from "./deliveryPoint";
+export * from "./complaint";
