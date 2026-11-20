@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 import { LEGAL, SITE } from "@/lib/siteConfig";
 import PreferenciasCookies from "@/Components/CookieBanner/PreferenciasCookies";
 
@@ -117,6 +118,15 @@ export default function Footer() {
               </Link>
             </li>
           ))}
+          <li>
+            <Link
+              href="/libro-de-reclamaciones"
+              className="inline-flex items-center gap-1 hover:text-white underline-offset-2 hover:underline"
+            >
+              <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+              Libro de Reclamaciones
+            </Link>
+          </li>
           <li>
             <PreferenciasCookies className="hover:text-white underline-offset-2 hover:underline" />
           </li>

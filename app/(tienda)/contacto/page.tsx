@@ -1,4 +1,5 @@
-import { Phone, Facebook, Mail } from "lucide-react";
+import Link from "next/link";
+import { Phone, Facebook, Mail, BookOpen } from "lucide-react";
 import { LEGAL, SITE } from "@/lib/siteConfig";
 
 export default function ContactSection() {
@@ -77,7 +78,17 @@ export default function ContactSection() {
         </div>
       </div>
 
-      <p className="max-w-5xl mx-auto mt-8 text-center text-xs text-white/80">
+      <div className="max-w-5xl mx-auto mt-8 text-center">
+        <Link
+          href="/libro-de-reclamaciones"
+          className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#2C2C6C] hover:bg-gray-100 transition"
+        >
+          <BookOpen className="w-4 h-4" aria-hidden="true" />
+          Libro de Reclamaciones
+        </Link>
+      </div>
+
+      <p className="max-w-5xl mx-auto mt-4 text-center text-xs text-white/80">
         {LEGAL.nombreComercial} es el nombre comercial de {LEGAL.titular} · RUC {LEGAL.ruc} · {LEGAL.domicilio}
       </p>
     </section>

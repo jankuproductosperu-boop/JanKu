@@ -129,10 +129,17 @@ export default function TerminosPage() {
           id: "reclamos",
           titulo: "Consultas y reclamos",
           contenido: (
-            <p>
-              Escríbenos a {LEGAL.correo} o por WhatsApp. Tus datos se tratan según la{" "}
-              <Link href="/privacidad">Política de privacidad</Link>.
-            </p>
+            <>
+              <p>
+                Escríbenos a {LEGAL.correo} o por WhatsApp. Tus datos se tratan según la{" "}
+                <Link href="/privacidad">Política de privacidad</Link>.
+              </p>
+              <p>
+                También puedes registrar un reclamo o una queja en nuestro{" "}
+                <Link href="/libro-de-reclamaciones">Libro de Reclamaciones</Link>. Te respondemos en un plazo no mayor a
+                quince (15) días hábiles.
+              </p>
+            </>
           ),
         },
         {

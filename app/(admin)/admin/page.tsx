@@ -1,6 +1,7 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, FolderTree, Sparkles, AlertCircle, ArrowRight, Plus, Image as ImageIcon, Tag } from "lucide-react";
+import { Package, FolderTree, Sparkles, AlertCircle, ArrowRight, Plus, Image as ImageIcon, Tag, BookOpen } from "lucide-react";
 import { useAdminData } from "@/app/(admin)/admin/_components/useAdminData";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
 
@@ -22,7 +23,24 @@ function saludo() {
 
 export default function AdminResumenPage() {
   const { products, categories, banners, promotions } = useAdminData();
-  const { admin } = useAdminSession();
+  const { admin, puede } = useAdminSession();
+
+  // Q7 (fase 22b): reclamos por responder, solo con `pedidos.ver` y con datos reales (D-52).
+  const verReclamos = puede("pedidos.ver");
+  const [reclamosPendientes, setReclamosPendientes] = useState<number | null>(null);
+  useEffect(() => {
+    if (!verReclamos) return;
+    let activo = true;
+    fetch("/api/admin/complaints?estado=pendiente&pageSize=1")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((datos: { total?: unknown } | null) => {
+        if (activo && datos && typeof datos.total === "number") setReclamosPendientes(datos.total);
+      })
+      .catch(() => undefined);
+    return () => {
+      activo = false;
+    };
+  }, [verReclamos]);
 
   const activos = products.filter((p) => p.activo !== false);
   const disponibles = activos.filter((p) => p.stock === "Disponible" || !p.stock).length;
@@ -71,6 +89,30 @@ export default function AdminResumenPage() {
           </Link>
         </div>
       </section>
+
+      {/* Reclamos por responder (Q7) */}
+      {verReclamos && reclamosPendientes !== null && (
+        <Link
+          href="/admin/reclamos"
+          className="group flex items-center gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition"
+        >
+          <span
+            className={`w-11 h-11 rounded-xl grid place-items-center flex-none ${
+              reclamosPendientes > 0 ? "bg-[var(--warn-soft)] text-[var(--warn)]" : "bg-[var(--ok-soft)] text-[var(--ok)]"
+            }`}
+          >
+            <BookOpen className="w-5 h-5" />
+          </span>
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-[var(--ink)]">Reclamos por responder</div>
+            <div className="text-xs text-[var(--muted)]">
+              {reclamosPendientes > 0 ? "Plazo máximo: 15 días hábiles" : "Todo respondido"}
+            </div>
+          </div>
+          <div className="ml-auto text-3xl font-bold leading-tight tracking-tight">{reclamosPendientes}</div>
+          <ArrowRight className="w-4 h-4 text-[var(--muted)] opacity-0 group-hover:opacity-100 transition" />
+        </Link>
+      )}
 
       {/* KPIs */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
