@@ -12,6 +12,7 @@ const TODOS: Permiso[] = [
   "descuentos.gestionar",
   "cupones.gestionar",
   "admins.gestionar",
+  "estadisticas.ver",
 ];
 
 describe("ROLES", () => {
@@ -22,10 +23,12 @@ describe("ROLES", () => {
 });
 
 describe("permisosDe", () => {
-  it("superadmin tiene los 9 permisos", () =>
+  it("superadmin tiene los 10 permisos", () =>
     expect([...permisosDe("superadmin")].sort()).toEqual([...TODOS].sort()));
-  it("gestor tiene todos menos admins.gestionar", () =>
-    expect([...permisosDe("gestor")].sort()).toEqual(TODOS.filter((p) => p !== "admins.gestionar").sort()));
+  it("gestor tiene todos menos admins.gestionar y estadisticas.ver", () =>
+    expect([...permisosDe("gestor")].sort()).toEqual(
+      TODOS.filter((p) => p !== "admins.gestionar" && p !== "estadisticas.ver").sort(),
+    ));
   it("ventas tiene exactamente inventario.ver, pedidos.ver y pedidos.gestionar", () =>
     expect([...permisosDe("ventas")].sort()).toEqual(["inventario.ver", "pedidos.gestionar", "pedidos.ver"]));
   it("devuelve una copia que no altera la matriz", () => {
@@ -43,6 +46,11 @@ describe("tienePermiso", () => {
   it("gestor puede editar catálogo", () => expect(tienePermiso("gestor", "catalogo.editar")).toBe(true));
   it("ventas no puede editar catálogo", () => expect(tienePermiso("ventas", "catalogo.editar")).toBe(false));
   it("ventas no ve costos", () => expect(tienePermiso("ventas", "costos.ver")).toBe(false));
+  it("solo superadmin ve estadísticas", () => {
+    expect(tienePermiso("superadmin", "estadisticas.ver")).toBe(true);
+    expect(tienePermiso("gestor", "estadisticas.ver")).toBe(false);
+    expect(tienePermiso("ventas", "estadisticas.ver")).toBe(false);
+  });
   it("ventas gestiona pedidos", () => expect(tienePermiso("ventas", "pedidos.gestionar")).toBe(true));
   it("un rol desconocido no tiene ningún permiso", () =>
     TODOS.forEach((p) => expect(tienePermiso("intruso" as unknown as AdminRol, p)).toBe(false)));

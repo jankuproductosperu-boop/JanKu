@@ -55,7 +55,8 @@ server/            SOLO servidor; todo archivo empieza con import "server-only"
   http/            errors (AppError), respond (json, fail, handle)
   validation/      esquemas Zod, uno por entidad
   services/        lógica de negocio y todo acceso a Mongoose
-  email/           send (con timeout) y auth-emails
+  analytics/       token de Google para las estadísticas del panel (fase 23b)
+  email/           send (con timeout) y auth-emails, complaint-emails
 models/            modelos Mongoose
 types/             tipos compartidos; se importa desde "@/types"
 scripts/
@@ -135,6 +136,8 @@ Sin `try/catch` genérico (lo cubre `handle`), sin `connectDB()`, sin importar m
 ## 8. Variables de entorno (solo nombres) y servicios externos
 
 `MONGODB_URI` · `JWT_SECRET` · `USER_JWT_SECRET` · `CLOUDINARY_CLOUD_NAME` · `CLOUDINARY_API_KEY` · `CLOUDINARY_API_SECRET` · `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` · `RESEND_API_KEY` · `FROM_EMAIL` · `NEXT_PUBLIC_SITE_URL` · `NEXT_PUBLIC_GA_ID` · `NEXT_PUBLIC_CHECKOUT_ENABLED` (solo `"true"` activa el checkout; se lee al construir)
+
+Estadísticas del panel (fase 23b, opcionales: sin ellas la pantalla explica cómo conectar): `GA_PROPERTY_ID` (número de la propiedad GA4) · `GA_SA_EMAIL` · `GA_SA_PRIVATE_KEY` (cuenta de servicio con rol Lector).
 
 Pendiente futuro, sin uso hoy: `ADMIN_NOTIFY_EMAIL` (aviso de pedido nuevo, cuando se hagan los correos de pedido).
 

@@ -14,6 +14,7 @@ export const PERMISOS: Record<AdminRol, readonly Permiso[]> = {
     "descuentos.gestionar",
     "cupones.gestionar",
     "admins.gestionar",
+    "estadisticas.ver",
   ],
   gestor: [
     "catalogo.editar",

@@ -141,6 +141,9 @@ const CHECKS = [
     nombre: "PATCH /api/admin/complaints/000000000000000000000000 (sin cookie)", metodo: "PATCH",
     ruta: "/api/admin/complaints/000000000000000000000000", cuerpo: {}, espera: estado(401),
   },
+  // Fase 23b: estadísticas de Google Analytics, solo superadmin.
+  { nombre: "GET /api/admin/analytics (sin cookie)", metodo: "GET", ruta: "/api/admin/analytics", espera: estado(401) },
+  { nombre: "GET /api/admin/analytics/realtime (sin cookie)", metodo: "GET", ruta: "/api/admin/analytics/realtime", espera: estado(401) },
 ];
 
 async function main() {

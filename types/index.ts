@@ -14,3 +14,4 @@ export * from "./popup";
 export * from "./inventory";
 export * from "./deliveryPoint";
 export * from "./complaint";
+export * from "./analytics";

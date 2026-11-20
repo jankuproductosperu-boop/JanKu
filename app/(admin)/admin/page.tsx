@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Package, FolderTree, Sparkles, AlertCircle, ArrowRight, Plus, Image as ImageIcon, Tag, BookOpen } from "lucide-react";
+import { Package, FolderTree, Sparkles, AlertCircle, ArrowRight, Plus, Image as ImageIcon, Tag, BookOpen, Eye } from "lucide-react";
+import type { AnalyticsResumen } from "@/types";
 import { useAdminData } from "@/app/(admin)/admin/_components/useAdminData";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
 import { PageHeader, TarjetaIndicador, type Tono } from "@/app/(admin)/admin/_components/ui";
@@ -40,6 +41,23 @@ export default function AdminResumenPage() {
     };
   }, [verReclamos]);
 
+  // Fase 23b: visitas de hoy y más vistos de la semana (solo superadmin). Sin conexión con Google, no se muestra nada.
+  const verEstadisticas = puede("estadisticas.ver");
+  const [semana, setSemana] = useState<AnalyticsResumen | null>(null);
+  useEffect(() => {
+    if (!verEstadisticas) return;
+    let activo = true;
+    fetch("/api/admin/analytics?rango=7d")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d: AnalyticsResumen | null) => {
+        if (activo && d && Array.isArray(d.serie)) setSemana(d);
+      })
+      .catch(() => undefined);
+    return () => {
+      activo = false;
+    };
+  }, [verEstadisticas]);
+
   const activos = products.filter((p) => p.activo !== false);
   const disponibles = activos.filter((p) => p.stock === "Disponible" || !p.stock).length;
   const limitados = activos.filter((p) => p.stock === "Limitado").length;
@@ -72,6 +90,18 @@ export default function AdminResumenPage() {
       href: "/admin/reclamos",
     });
   }
+  const hoy = semana?.serie[semana.serie.length - 1];
+  if (verEstadisticas && hoy) {
+    tarjetas.push({
+      titulo: "Visitas hoy",
+      valor: hoy.vistas,
+      detalle: `${hoy.usuarios} usuarios · Google Analytics`,
+      icono: Eye,
+      tono: "acento",
+      href: "/admin/estadisticas",
+    });
+  }
+  const COLUMNAS: Record<number, string> = { 4: "lg:grid-cols-4", 5: "lg:grid-cols-3 xl:grid-cols-5", 6: "lg:grid-cols-3" };
 
   const stock = [
     { etiqueta: "Disponible", n: disponibles, barra: "bg-emerald-500", texto: "text-emerald-700" },
@@ -106,11 +136,33 @@ export default function AdminResumenPage() {
       </section>
 
       {/* KPIs */}
-      <section className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${tarjetas.length > 4 ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"}`}>
+      <section className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${COLUMNAS[tarjetas.length] ?? "lg:grid-cols-4"}`}>
         {tarjetas.map((t) => (
           <TarjetaIndicador key={t.titulo} titulo={t.titulo} valor={t.valor} detalle={t.detalle} icono={t.icono} tono={t.tono} href={t.href} />
         ))}
       </section>
+
+      {/* Más vistos esta semana (fase 23b) */}
+      {verEstadisticas && semana && semana.masVistos.length > 0 && (
+        <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="font-bold">Más vistos esta semana</h2>
+              <p className="text-xs text-[var(--muted)]">Vistas de la ficha del producto en los últimos 7 días</p>
+            </div>
+            <Link href="/admin/estadisticas" className="text-sm font-semibold text-[var(--accent)] hover:underline">Ver estadísticas →</Link>
+          </div>
+          <ol>
+            {semana.masVistos.slice(0, 5).map((p, i) => (
+              <li key={p.productoId} className="flex items-center gap-3 py-2.5 border-t border-[var(--line)] first:border-t-0 text-sm">
+                <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
+                <span className="flex-1 min-w-0 truncate font-semibold">{p.nombre}</span>
+                <b>{p.vistas.toLocaleString("es-PE")}</b>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Estado de stock */}

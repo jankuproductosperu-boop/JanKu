@@ -9,7 +9,8 @@ export type Permiso =
   | "pedidos.gestionar"
   | "descuentos.gestionar"
   | "cupones.gestionar"
-  | "admins.gestionar";
+  | "admins.gestionar"
+  | "estadisticas.ver"; // fase 23b: solo superadmin
 
 export type AdminSession = {
   id: string;
