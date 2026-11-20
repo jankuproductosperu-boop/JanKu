@@ -66,6 +66,10 @@ Estado: **pendiente de aprobación del dueño.** Nada de este plan se ha impleme
 | 21 | [Usuarios admin y cierre](fases/fase-21-usuarios-admin-y-cierre.md) | Bajo | Sonnet | 1 | 1 h | Pantalla nueva en el panel |
 | 22a | [Páginas legales, datos del titular, cookies y casillas](fases/fase-22a-legal-y-cookies.md) | Medio | Sonnet | 1 | 1 h | Pie, aviso de cookies, casillas, 5 páginas nuevas |
 | 22b | [Libro de Reclamaciones](fases/fase-22b-libro-de-reclamaciones.md) | ⚠️ Medio-alto · migración 004 | Superior + Sonnet | 2 | 1 h | Página nueva; enlace en el pie; Panel → Reclamos |
+| 23a | [Panel nuevo: estructura, temas, personalizador e inventario](fases/fase-23a-panel-nuevo.md) *(propuesta)* | Medio | Sonnet | 2–3 | 1 h | Todo el panel |
+| 23b | [Estadísticas de Google Analytics y más vistos](fases/fase-23b-estadisticas-analytics.md) *(propuesta)* | Medio | Superior + Sonnet | 1–2 | 30 min + Google Cloud | Panel → Estadísticas (solo superadmin) |
+| 23c | [Colores de la tienda](fases/fase-23c-colores-tienda.md) *(propuesta)* | Bajo | Sonnet | 1 | 30 min | Botones y cajas de la tienda |
+| 24 | [Catálogo resuelto en el servidor](fases/fase-24-catalogo-en-servidor.md) *(propuesta)* | ⚠️ Medio-alto | Superior + Sonnet | 2–3 | 1 h | Mismo aspecto; páginas más rápidas |
 
 **Total estimado:** 25–30 sesiones de modelo y unas 14–16 horas del dueño repartidas en las 21 fases.
 
@@ -122,7 +126,7 @@ El orden recomendado es lineal. Dependencias **estrictas** (por si hubiera que r
 
 Único adelanto razonable: la **fase 14** puede hacerse en cualquier momento después de la 05.
 
-> **Propuestas posteriores** (21b visitas): ver [propuestas-panel.md](propuestas-panel.md). Aún sin archivo de fase.
+> **Propuestas posteriores:** la 21b (visitas) queda sustituida por la 23b, que saca los más vistos de Google Analytics. Ver [propuestas-panel.md](propuestas-panel.md).
 
 ### Migraciones y pasos manuales del dueño
 
