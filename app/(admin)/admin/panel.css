@@ -1,56 +1,152 @@
-/* Tokens del panel admin. Todo acotado a .panel: no afecta a la tienda (N1-1). */
+/* Tokens del panel admin. Todo acotado a .panel: no afecta a la tienda (N1-1).
+   Fase 23a: paleta nueva (claro con fondo gris azulado, oscuro neutro) con el azul de Janku como base. */
 .panel {
-  --bg: #f3f4fa;
+  --bg: #f3f3f9;
   --surface: #ffffff;
-  --ink: #1b1e3a;
-  --muted: #5f648a;
-  --line: #e4e6f2;
+  --ink: #212529;
+  --muted: #878a99;
+  --line: #e9ebec;
   --navy: #2c2c6c;
   --navy-ink: #dce0ff;
   --navy-mute: #a9aee0;
   --accent: #4f46e5;
   --accent-soft: #e9e8fc;
-  --ok: #15803d;
-  --ok-soft: #dcf3e4;
+  --ok: #0a8a5c;
+  --ok-soft: #daf4e9;
   --warn: #b45309;
   --warn-soft: #fdebc8;
-  --bad: #b91c1c;
-  --bad-soft: #fbdada;
-  /* Retoque D-70: azul de la tienda en chips, campos y sombras */
+  --bad: #c0392b;
+  --bad-soft: #fbe0dc;
   --navy-soft: #e9eaf7;
   --navy-tint: #2c2c6c;
   --field: #ffffff;
-  --sombra: rgb(44 44 108 / 0.10);
-  --brillo: rgb(44 44 108 / 0.05);
+  --sombra: rgb(56 65 74 / 0.10);
+  --brillo: transparent;
+  /* Barra lateral: la cambian data-sidebar-color y data-sidebar-size. */
+  --sb-w: 250px;
+  --sb-bg: linear-gradient(180deg, #2c2c6c, #1f1f52);
+  --sb-ink: #dce0ff;
+  --sb-mute: #a9aee0;
+  --sb-hover: rgb(255 255 255 / 0.08);
+  --sb-active-bg: #ffffff;
+  --sb-active-ink: #2c2c6c;
+  --sb-active-icon: #4f46e5;
+  --sb-borde: transparent;
+  --sb-logo-bg: #ffffff;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* Tema oscuro: tokens listos; el botón que lo activa llega en la fase 12d. */
 .panel[data-theme="dark"] {
-  --bg: #0d0f26;
-  --surface: #161936;
-  --ink: #eef0ff;
-  --muted: #a6abd8;
-  --line: #2b3062;
+  --bg: #1a1d21;
+  --surface: #212529;
+  --ink: #ced4da;
+  --muted: #878a99;
+  --line: #32383e;
   --navy: #14173b;
   --navy-ink: #eef0ff;
   --navy-mute: #a6abd8;
-  --accent: #918cff;
-  --accent-soft: #262a63;
-  --navy-soft: #222659;
-  --navy-tint: #c3c0ff;
-  --field: #10132d;
+  --accent: #6f6af5;
+  --accent-soft: #2b2d52;
+  --navy-soft: #2a2f34;
+  --navy-tint: #a5a3ff;
+  --field: #262a2f;
   --sombra: rgb(0 0 0 / 0.45);
-  --brillo: rgb(79 70 229 / 0.18);
-  --ok: #6ee7a0;
-  --ok-soft: #173b2a;
+  --ok: #4fd1a1;
+  --ok-soft: #173b2e;
   --warn: #fbbf4d;
   --warn-soft: #44340f;
-  --bad: #fca5a5;
-  --bad-soft: #4a1d24;
+  --bad: #f8a5a0;
+  --bad-soft: #4a1f1d;
+  --sb-bg: #212529;
+  --sb-ink: #ced4da;
+  --sb-mute: #878a99;
+  --sb-hover: rgb(255 255 255 / 0.05);
+  --sb-active-bg: rgb(111 106 245 / 0.18);
+  --sb-active-ink: #ffffff;
+  --sb-active-icon: #a5a3ff;
+  --sb-borde: #32383e;
 }
+
+/* Color de la barra lateral (personalizador). "azul" es el valor de arriba. */
+.panel[data-sidebar-color="blanca"] {
+  --sb-bg: var(--surface);
+  --sb-ink: var(--ink);
+  --sb-mute: var(--muted);
+  --sb-hover: var(--bg);
+  --sb-active-bg: var(--accent-soft);
+  --sb-active-ink: var(--accent);
+  --sb-active-icon: var(--accent);
+  --sb-borde: var(--line);
+  --sb-logo-bg: var(--navy-soft);
+}
+.panel[data-sidebar-color="degradado"] {
+  --sb-bg: linear-gradient(165deg, #2c2c6c 0%, #3b3a9a 55%, #4f46e5 100%);
+  --sb-ink: #e6e8ff;
+  --sb-mute: #b8bdf0;
+  --sb-hover: rgb(255 255 255 / 0.1);
+  --sb-active-bg: #ffffff;
+  --sb-active-ink: #2c2c6c;
+  --sb-active-icon: #4f46e5;
+  --sb-borde: transparent;
+}
+.panel[data-theme="dark"][data-sidebar-color="degradado"] {
+  --sb-bg: linear-gradient(165deg, #1f2149 0%, #2a2b70 60%, #3a35a8 100%);
+  --sb-active-bg: rgb(255 255 255 / 0.14);
+  --sb-active-ink: #ffffff;
+  --sb-active-icon: #c3c0ff;
+}
+
+/* Tamaño de la barra: solo en escritorio; en móvil siempre se abre completa. */
+@media (min-width: 861px) {
+  .panel[data-sidebar-size="compacta"] { --sb-w: 112px; }
+  .panel[data-sidebar-size="iconos"] { --sb-w: 72px; }
+  .panel-shell { display: grid; grid-template-columns: var(--sb-w) minmax(0, 1fr); }
+
+  .panel[data-sidebar-size="compacta"] .sb-link { flex-direction: column; gap: 4px; padding: 10px 4px; text-align: center; font-size: 11.5px; }
+  .panel[data-sidebar-size="compacta"] .sb-grupo { text-align: center; padding: 0; font-size: 10px; }
+  .panel[data-sidebar-size="compacta"] .sb-marca-texto { display: none; }
+  .panel[data-sidebar-size="compacta"] .sb-marca { justify-content: center; }
+
+  .panel[data-sidebar-size="iconos"] .sb-texto,
+  .panel[data-sidebar-size="iconos"] .sb-grupo,
+  .panel[data-sidebar-size="iconos"] .sb-marca-texto { display: none; }
+  .panel[data-sidebar-size="iconos"] .sb-link { justify-content: center; padding: 11px 0; }
+  .panel[data-sidebar-size="iconos"] .sb-marca { justify-content: center; }
+  .panel[data-sidebar-size="iconos"] .sb-separador { display: block; }
+  .panel[data-sidebar-size="iconos"] .panel-sidebar { overflow: visible; }
+  .panel[data-sidebar-size="iconos"] .sb-link:hover .sb-tip,
+  .panel[data-sidebar-size="iconos"] .sb-link:focus-visible .sb-tip { display: block; }
+}
+
+/* Ancho centrado (personalizador): todo el panel en una caja de 1440 px. */
+@media (min-width: 1480px) {
+  .panel[data-layout-width="centrado"] .panel-shell {
+    max-width: 1440px;
+    margin: 0 auto;
+    box-shadow: 0 0 0 1px var(--line), 0 10px 40px var(--sombra);
+  }
+}
+
+/* Barra lateral */
+.panel .panel-sidebar {
+  background: var(--sb-bg);
+  color: var(--sb-ink);
+  border-right: 1px solid var(--sb-borde);
+}
+.panel .sb-link { color: var(--sb-ink); }
+.panel .sb-link:hover { background: var(--sb-hover); }
+.panel .sb-link[aria-current="page"] {
+  background: var(--sb-active-bg);
+  color: var(--sb-active-ink);
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgb(10 10 40 / 0.18);
+}
+.panel .sb-link[aria-current="page"] svg { color: var(--sb-active-icon); }
+.panel .sb-grupo { color: var(--sb-mute); }
+.panel .sb-logo { background: var(--sb-logo-bg); }
+.panel .sb-tip { display: none; }
 
 .panel :focus-visible {
   outline: 2px solid var(--accent);
@@ -90,16 +186,7 @@
 .panel[data-theme="dark"] :is(.text-blue-700) { color: #93c5fd; }
 .panel[data-theme="dark"] :is(.text-indigo-600, .text-indigo-700, .text-indigo-800, .text-indigo-900, .hover\:text-indigo-500:hover, .hover\:text-indigo-600:hover) { color: var(--accent); }
 
-
 /* ── Retoque visual del panel (D-70): solo estilo, sin cambiar estructura ───────────────── */
-
-/* Fondo con un leve resplandor azul arriba: da profundidad en claro y en oscuro. */
-.panel {
-  background:
-    radial-gradient(1100px 420px at 12% -8%, var(--brillo), transparent 65%),
-    var(--bg);
-  background-attachment: fixed;
-}
 
 /* Campos: un tono propio (en oscuro, más hundidos que la tarjeta). */
 :where(.panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(.bg-transparent), .panel select, .panel textarea) {
@@ -117,36 +204,38 @@
   --tw-shadow-color: var(--sombra);
 }
 
-/* Tarjetas: en oscuro, un brillo sutil arriba para que no se vean planas. */
-.panel[data-theme="dark"] .bg-\[var\(--surface\)\] {
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.035), transparent 42%);
-}
-
 /* Tarjetas que son enlaces: al pasar, el borde toma el azul del panel. */
 .panel a.rounded-2xl:hover {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
 }
 
-/* Barra superior translúcida. */
+/* Barra superior: del color de las tarjetas y fija arriba. */
 .panel .panel-topbar {
-  background-color: color-mix(in srgb, var(--surface) 84%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px);
+  background-color: var(--surface);
+  box-shadow: 0 1px 2px var(--sombra);
 }
 
-/* Barra lateral: el elemento activo lleva una marca del acento. */
-.panel aside a[aria-current="page"] {
-  box-shadow: inset 3px 0 0 var(--accent), 0 6px 16px rgb(10 10 40 / 0.25);
+/* Inventario (fase 23a): cabecera y columna de acciones fijas dentro de la tabla con desplazamiento propio. */
+.panel .tabla-fija thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
 }
-.panel[data-theme="dark"] aside {
-  background-image: linear-gradient(180deg, #171b46, #0f1231);
-  border-right: 1px solid var(--line);
+.panel .tabla-fija .col-acciones {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--surface);
+  box-shadow: -8px 0 12px -10px var(--sombra);
 }
-.panel[data-theme="dark"] aside a[aria-current="page"] {
-  background-color: rgb(145 140 255 / 0.16);
-  color: #ffffff;
-}
-.panel[data-theme="dark"] aside a[aria-current="page"] svg {
-  color: var(--accent);
+.panel .tabla-fija thead th.col-acciones { z-index: 3; background: var(--bg); }
+
+/* Engranaje del personalizador: gira despacio, salvo que se pida menos movimiento. */
+@keyframes panel-girar { to { transform: rotate(360deg); } }
+.panel .engranaje svg { animation: panel-girar 6s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .panel .engranaje svg { animation: none; }
 }
 
 /* Cabeceras de tabla y filas: algo más de contraste en oscuro. */
@@ -166,6 +255,3 @@
 .panel[data-theme="dark"] :is(.text-blue-700, .text-pink-600, .text-purple-600, .text-orange-600) { color: var(--navy-tint); }
 .panel[data-theme="dark"] .border-blue-200 { border-color: #2f4a8a; }
 
-@media (prefers-reduced-motion: reduce) {
-  .panel { background-attachment: scroll; }
-}

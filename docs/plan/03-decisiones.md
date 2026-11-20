@@ -298,3 +298,13 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-81 · Plazo mostrado** = 15 días hábiles contando solo sábados y domingos como no hábiles (nunca más permisivo que el real: los feriados no se descuentan).
 
 **D-82 · Permisos de reclamos** = los de pedidos (Q5): ven la lista y la hoja quienes tienen `pedidos.ver`; responden quienes tienen `pedidos.gestionar`. Sin permiso nuevo. La tarjeta "Reclamos por responder" del Resumen solo aparece con `pedidos.ver` (Q7).
+
+---
+
+## Panel nuevo (fase 23a)
+
+*Aprobada por el dueño el 2026-11-20.*
+
+**D-83 · Panel nuevo con preferencias por navegador.** Tema, tamaño y color de la barra lateral y ancho del panel se eligen en el personalizador (engranaje) y se guardan en el navegador de cada persona (`localStorage`); no viajan al servidor. Sustituye el estilo de D-70. Buscador y campana solo usan endpoints existentes y respetan permisos.
+
+**D-84 · Sin plantilla de terceros.** La estructura se inspira en paneles comerciales (referencia del dueño), pero el código, los nombres y los recursos visuales son propios de Janku; el logo es `public/apple-touch-icon.png`.

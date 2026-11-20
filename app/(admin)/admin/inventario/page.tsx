@@ -530,8 +530,9 @@ export default function InventarioPage() {
 
         {/* Tabla */}
         <div className="bg-[var(--surface)] rounded-2xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          {/* Fase 23a: la tabla se desplaza dentro de su caja; cabecera y acciones quedan fijas. */}
+          <div className="overflow-auto max-h-[calc(100vh-290px)] min-h-[320px]">
+            <table className="tabla-fija w-full text-sm">
               <thead className="bg-[var(--bg)] border-b border-[var(--line)]">
                 <tr>
                   <th className="px-4 py-3 text-left"><SortHeader label="Código" sortk="codigo" /></th>
@@ -545,7 +546,7 @@ export default function InventarioPage() {
                   <th className="px-4 py-3 text-right"><SortHeader label="Margen" sortk="margen" /></th>
                   <th className="px-4 py-3 text-left">Proveedor</th>
                   <th className="px-4 py-3 text-center">Activo</th>
-                  <th className="px-4 py-3 text-center">Acciones</th>
+                  <th className="col-acciones px-4 py-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--line)]">
@@ -703,7 +704,7 @@ export default function InventarioPage() {
                         </td>
 
                         {/* Acciones */}
-                        <td className="px-4 py-3">
+                        <td className="col-acciones px-4 py-3">
                           <div className="flex items-center justify-center gap-1.5">
                             {editando ? (
                               <>

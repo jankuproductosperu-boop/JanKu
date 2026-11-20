@@ -38,6 +38,20 @@ function suscribir(avisar: () => void) {
 // Tras hidratar, React vuelve a leer el tema real sin error.
 const temaDelServidor = (): Tema => "claro";
 
+/** Olvida el tema elegido: vuelve a seguir la preferencia del sistema (personalizador, fase 23a). */
+export function restablecerTema() {
+  temaEnMemoria = null;
+  try { localStorage.removeItem(CLAVE); } catch { /* sin almacenamiento */ }
+  window.dispatchEvent(new Event(EVENTO));
+}
+
+/** Fija un tema concreto (personalizador, fase 23a). */
+export function fijarTema(nuevo: Tema) {
+  temaEnMemoria = nuevo;
+  try { localStorage.setItem(CLAVE, nuevo); } catch { /* la elección no se recuerda entre visitas */ }
+  window.dispatchEvent(new Event(EVENTO));
+}
+
 export function useTema() {
   const tema = useSyncExternalStore(suscribir, leerTema, temaDelServidor);
 

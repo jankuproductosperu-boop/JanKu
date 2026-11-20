@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Package, FolderTree, Sparkles, AlertCircle, ArrowRight, Plus, Image as ImageIcon, Tag, BookOpen } from "lucide-react";
 import { useAdminData } from "@/app/(admin)/admin/_components/useAdminData";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
+import { PageHeader, TarjetaIndicador, type Tono } from "@/app/(admin)/admin/_components/ui";
 
 const ACCESOS = [
   { href: "/admin/productos", texto: "Productos", icono: Package },
@@ -12,9 +13,6 @@ const ACCESOS = [
   { href: "/admin/descuentos", texto: "Descuentos", icono: Tag },
 ];
 
-// Chips de icono con el azul de la tienda (D-70)
-const CHIP_AZUL = "bg-[var(--navy-soft)] text-[var(--navy-tint)]";
-const CHIP_ACENTO = "bg-[var(--accent-soft)] text-[var(--accent)]";
 
 function saludo() {
   const h = new Date().getHours();
@@ -57,12 +55,23 @@ export default function AdminResumenPage() {
     .slice(0, 6);
   const maxCategoria = Math.max(1, ...porCategoria.map((c) => c.total));
 
-  const tarjetas = [
-    { titulo: "Productos activos", valor: activos.length, detalle: `${products.length} en total`, icono: Package, color: CHIP_AZUL, href: "/admin/productos" },
-    { titulo: "Stock bajo o agotado", valor: criticos.length, detalle: criticos.length ? "Reponer pronto" : "Todo en orden", icono: AlertCircle, color: criticos.length ? "bg-[var(--warn-soft)] text-[var(--warn)]" : "bg-[var(--ok-soft)] text-[var(--ok)]", href: "/admin/inventario" },
-    { titulo: "Categorías activas", valor: categories.filter((c) => c.activo).length, detalle: `${categories.length} en total`, icono: FolderTree, color: CHIP_ACENTO, href: "/admin/categorias" },
-    { titulo: "Banners y promociones", valor: banners.filter((b) => b.activo).length + promotions.filter((p) => p.activo).length, detalle: `${banners.length} banners · ${promotions.length} promos`, icono: Sparkles, color: CHIP_AZUL, href: "/admin/banners" },
+  const tarjetas: { titulo: string; valor: number; detalle: string; icono: typeof Package; tono: Tono; href: string }[] = [
+    { titulo: "Productos activos", valor: activos.length, detalle: `${products.length} en total`, icono: Package, tono: "acento", href: "/admin/productos" },
+    { titulo: "Stock bajo o agotado", valor: criticos.length, detalle: criticos.length ? "Reponer pronto" : "Todo en orden", icono: AlertCircle, tono: criticos.length ? "aviso" : "ok", href: "/admin/inventario" },
+    { titulo: "Categorías activas", valor: categories.filter((c) => c.activo).length, detalle: `${categories.length} en total`, icono: FolderTree, tono: "acento", href: "/admin/categorias" },
+    { titulo: "Banners y promociones", valor: banners.filter((b) => b.activo).length + promotions.filter((p) => p.activo).length, detalle: `${banners.length} banners · ${promotions.length} promos`, icono: Sparkles, tono: "acento", href: "/admin/banners" },
   ];
+  // Q7 de la 22b: la tarjeta de reclamos solo con `pedidos.ver` y cuando ya hay dato real.
+  if (verReclamos && reclamosPendientes !== null) {
+    tarjetas.push({
+      titulo: "Reclamos por responder",
+      valor: reclamosPendientes,
+      detalle: reclamosPendientes > 0 ? "Plazo máximo: 15 días hábiles" : "Todo respondido",
+      icono: BookOpen,
+      tono: reclamosPendientes > 0 ? "aviso" : "ok",
+      href: "/admin/reclamos",
+    });
+  }
 
   const stock = [
     { etiqueta: "Disponible", n: disponibles, barra: "bg-emerald-500", texto: "text-emerald-700" },
@@ -74,64 +83,38 @@ export default function AdminResumenPage() {
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
       {/* Bienvenida */}
-      <section className="rounded-2xl p-6 md:p-8 text-white bg-gradient-to-r from-[#2C2C6C] via-[#3B3A9A] to-[#4F46E5] shadow-lg flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-        <div>
-          <p className="text-sm text-white/70">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}</p>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{saludo()}{admin?.nombre ? `, ${admin.nombre}` : ""} 👋</h1>
-          <p className="text-white/80 mt-1">Esto es lo que hay hoy en tu tienda.</p>
+      <PageHeader titulo="Resumen" />
+
+      <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm overflow-hidden">
+        <div className="px-5 py-3 bg-[var(--accent-soft)] text-sm text-[var(--accent)] font-medium">
+          {new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" })}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/admin/productos" className="inline-flex items-center gap-2 rounded-xl bg-white text-[#2C2C6C] px-4 py-2.5 text-sm font-bold hover:bg-indigo-50 transition shadow">
-            <Plus className="w-4 h-4" /> Nuevo producto
-          </Link>
-          <Link href="/admin/banners" className="inline-flex items-center gap-2 rounded-xl bg-white/15 border border-white/30 px-4 py-2.5 text-sm font-semibold hover:bg-white/25 transition">
-            <ImageIcon className="w-4 h-4" /> Nuevo banner
-          </Link>
+        <div className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">{saludo()}{admin?.nombre ? `, ${admin.nombre}` : ""}</h2>
+            <p className="text-sm text-[var(--muted)] mt-0.5">Esto es lo que hay hoy en tu tienda.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/productos" className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] text-white px-4 py-2.5 text-sm font-semibold hover:brightness-110 transition">
+              <Plus className="w-4 h-4" /> Nuevo producto
+            </Link>
+            <Link href="/admin/banners" className="inline-flex items-center gap-2 rounded-lg border border-[var(--line)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--bg)] transition">
+              <ImageIcon className="w-4 h-4" /> Nuevo banner
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Reclamos por responder (Q7) */}
-      {verReclamos && reclamosPendientes !== null && (
-        <Link
-          href="/admin/reclamos"
-          className="group flex items-center gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition"
-        >
-          <span
-            className={`w-11 h-11 rounded-xl grid place-items-center flex-none ${
-              reclamosPendientes > 0 ? "bg-[var(--warn-soft)] text-[var(--warn)]" : "bg-[var(--ok-soft)] text-[var(--ok)]"
-            }`}
-          >
-            <BookOpen className="w-5 h-5" />
-          </span>
-          <div className="min-w-0">
-            <div className="text-sm font-medium text-[var(--ink)]">Reclamos por responder</div>
-            <div className="text-xs text-[var(--muted)]">
-              {reclamosPendientes > 0 ? "Plazo máximo: 15 días hábiles" : "Todo respondido"}
-            </div>
-          </div>
-          <div className="ml-auto text-3xl font-bold leading-tight tracking-tight">{reclamosPendientes}</div>
-          <ArrowRight className="w-4 h-4 text-[var(--muted)] opacity-0 group-hover:opacity-100 transition" />
-        </Link>
-      )}
-
       {/* KPIs */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${tarjetas.length > 4 ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"}`}>
         {tarjetas.map((t) => (
-          <Link key={t.titulo} href={t.href} className="group rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 md:p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition min-w-0">
-            <div className="flex items-start justify-between">
-              <span className={`w-11 h-11 rounded-xl grid place-items-center transition group-hover:scale-105 ${t.color}`}><t.icono className="w-5 h-5" /></span>
-              <ArrowRight className="w-4 h-4 text-[var(--muted)] opacity-0 group-hover:opacity-100 transition" />
-            </div>
-            <div className="mt-3 text-3xl font-bold leading-tight tracking-tight">{t.valor}</div>
-            <div className="text-sm font-medium text-[var(--ink)]">{t.titulo}</div>
-            <div className="text-xs text-[var(--muted)]">{t.detalle}</div>
-          </Link>
+          <TarjetaIndicador key={t.titulo} titulo={t.titulo} valor={t.valor} detalle={t.detalle} icono={t.icono} tono={t.tono} href={t.href} />
         ))}
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Estado de stock */}
-        <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
+        <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
           <h2 className="font-bold">Estado de stock</h2>
           <p className="text-xs text-[var(--muted)] mb-4">Productos activos según su disponibilidad</p>
           <div className="flex h-3 rounded-full overflow-hidden bg-[var(--line)] mb-4" role="img" aria-label="Distribución de stock">
@@ -148,7 +131,7 @@ export default function AdminResumenPage() {
         </section>
 
         {/* Productos por categoría */}
-        <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
+        <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
           <h2 className="font-bold">Productos por categoría</h2>
           <p className="text-xs text-[var(--muted)] mb-4">Las 6 categorías con más productos activos</p>
           {porCategoria.length === 0 ? (
@@ -169,7 +152,7 @@ export default function AdminResumenPage() {
       </div>
 
       {/* Stock crítico */}
-      <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
+      <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="font-bold">Stock crítico</h2>

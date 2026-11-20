@@ -1,17 +1,17 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ClipboardList, Package, FolderTree, Archive, ListOrdered,
-  Tag, Ticket, Sparkles, Image as ImageIcon, MessageSquare, LogOut, MapPin, Users, BookOpen,
+  Tag, Ticket, Sparkles, Image as ImageIcon, MessageSquare, MapPin, Users, BookOpen, ExternalLink,
 } from "lucide-react";
 import type { Permiso } from "@/types";
-import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
 
 type Item = { grupo?: string; href: string; etiqueta: string; permiso?: Permiso; icono: React.ComponentType<{ className?: string }> };
 
 const MENU: Item[] = [
-  { href: "/admin", etiqueta: "Resumen", icono: LayoutDashboard },
+  { grupo: "Menú", href: "/admin", etiqueta: "Resumen", icono: LayoutDashboard },
   { grupo: "Ventas", href: "/admin/pedidos", etiqueta: "Pedidos", permiso: "pedidos.ver", icono: ClipboardList },
   { href: "/admin/reclamos", etiqueta: "Reclamos", permiso: "pedidos.ver", icono: BookOpen },
   { href: "/admin/puntos-entrega", etiqueta: "Puntos de entrega", permiso: "catalogo.editar", icono: MapPin },
@@ -25,21 +25,18 @@ const MENU: Item[] = [
   { href: "/admin/banners", etiqueta: "Banners", permiso: "catalogo.editar", icono: ImageIcon },
   { href: "/admin/popup", etiqueta: "Popup de oferta", permiso: "catalogo.editar", icono: MessageSquare },
   { grupo: "Equipo", href: "/admin/usuarios", etiqueta: "Usuarios", permiso: "admins.gestionar", icono: Users },
-  // 21b: Estadísticas
 ];
 
-export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => void }) {
-  const router = useRouter();
+export default function AdminSidebar({
+  abierto,
+  onCerrar,
+  puede,
+}: {
+  abierto: boolean;
+  onCerrar: () => void;
+  puede: (p: Permiso) => boolean;
+}) {
   const pathname = usePathname();
-  const { admin, puede } = useAdminSession();
-
-  const handleLogout = async () => {
-    if (confirm("¿Cerrar sesión?")) {
-      try { await fetch("/api/auth/logout", { method: "POST" }); router.push("/login-admin"); }
-      catch { console.error("Error al cerrar sesión"); }
-    }
-  };
-
   const activo = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
 
   // Cada elemento hereda el grupo del anterior; la etiqueta solo se pinta si hay elementos visibles.
@@ -54,12 +51,16 @@ export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; 
       {abierto && <div className="fixed inset-0 z-30 bg-black/40 min-[861px]:hidden" onClick={onCerrar} aria-hidden="true" />}
       <aside
         aria-label="Navegación del panel"
-        className={`fixed inset-y-0 left-0 z-40 w-[270px] overflow-y-auto bg-gradient-to-b from-[var(--navy)] to-[#1c1c4d] text-[var(--navy-ink)] p-3 pt-[18px] flex flex-col gap-0.5 transition-transform motion-reduce:transition-none ${abierto ? "translate-x-0" : "-translate-x-full"} min-[861px]:static min-[861px]:z-auto min-[861px]:w-auto min-[861px]:translate-x-0 min-[861px]:sticky min-[861px]:top-0 min-[861px]:h-screen min-[861px]:self-start`}
+        className={`panel-sidebar fixed inset-y-0 left-0 z-40 w-[270px] overflow-y-auto flex flex-col transition-transform motion-reduce:transition-none ${abierto ? "translate-x-0" : "-translate-x-full"} min-[861px]:z-auto min-[861px]:w-auto min-[861px]:translate-x-0 min-[861px]:sticky min-[861px]:top-0 min-[861px]:h-screen min-[861px]:self-start`}
       >
-        <div className="flex items-center gap-2.5 px-2.5 pb-3.5 text-lg font-bold text-white">
-          <span className="w-8 h-8 rounded-[9px] bg-white text-[var(--navy)] grid place-items-center">J</span> Janku
-        </div>
-        <nav className="flex flex-col gap-0.5">
+        <Link href="/admin" onClick={onCerrar} className="sb-marca h-[70px] flex-none flex items-center gap-2.5 px-5 text-lg font-bold tracking-wide">
+          <span className="sb-logo w-9 h-9 rounded-[10px] grid place-items-center flex-none overflow-hidden">
+            <Image src="/apple-touch-icon.png" alt="" width={30} height={30} priority />
+          </span>
+          <span className="sb-marca-texto">JANKU</span>
+        </Link>
+
+        <nav className="flex flex-col gap-0.5 px-3 pb-4">
           {visibles.map((i, idx) => {
             const Icono = i.icono;
             const nuevoGrupo = i.grupoEfectivo && i.grupoEfectivo !== visibles[idx - 1]?.grupoEfectivo;
@@ -67,34 +68,46 @@ export default function AdminSidebar({ abierto, onCerrar }: { abierto: boolean; 
             return (
               <div key={i.href}>
                 {nuevoGrupo && (
-                  <div className="mt-3.5 mb-1 px-2.5 text-[11.5px] font-semibold uppercase tracking-wider text-[var(--navy-mute)]">{i.grupoEfectivo}</div>
+                  <>
+                    <div className="sb-grupo mt-4 mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider">{i.grupoEfectivo}</div>
+                    <div className="sb-separador hidden mx-3 my-2 border-t border-current opacity-20" aria-hidden="true" />
+                  </>
                 )}
                 <Link
                   href={i.href}
                   onClick={onCerrar}
                   aria-current={esActivo ? "page" : undefined}
-                  className={`flex items-center gap-2.5 rounded-[9px] px-2.5 py-2 text-sm transition ${esActivo ? "bg-white text-[var(--navy)] font-semibold shadow-md" : "hover:bg-white/10"}`}
+                  aria-label={i.etiqueta}
+                  className="sb-link relative flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[14.5px] transition"
                 >
-                  <Icono className={`w-[18px] h-[18px] flex-none ${esActivo ? "text-[var(--accent)]" : ""}`} />
-                  {i.etiqueta}
+                  <Icono className="w-[18px] h-[18px] flex-none" />
+                  <span className="sb-texto truncate">{i.etiqueta}</span>
+                  <span
+                    role="tooltip"
+                    className="sb-tip absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-md bg-[var(--ink)] px-2.5 py-1 text-xs font-medium text-[var(--surface)] shadow-lg"
+                  >
+                    {i.etiqueta}
+                  </span>
                 </Link>
               </div>
             );
           })}
         </nav>
-        <div className="mt-auto pt-3 border-t border-white/15">
-          <div className="flex items-center gap-2.5 px-2.5 pb-2">
-            <span className="w-[34px] h-[34px] rounded-full bg-[var(--accent)] text-white grid place-items-center font-bold flex-none">
-              {(admin?.nombre || "A").charAt(0).toUpperCase()}
+
+        <div className="mt-auto px-3 pb-4">
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Ver tienda"
+            className="sb-link relative flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[14.5px] transition"
+          >
+            <ExternalLink className="w-[18px] h-[18px] flex-none" />
+            <span className="sb-texto">Ver tienda</span>
+            <span role="tooltip" className="sb-tip absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap rounded-md bg-[var(--ink)] px-2.5 py-1 text-xs font-medium text-[var(--surface)] shadow-lg">
+              Ver tienda
             </span>
-            <div className="min-w-0">
-              <b className="block truncate text-[13px] text-white">{admin?.nombre ?? "…"}</b>
-              <small className="text-[var(--navy-mute)]">{admin ? `Rol: ${admin.rol}` : ""}</small>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 rounded-[9px] border border-white/25 px-2.5 py-2 text-sm hover:bg-white/10 transition">
-            <LogOut className="w-4 h-4" /> Cerrar sesión
-          </button>
+          </Link>
         </div>
       </aside>
     </>

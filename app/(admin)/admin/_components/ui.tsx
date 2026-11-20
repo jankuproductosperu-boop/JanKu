@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 // Piezas visuales repetidas del panel. Solo presentación, sin lógica.
 
 export type Tono = "ok" | "aviso" | "malo" | "acento";
@@ -32,14 +34,67 @@ export function Switch({ activo, onChange, etiqueta }: { activo: boolean; onChan
   );
 }
 
+/** Cabecera de cada pantalla (fase 23a): título en mayúsculas y la ruta a la derecha. */
 export function PageHeader({ titulo, subtitulo, acciones }: { titulo: string; subtitulo?: string; acciones?: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)]">{titulo}</h1>
+        <h1 className="text-[17px] font-bold uppercase tracking-wide text-[var(--ink)]">{titulo}</h1>
         {subtitulo && <p className="text-sm text-[var(--muted)] mt-0.5">{subtitulo}</p>}
       </div>
-      {acciones && <div className="flex flex-wrap gap-2">{acciones}</div>}
+      {acciones ? (
+        <div className="flex flex-wrap gap-2">{acciones}</div>
+      ) : (
+        <nav aria-label="Ruta" className="hidden sm:block text-sm">
+          <span className="text-[var(--ink)]">Panel</span>
+          <span className="mx-2 text-[var(--muted)]">›</span>
+          <span className="text-[var(--muted)]">{titulo}</span>
+        </nav>
+      )}
     </div>
+  );
+}
+
+/** Tarjeta de indicador del Resumen (fase 23a): etiqueta, cifra grande, detalle e icono en círculo suave. */
+export function TarjetaIndicador({
+  titulo,
+  valor,
+  detalle,
+  icono: Icono,
+  tono = "acento",
+  href,
+}: {
+  titulo: string;
+  valor: React.ReactNode;
+  detalle?: React.ReactNode;
+  icono: React.ComponentType<{ className?: string }>;
+  tono?: Tono;
+  href?: string;
+}) {
+  const circulo: Record<Tono, string> = {
+    ok: "bg-[var(--ok-soft)] text-[var(--ok)]",
+    aviso: "bg-[var(--warn-soft)] text-[var(--warn)]",
+    malo: "bg-[var(--bad-soft)] text-[var(--bad)]",
+    acento: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  };
+  const contenido = (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-[13px] font-medium uppercase tracking-wide text-[var(--muted)]">{titulo}</span>
+        <span className={`w-12 h-12 rounded-full grid place-items-center flex-none ${circulo[tono]}`}>
+          <Icono className="w-[22px] h-[22px]" />
+        </span>
+      </div>
+      <div className="-mt-2 text-[28px] font-semibold leading-tight tracking-tight text-[var(--ink)]">{valor}</div>
+      {detalle && <div className="mt-1 text-xs text-[var(--muted)]">{detalle}</div>}
+    </>
+  );
+  const clase = "block rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm min-w-0 transition";
+  return href ? (
+    <Link href={href} className={`${clase} hover:shadow-md hover:-translate-y-0.5`}>
+      {contenido}
+    </Link>
+  ) : (
+    <div className={clase}>{contenido}</div>
   );
 }
