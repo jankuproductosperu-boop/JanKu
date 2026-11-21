@@ -50,7 +50,7 @@ export default function AdminResumenPage() {
     fetch("/api/admin/analytics?rango=7d")
       .then((res) => (res.ok ? res.json() : null))
       .then((d: AnalyticsResumen | null) => {
-        if (activo && d && Array.isArray(d.serie)) setSemana(d);
+        if (activo && d && d.hoy) setSemana(d);
       })
       .catch(() => undefined);
     return () => {
@@ -90,7 +90,7 @@ export default function AdminResumenPage() {
       href: "/admin/reclamos",
     });
   }
-  const hoy = semana?.serie[semana.serie.length - 1];
+  const hoy = semana?.hoy;
   if (verEstadisticas && hoy) {
     tarjetas.push({
       titulo: "Visitas hoy",

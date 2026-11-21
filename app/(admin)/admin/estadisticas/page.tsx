@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, Clock, Eye, TrendingDown, Users } from "lucide-react";
+import { Activity, AlertTriangle, Clock, TrendingDown, Users } from "lucide-react";
 import type { AnalyticsResumen, AnalyticsTiempoReal, KpiAnalytics, RangoAnalytics } from "@/types";
 import { formatearDuracion } from "@/lib/analytics";
 import Seccion from "@/app/(admin)/admin/_components/Seccion";
@@ -9,105 +9,212 @@ import { TarjetaIndicador } from "@/app/(admin)/admin/_components/ui";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
 
 // Estadísticas de Google Analytics (fase 23b). Solo superadmin. Las cifras solo cuentan a quien
-// aceptó las cookies (D-75), así que sirven para comparar, no como conteo exacto (D-86).
+// aceptó las cookies (D-75): sirven para comparar, no como conteo exacto (D-86).
+// Gráficos dibujados aquí mismo en SVG: sin librerías nuevas.
 
 const RANGOS: { valor: RangoAnalytics; etiqueta: string }[] = [
   { valor: "7d", etiqueta: "7 días" },
   { valor: "28d", etiqueta: "28 días" },
   { valor: "90d", etiqueta: "90 días" },
 ];
+/** Colores de series: azul Janku, ámbar, celeste, verde y coral; legibles en claro y en oscuro. */
+const PALETA = ["#3552ad", "#f7b84b", "#299cdb", "#0ab39c", "#f06548"];
+const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 const miles = (n: number) => n.toLocaleString("es-PE");
 const fechaCorta = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString("es-PE", { day: "numeric", month: "short", timeZone: "UTC" });
 
-function Variacion({ k, inversa = false }: { k: KpiAnalytics; inversa?: boolean }) {
-  if (k.variacion === null) return <span>Sin periodo anterior para comparar</span>;
-  // En el rebote, bajar es bueno.
-  const bueno = inversa ? k.variacion <= 0 : k.variacion >= 0;
+function nombrePais(codigo: string): string {
+  if (!codigo) return "Sin identificar";
+  try {
+    return new Intl.DisplayNames(["es"], { type: "region" }).of(codigo) ?? codigo;
+  } catch {
+    return codigo;
+  }
+}
+/** Bandera con los indicadores regionales de Unicode ("PE" → 🇵🇪). */
+const bandera = (codigo: string) =>
+  codigo ? String.fromCodePoint(...[...codigo].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : "🌐";
+
+function Flecha({ v, inversa = false }: { v: number | null; inversa?: boolean }) {
+  if (v === null) return <span className="text-[var(--muted)]">—</span>;
+  const bueno = inversa ? v <= 0 : v >= 0;
   return (
-    <span>
-      <b className={bueno ? "text-[var(--ok)]" : "text-[var(--bad)]"}>
-        {k.variacion > 0 ? "↑" : k.variacion < 0 ? "↓" : "="} {Math.abs(k.variacion).toFixed(1)} %
-      </b>{" "}
-      frente al periodo anterior
+    <span
+      className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+        bueno ? "bg-[var(--ok-soft)] text-[var(--ok)]" : "bg-[var(--bad-soft)] text-[var(--bad)]"
+      }`}
+    >
+      {v > 0 ? "↑" : v < 0 ? "↓" : "="} {Math.abs(v).toFixed(1)} %
     </span>
   );
 }
 
-function Bloque({ titulo, children, extra }: { titulo: string; children: React.ReactNode; extra?: React.ReactNode }) {
+function Variacion({ k, inversa = false }: { k: KpiAnalytics; inversa?: boolean }) {
+  if (k.variacion === null) return <span>Sin periodo anterior para comparar</span>;
   return (
-    <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm">
+    <span className="inline-flex items-center gap-1.5">
+      <Flecha v={k.variacion} inversa={inversa} /> frente al periodo anterior
+    </span>
+  );
+}
+
+function Tarjeta({
+  titulo,
+  extra,
+  children,
+  className = "",
+}: {
+  titulo: string;
+  extra?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm flex flex-col min-w-0 ${className}`}>
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--line)]">
-        <h2 className="font-semibold">{titulo}</h2>
+        <h2 className="font-semibold text-[16px]">{titulo}</h2>
         {extra}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-5 flex-1">{children}</div>
     </section>
   );
 }
 
-/** Gráfico de líneas propio: vistas y usuarios por día. */
+const SinDatos = () => <p className="text-sm text-[var(--muted)]">Aún no hay datos en este periodo.</p>;
+
+/** Visitas por día: vistas (área) y usuarios (línea). */
 function GraficoDiario({ serie }: { serie: AnalyticsResumen["serie"] }) {
-  const W = 800;
-  const H = 260;
-  const m = { izq: 44, der: 12, arr: 12, aba: 28 };
+  const W = 640;
+  const H = 240;
+  const m = { izq: 40, der: 8, arr: 10, aba: 26 };
   const max = Math.max(1, ...serie.map((p) => Math.max(p.vistas, p.usuarios)));
   const paso = Math.pow(10, Math.floor(Math.log10(max)));
   const tope = Math.ceil(max / paso) * paso;
   const x = (i: number) => m.izq + (serie.length <= 1 ? 0 : (i * (W - m.izq - m.der)) / (serie.length - 1));
   const y = (v: number) => H - m.aba - (v / tope) * (H - m.arr - m.aba);
   const linea = (campo: "vistas" | "usuarios") => serie.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[campo]).toFixed(1)}`).join(" ");
-  const marcas = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(tope * f));
-  const cadaX = Math.max(1, Math.ceil(serie.length / 7));
+  const area = `${linea("vistas")} L${x(serie.length - 1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z`;
+  const marcas = [0, 0.5, 1].map((f) => Math.round(tope * f));
+  const cadaX = Math.max(1, Math.ceil(serie.length / 6));
 
   return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Vistas y usuarios por día">
+      <defs>
+        <linearGradient id="area-vistas" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={PALETA[0]} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={PALETA[0]} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {marcas.map((v) => (
+        <g key={v}>
+          <line x1={m.izq} x2={W - m.der} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeDasharray="3 4" />
+          <text x={m.izq - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">{miles(v)}</text>
+        </g>
+      ))}
+      {serie.map((p, i) =>
+        i % cadaX === 0 || i === serie.length - 1 ? (
+          <text key={p.fecha} x={x(i)} y={H - 6} textAnchor="middle" fontSize="11" fill="var(--muted)">{fechaCorta(p.fecha)}</text>
+        ) : null,
+      )}
+      <path d={area} fill="url(#area-vistas)" />
+      <path d={linea("vistas")} fill="none" stroke={PALETA[0]} strokeWidth="2.5" strokeLinejoin="round" />
+      <path d={linea("usuarios")} fill="none" stroke={PALETA[3]} strokeWidth="2" strokeLinejoin="round" />
+      {serie.map((p, i) => (
+        <circle key={p.fecha} cx={x(i)} cy={y(p.vistas)} r={serie.length > 31 ? 0 : 3} fill={PALETA[0]}>
+          <title>{`${fechaCorta(p.fecha)}: ${miles(p.vistas)} vistas, ${miles(p.usuarios)} usuarios`}</title>
+        </circle>
+      ))}
+    </svg>
+  );
+}
+
+/** Barras horizontales con el valor al final (usuarios por país). */
+function BarrasHorizontales({ filas }: { filas: { etiqueta: React.ReactNode; clave: string; valor: number }[] }) {
+  const max = Math.max(1, ...filas.map((f) => f.valor));
+  return (
+    <ul className="space-y-3.5">
+      {filas.map((f) => (
+        <li key={f.clave} className="grid grid-cols-[minmax(0,7.5rem)_1fr] items-center gap-3 text-sm">
+          <span className="truncate text-right text-[var(--muted)]">{f.etiqueta}</span>
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="h-6 rounded-[3px] bg-[#299cdb]" style={{ width: `${Math.max(2, (f.valor / max) * 85)}%` }} />
+            <span className="text-xs font-medium">{miles(f.valor)}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Usuarios por mes: este año frente al año pasado (barras redondeadas lado a lado). */
+function GraficoMensual({ mensual }: { mensual: AnalyticsResumen["mensual"] }) {
+  const W = 640;
+  const H = 230;
+  const m = { izq: 8, der: 8, arr: 10, aba: 26 };
+  const max = Math.max(1, ...mensual.map((x) => Math.max(x.esteAnio, x.anioPasado)));
+  const ancho = (W - m.izq - m.der) / 12;
+  const barra = Math.min(12, ancho / 3.4);
+  const alto = (v: number) => (v / max) * (H - m.arr - m.aba);
+  return (
     <div>
-      <div className="flex gap-4 text-xs text-[var(--muted)] mb-2">
-        <span className="flex items-center gap-1.5"><i className="w-3 h-0.5 bg-[var(--accent)]" /> Vistas de página</span>
-        <span className="flex items-center gap-1.5"><i className="w-3 h-0.5 bg-[var(--ok)]" /> Usuarios</span>
-      </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Vistas y usuarios por día">
-        {marcas.map((v) => (
-          <g key={v}>
-            <line x1={m.izq} x2={W - m.der} y1={y(v)} y2={y(v)} stroke="var(--line)" />
-            <text x={m.izq - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="var(--muted)">{miles(v)}</text>
-          </g>
-        ))}
-        {serie.map((p, i) =>
-          i % cadaX === 0 || i === serie.length - 1 ? (
-            <text key={p.fecha} x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="var(--muted)">{fechaCorta(p.fecha)}</text>
-          ) : null,
-        )}
-        <path d={linea("vistas")} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" />
-        <path d={linea("usuarios")} fill="none" stroke="var(--ok)" strokeWidth="2" strokeLinejoin="round" />
-        {serie.map((p, i) => (
-          <circle key={p.fecha} cx={x(i)} cy={y(p.vistas)} r={serie.length > 40 ? 0 : 3} fill="var(--accent)">
-            <title>{`${fechaCorta(p.fecha)}: ${miles(p.vistas)} vistas, ${miles(p.usuarios)} usuarios`}</title>
-          </circle>
-        ))}
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Usuarios por mes, este año y el año pasado">
+        <line x1={m.izq} x2={W - m.der} y1={H - m.aba} y2={H - m.aba} stroke="var(--line)" />
+        {mensual.map((x, i) => {
+          const cx = m.izq + ancho * i + ancho / 2;
+          return (
+            <g key={x.mes}>
+              <rect x={cx - barra - 2} y={H - m.aba - alto(x.anioPasado)} width={barra} height={alto(x.anioPasado)} rx={barra / 2} fill="var(--line)">
+                <title>{`${MESES[i]} año pasado: ${miles(x.anioPasado)} usuarios`}</title>
+              </rect>
+              <rect x={cx + 2} y={H - m.aba - alto(x.esteAnio)} width={barra} height={alto(x.esteAnio)} rx={barra / 2} fill={PALETA[0]}>
+                <title>{`${MESES[i]} este año: ${miles(x.esteAnio)} usuarios`}</title>
+              </rect>
+              <text x={cx} y={H - 7} textAnchor="middle" fontSize="11" fill="var(--muted)">{MESES[i]}</text>
+            </g>
+          );
+        })}
       </svg>
+      <div className="flex justify-center gap-5 text-xs text-[var(--muted)] mt-1">
+        <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-sm bg-[var(--line)]" /> Año pasado</span>
+        <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-sm" style={{ background: PALETA[0] }} /> Este año</span>
+      </div>
     </div>
   );
 }
 
-function Barras({ filas }: { filas: { etiqueta: string; valor: number }[] }) {
-  const max = Math.max(1, ...filas.map((f) => f.valor));
-  if (!filas.length) return <p className="text-sm text-[var(--muted)]">Aún no hay datos en este periodo.</p>;
+/** Anillo de dispositivos. */
+function Anillo({ partes }: { partes: { valor: number; color: string; etiqueta: string }[] }) {
+  const total = partes.reduce((s, p) => s + p.valor, 0) || 1;
+  const r = 70;
+  const largo = 2 * Math.PI * r;
+  // Cada tramo empieza donde terminan los anteriores (sin reasignar variables durante el render).
+  const tramos = partes.map((p, i) => ({
+    ...p,
+    tramo: (p.valor / total) * largo,
+    inicio: partes.slice(0, i).reduce((s, q) => s + (q.valor / total) * largo, 0),
+  }));
   return (
-    <ul className="space-y-3">
-      {filas.map((f) => (
-        <li key={f.etiqueta}>
-          <div className="flex justify-between text-sm mb-1">
-            <span className="truncate pr-3">{f.etiqueta}</span>
-            <b>{miles(f.valor)}</b>
-          </div>
-          <div className="h-2 rounded-full bg-[var(--bg)] overflow-hidden">
-            <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${(f.valor / max) * 100}%` }} />
-          </div>
-        </li>
+    <svg viewBox="0 0 200 200" className="w-[190px] h-[190px] mx-auto" role="img" aria-label="Usuarios por dispositivo">
+      <circle cx="100" cy="100" r={r} fill="none" stroke="var(--line)" strokeWidth="22" />
+      {tramos.map((p) => (
+        <circle
+          key={p.etiqueta}
+          cx="100"
+          cy="100"
+          r={r}
+          fill="none"
+          stroke={p.color}
+          strokeWidth="22"
+          strokeDasharray={`${p.tramo} ${largo - p.tramo}`}
+          strokeDashoffset={-p.inicio}
+          transform="rotate(-90 100 100)"
+        >
+          <title>{`${p.etiqueta}: ${miles(p.valor)}`}</title>
+        </circle>
       ))}
-    </ul>
+    </svg>
   );
 }
 
@@ -126,6 +233,234 @@ function SinConexion() {
         </li>
       </ol>
     </section>
+  );
+}
+
+function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | null }) {
+  const paginasPorSesion = d.kpis.sesiones.actual ? d.kpis.vistas.actual / d.kpis.sesiones.actual : 0;
+  const mesActual = new Date().getMonth() + 1;
+  const esteAnio = d.mensual.reduce((s, m) => s + m.esteAnio, 0);
+  const mismoPeriodoPasado = d.mensual.filter((m) => m.mes <= mesActual).reduce((s, m) => s + m.anioPasado, 0);
+  const mejorMes = d.mensual.reduce((a, b) => (b.esteAnio > a.esteAnio ? b : a), d.mensual[0]);
+  const maxProducto = Math.max(1, ...d.masVistos.map((p) => p.vistas));
+  const totalDispositivos = d.dispositivos.reduce((s, x) => s + x.usuarios, 0) || 1;
+
+  return (
+    <>
+      {/* Fila 1: aviso + indicadores · visitas por día · países */}
+      <div className="grid gap-5 xl:grid-cols-3">
+        <div className="space-y-5 min-w-0">
+          <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm overflow-hidden">
+            <div className="flex items-start gap-2.5 px-5 py-3 bg-[var(--warn-soft)] text-[var(--warn)] text-sm">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-none" />
+              <span>Solo cuentan las visitas de quienes aceptaron las cookies.</span>
+            </div>
+            <div className="p-5 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[15px]">
+                  Hoy van <b>{miles(d.hoy.vistas)}</b> vistas de <b>{miles(d.hoy.usuarios)}</b> usuarios
+                  {vivo ? (
+                    <>
+                      {" "}y hay <b>{vivo.activos}</b> en la tienda ahora.
+                    </>
+                  ) : (
+                    "."
+                  )}
+                </p>
+                <a
+                  href="https://analytics.google.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-block rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white hover:brightness-110 transition"
+                >
+                  Abrir Google Analytics
+                </a>
+              </div>
+              <Activity className="w-14 h-14 text-[var(--accent)] opacity-20 flex-none" aria-hidden="true" />
+            </div>
+          </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <TarjetaIndicador titulo="Usuarios" valor={miles(d.kpis.usuarios.actual)} detalle={<Variacion k={d.kpis.usuarios} />} icono={Users} />
+            <TarjetaIndicador titulo="Sesiones" valor={miles(d.kpis.sesiones.actual)} detalle={<Variacion k={d.kpis.sesiones} />} icono={Activity} />
+            <TarjetaIndicador titulo="Duración media" valor={formatearDuracion(d.kpis.duracionMedia.actual)} detalle={<Variacion k={d.kpis.duracionMedia} />} icono={Clock} />
+            <TarjetaIndicador titulo="Rebote" valor={`${d.kpis.rebote.actual.toFixed(1)} %`} detalle={<Variacion k={d.kpis.rebote} inversa />} icono={TrendingDown} tono="aviso" />
+          </div>
+        </div>
+
+        <Tarjeta titulo="Visitas por día">
+          <div className="flex gap-4 text-xs text-[var(--muted)] mb-3">
+            <span className="flex items-center gap-1.5"><i className="w-3 h-0.5" style={{ background: PALETA[0] }} /> Vistas</span>
+            <span className="flex items-center gap-1.5"><i className="w-3 h-0.5" style={{ background: PALETA[3] }} /> Usuarios</span>
+          </div>
+          <GraficoDiario serie={d.serie} />
+          <table className="mt-4 w-full text-sm">
+            <thead className="text-left text-[var(--muted)]">
+              <tr className="border-b border-[var(--line)]">
+                <th className="py-2 font-medium">Vistas</th>
+                <th className="py-2 font-medium">Páginas por sesión</th>
+                <th className="py-2 font-medium">Variación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="py-2.5 font-semibold">{miles(d.kpis.vistas.actual)}</td>
+                <td className="py-2.5 font-semibold">{paginasPorSesion.toFixed(2)}</td>
+                <td className="py-2.5"><Flecha v={d.kpis.vistas.variacion} /></td>
+              </tr>
+            </tbody>
+          </table>
+        </Tarjeta>
+
+        <Tarjeta titulo="Usuarios por país">
+          {d.paises.length === 0 ? (
+            <SinDatos />
+          ) : (
+            <BarrasHorizontales
+              filas={d.paises.map((p) => ({
+                clave: p.codigo || "?",
+                valor: p.usuarios,
+                etiqueta: (
+                  <>
+                    <span aria-hidden="true">{bandera(p.codigo)}</span> {nombrePais(p.codigo)}
+                  </>
+                ),
+              }))}
+            />
+          )}
+        </Tarjeta>
+      </div>
+
+      {/* Fila 2: usuarios por mes · productos más vistos */}
+      <div className="grid gap-5 xl:grid-cols-2">
+        <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm min-w-0">
+          <div className="px-5 py-4 border-b border-[var(--line)]">
+            <h2 className="font-semibold text-[16px]">Usuarios por mes</h2>
+          </div>
+          <div className="grid grid-cols-3 border-b border-dashed border-[var(--line)] text-center">
+            {[
+              { valor: miles(esteAnio), etiqueta: "Este año" },
+              { valor: <Flecha v={mismoPeriodoPasado ? Math.round(((esteAnio - mismoPeriodoPasado) / mismoPeriodoPasado) * 1000) / 10 : null} />, etiqueta: "Frente al año pasado" },
+              { valor: mejorMes?.esteAnio ? MESES[mejorMes.mes - 1] : "—", etiqueta: "Mejor mes" },
+            ].map((x, i) => (
+              <div key={x.etiqueta} className={`py-4 ${i ? "border-l border-dashed border-[var(--line)]" : ""}`}>
+                <div className="text-lg font-semibold">{x.valor}</div>
+                <div className="text-xs text-[var(--muted)]">{x.etiqueta}</div>
+              </div>
+            ))}
+          </div>
+          <div className="p-5">
+            <GraficoMensual mensual={d.mensual} />
+          </div>
+        </section>
+
+        <Tarjeta titulo="Productos más vistos" extra={<span className="text-xs text-[var(--muted)]">Vistas de la ficha</span>}>
+          {d.masVistos.length === 0 ? (
+            <p className="text-sm text-[var(--muted)]">Aún no hay vistas de productos en este periodo.</p>
+          ) : (
+            <ol className="space-y-3">
+              {d.masVistos.map((p, i) => (
+                <li key={p.productoId} className="text-sm">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="w-6 h-6 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] grid place-items-center text-xs font-bold flex-none">{i + 1}</span>
+                    <Link href={p.href} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 truncate hover:text-[var(--accent)]">
+                      {p.nombre}
+                    </Link>
+                    <b>{miles(p.vistas)}</b>
+                  </div>
+                  <div className="ml-9 h-1.5 rounded-full bg-[var(--bg)] overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${(p.vistas / maxProducto) * 100}%`, background: PALETA[i % PALETA.length] }} />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Tarjeta>
+      </div>
+
+      {/* Fila 3: dispositivos · fuentes · páginas */}
+      <div className="grid gap-5 xl:grid-cols-3">
+        <Tarjeta titulo="Usuarios por dispositivo">
+          {d.dispositivos.length === 0 ? (
+            <SinDatos />
+          ) : (
+            <>
+              <Anillo partes={d.dispositivos.map((x, i) => ({ valor: x.usuarios, color: PALETA[i % PALETA.length], etiqueta: x.tipo }))} />
+              <ul className="mt-5 space-y-3 text-sm">
+                {d.dispositivos.map((x, i) => (
+                  <li key={x.tipo} className="flex items-center gap-3">
+                    <i className="w-3 h-3 rounded-sm flex-none" style={{ background: PALETA[i % PALETA.length] }} />
+                    <span className="flex-1 font-medium">{x.tipo}</span>
+                    <span className="text-[var(--muted)]">{miles(x.usuarios)} · {Math.round((x.usuarios / totalDispositivos) * 100)} %</span>
+                    <Flecha v={x.variacion} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </Tarjeta>
+
+        <Tarjeta titulo="De dónde llegan">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Sesiones del periodo</p>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-2xl font-semibold">{miles(d.kpis.sesiones.actual)}</span>
+            <Flecha v={d.kpis.sesiones.variacion} />
+          </div>
+          {d.fuentes.length === 0 ? (
+            <div className="mt-4"><SinDatos /></div>
+          ) : (
+            <>
+              <div className="mt-5 flex h-3 rounded-full overflow-hidden" role="img" aria-label="Reparto de sesiones por fuente">
+                {d.fuentes.map((f, i) => (
+                  <span key={f.fuente} style={{ width: `${f.porcentaje}%`, background: PALETA[i % PALETA.length] }} />
+                ))}
+              </div>
+              <ul className="mt-5 space-y-3 text-sm">
+                {d.fuentes.map((f, i) => (
+                  <li key={f.fuente} className="flex items-center gap-3">
+                    <i className="w-2.5 h-2.5 rounded-full flex-none" style={{ background: PALETA[i % PALETA.length] }} />
+                    <span className="flex-1 truncate text-[var(--muted)]">{f.fuente}</span>
+                    <b>{f.porcentaje.toFixed(1)} %</b>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </Tarjeta>
+
+        <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm min-w-0">
+          <div className="px-5 py-4 border-b border-[var(--line)]">
+            <h2 className="font-semibold text-[16px]">Páginas más vistas</h2>
+          </div>
+          {d.paginas.length === 0 ? (
+            <div className="p-5"><SinDatos /></div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="text-left text-[var(--muted)] bg-[var(--bg)]">
+                <tr>
+                  <th className="px-5 py-2.5 font-medium">Página</th>
+                  <th className="px-3 py-2.5 font-medium text-right">Vistas</th>
+                  <th className="px-5 py-2.5 font-medium text-right">Usuarios</th>
+                </tr>
+              </thead>
+              <tbody>
+                {d.paginas.map((p) => (
+                  <tr key={p.ruta} className="border-t border-[var(--line)]">
+                    <td className="px-5 py-2.5 max-w-[200px] truncate" title={p.ruta}>{p.ruta}</td>
+                    <td className="px-3 py-2.5 text-right">{miles(p.vistas)}</td>
+                    <td className="px-5 py-2.5 text-right">{p.porcentaje.toFixed(1)} %</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      </div>
+
+      <p className="text-xs text-[var(--muted)]">
+        Datos de Google Analytics. Los periodos terminan ayer, igual que en Google Analytics. Actualizado{" "}
+        {new Date(d.actualizado).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" })}.
+      </p>
+    </>
   );
 }
 
@@ -197,90 +532,41 @@ export default function EstadisticasPage() {
   const e: Estado = estado?.rango === rango ? estado.e : { tipo: "cargando" };
 
   return (
-    <Seccion titulo="Estadísticas">
+    <div className="max-w-[1600px] mx-auto p-4 md:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-2" role="tablist" aria-label="Periodo">
-          {RANGOS.map((r) => (
-            <button
-              key={r.valor}
-              role="tab"
-              aria-selected={rango === r.valor}
-              onClick={() => setRango(r.valor)}
-              className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold border transition ${
-                rango === r.valor
-                  ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                  : "border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--bg)]"
-              }`}
-            >
-              {r.etiqueta}
-            </button>
-          ))}
-        </div>
-        {vivo && (
-          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--ok-soft)] text-[var(--ok)] px-3.5 py-1.5 text-sm font-semibold">
-            <span className="relative flex w-2.5 h-2.5">
-              <span className="absolute inset-0 rounded-full bg-[var(--ok)] opacity-60 animate-ping motion-reduce:hidden" />
-              <span className="relative w-2.5 h-2.5 rounded-full bg-[var(--ok)]" />
+        <h1 className="text-[17px] font-bold uppercase tracking-wide">Estadísticas</h1>
+        <div className="flex items-center gap-3">
+          {vivo && (
+            <span className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[var(--ok-soft)] text-[var(--ok)] px-3 py-1 text-xs font-semibold">
+              <span className="relative flex w-2 h-2">
+                <span className="absolute inset-0 rounded-full bg-[var(--ok)] opacity-60 animate-ping motion-reduce:hidden" />
+                <span className="relative w-2 h-2 rounded-full bg-[var(--ok)]" />
+              </span>
+              {vivo.activos} ahora
             </span>
-            {vivo.activos} en la tienda ahora
-          </span>
-        )}
+          )}
+          <div className="flex gap-1.5" role="tablist" aria-label="Periodo">
+            {RANGOS.map((r) => (
+              <button
+                key={r.valor}
+                role="tab"
+                aria-selected={rango === r.valor}
+                onClick={() => setRango(r.valor)}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  rango === r.valor ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95"
+                }`}
+              >
+                {r.etiqueta}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {e.tipo === "cargando" && <p className="text-[var(--muted)]">Cargando estadísticas…</p>}
       {e.tipo === "sin-conexion" && <SinConexion />}
       {e.tipo === "error" && <p role="alert" className="text-red-600">{e.texto}</p>}
-
-      {e.tipo === "ok" && (
-        <>
-          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-            <TarjetaIndicador titulo="Usuarios" valor={miles(e.datos.kpis.usuarios.actual)} detalle={<Variacion k={e.datos.kpis.usuarios} />} icono={Users} />
-            <TarjetaIndicador titulo="Sesiones" valor={miles(e.datos.kpis.sesiones.actual)} detalle={<Variacion k={e.datos.kpis.sesiones} />} icono={Activity} />
-            <TarjetaIndicador titulo="Vistas de página" valor={miles(e.datos.kpis.vistas.actual)} detalle={<Variacion k={e.datos.kpis.vistas} />} icono={Eye} />
-            <TarjetaIndicador titulo="Duración media" valor={formatearDuracion(e.datos.kpis.duracionMedia.actual)} detalle={<Variacion k={e.datos.kpis.duracionMedia} />} icono={Clock} />
-            <TarjetaIndicador titulo="Rebote" valor={`${e.datos.kpis.rebote.actual.toFixed(1)} %`} detalle={<Variacion k={e.datos.kpis.rebote} inversa />} icono={TrendingDown} tono="aviso" />
-          </section>
-
-          <Bloque titulo="Visitas por día">
-            <GraficoDiario serie={e.datos.serie} />
-          </Bloque>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Bloque titulo="Productos más vistos">
-              {e.datos.masVistos.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">Aún no hay vistas de productos en este periodo.</p>
-              ) : (
-                <ol className="divide-y divide-[var(--line)]">
-                  {e.datos.masVistos.map((p, i) => (
-                    <li key={p.productoId} className="flex items-center gap-3 py-2.5 text-sm">
-                      <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
-                      <Link href={p.href} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 truncate hover:text-[var(--accent)]">
-                        {p.nombre}
-                      </Link>
-                      <b>{miles(p.vistas)}</b>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </Bloque>
-            <Bloque titulo="Páginas más vistas">
-              <Barras filas={e.datos.paginas.map((p) => ({ etiqueta: p.ruta, valor: p.vistas }))} />
-            </Bloque>
-            <Bloque titulo="De dónde llegan">
-              <Barras filas={e.datos.origenes.map((o) => ({ etiqueta: o.canal, valor: o.sesiones }))} />
-            </Bloque>
-            <Bloque titulo="Dispositivos">
-              <Barras filas={e.datos.dispositivos.map((d) => ({ etiqueta: d.tipo, valor: d.usuarios }))} />
-            </Bloque>
-          </div>
-
-          <p className="text-xs text-[var(--muted)]">
-            Datos de Google Analytics. Solo cuentan las visitas de quienes aceptaron las cookies, así que son menores que las
-            reales: sirven para comparar días y productos. Google tarda unas horas en procesar el día. Actualizado{" "}
-            {new Date(e.datos.actualizado).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" })}.
-          </p>
-        </>
-      )}
-    </Seccion>
+      {e.tipo === "ok" && <Panel d={e.datos} vivo={vivo} />}
+    </div>
   );
 }

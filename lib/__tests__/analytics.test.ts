@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  agruparFuentes,
   codigoDeRutaProducto,
   fechaDeGA,
   formatearDuracion,
   nombreCanal,
   nombreDispositivo,
+  nombreFuente,
   ultimosDias,
   variacion,
 } from "@/lib/analytics";
@@ -55,4 +57,28 @@ describe("nombres", () => {
     expect(nombreCanal("Nuevo canal")).toBe("Nuevo canal");
   });
   it("dispositivo", () => expect(nombreDispositivo("mobile")).toBe("Celular"));
+});
+
+describe("fuentes", () => {
+  it("nombres conocidos", () => {
+    expect(nombreFuente("(direct)")).toBe("Directo");
+    expect(nombreFuente("m.facebook.com")).toBe("Facebook");
+    expect(nombreFuente("otra.pe")).toBe("otra.pe");
+  });
+  it("une variantes, deja 4 y suma Otros", () => {
+    const r = agruparFuentes([
+      { fuente: "google", sesiones: 50 },
+      { fuente: "m.facebook.com", sesiones: 15 },
+      { fuente: "facebook.com", sesiones: 10 },
+      { fuente: "(direct)", sesiones: 10 },
+      { fuente: "tiktok.com", sesiones: 5 },
+      { fuente: "a.pe", sesiones: 6 },
+      { fuente: "b.pe", sesiones: 4 },
+    ]);
+    expect(r.map((x) => x.fuente)).toEqual(["Google", "Facebook", "Directo", "a.pe", "Otros"]);
+    expect(r[1].sesiones).toBe(25);
+    expect(r[4].sesiones).toBe(9);
+    expect(r[0].porcentaje).toBe(50);
+  });
+  it("sin sesiones → vacío", () => expect(agruparFuentes([{ fuente: "google", sesiones: 0 }])).toEqual([]));
 });

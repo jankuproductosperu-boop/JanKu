@@ -10,9 +10,9 @@ import {
 } from "@/server/analytics/googleAuth";
 import {
   RANGOS,
+  agruparFuentes,
   codigoDeRutaProducto,
   fechaDeGA,
-  nombreCanal,
   nombreDispositivo,
   ultimosDias,
   variacion,
@@ -100,64 +100,99 @@ async function productosPorCodigo(codigos: string[]): Promise<Map<string, { id: 
   return mapa;
 }
 
+/** Valor de la dimensión `dateRange` que Google añade cuando hay dos periodos (los nombres que les damos). */
+const PERIODOS = new Set(["actual", "anterior", "este", "pasado"]);
+const periodoDe = (f: Fila) => (f.dimensionValues ?? []).map((d) => d.value ?? "").find((v) => PERIODOS.has(v)) ?? "";
+const dimSinPeriodo = (f: Fila) => (f.dimensionValues ?? []).map((d) => d.value ?? "").find((v) => !PERIODOS.has(v)) ?? "";
+
 export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<AnalyticsResumen> {
   const guardado = cacheInformes.get(rango);
   if (guardado && guardado.vence > Date.now()) return guardado.datos;
 
   const c = config();
   const dias = RANGOS[rango];
-  const actual = { startDate: `${dias - 1}daysAgo`, endDate: "today" };
-  const anterior = { startDate: `${dias * 2 - 1}daysAgo`, endDate: `${dias}daysAgo` };
+  // Mismo criterio que Google Analytics: «últimos N días» termina ayer.
+  const actual = { startDate: `${dias}daysAgo`, endDate: "yesterday" };
+  const anterior = { startDate: `${dias * 2}daysAgo`, endDate: `${dias + 1}daysAgo` };
+  const dosPeriodos = [
+    { ...actual, name: "actual" },
+    { ...anterior, name: "anterior" },
+  ];
+  const hoy = hoyEnLima();
+  const anio = Number(hoy.slice(0, 4));
 
-  const respuesta = await llamarGoogle(c, "batchRunReports", {
-    requests: [
-      {
-        dateRanges: [
-          { ...actual, name: "actual" },
-          { ...anterior, name: "anterior" },
-        ],
-        metrics: [
-          { name: "activeUsers" },
-          { name: "sessions" },
-          { name: "screenPageViews" },
-          { name: "averageSessionDuration" },
-          { name: "bounceRate" },
-        ],
-      },
-      {
-        dateRanges: [actual],
-        dimensions: [{ name: "date" }],
-        metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
-        orderBys: [{ dimension: { dimensionName: "date" } }],
-        limit: 200,
-      },
-      {
-        dateRanges: [actual],
-        dimensions: [{ name: "pagePath" }],
-        metrics: [{ name: "screenPageViews" }],
-        orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-        limit: 250,
-      },
-      {
-        dateRanges: [actual],
-        dimensions: [{ name: "sessionDefaultChannelGroup" }],
-        metrics: [{ name: "sessions" }],
-        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-        limit: 10,
-      },
-      {
-        dateRanges: [actual],
-        dimensions: [{ name: "deviceCategory" }],
-        metrics: [{ name: "activeUsers" }],
-        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-        limit: 10,
-      },
-    ],
-  });
-  const [rKpis, rSerie, rPaginas, rOrigenes, rDispositivos] = informes(respuesta);
+  const [respuestaA, respuestaB] = await Promise.all([
+    llamarGoogle(c, "batchRunReports", {
+      requests: [
+        {
+          dateRanges: dosPeriodos,
+          metrics: [
+            { name: "activeUsers" },
+            { name: "sessions" },
+            { name: "screenPageViews" },
+            { name: "averageSessionDuration" },
+            { name: "bounceRate" },
+          ],
+        },
+        {
+          dateRanges: [actual],
+          dimensions: [{ name: "date" }],
+          metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+          orderBys: [{ dimension: { dimensionName: "date" } }],
+          limit: 200,
+        },
+        {
+          dateRanges: [actual],
+          dimensions: [{ name: "pagePath" }],
+          metrics: [{ name: "screenPageViews" }, { name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+          limit: 250,
+        },
+        {
+          dateRanges: [actual],
+          dimensions: [{ name: "countryId" }],
+          metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+          limit: 10,
+        },
+        {
+          dateRanges: dosPeriodos,
+          dimensions: [{ name: "deviceCategory" }],
+          metrics: [{ name: "activeUsers" }],
+          limit: 20,
+        },
+      ],
+    }),
+    llamarGoogle(c, "batchRunReports", {
+      requests: [
+        {
+          dateRanges: [actual],
+          dimensions: [{ name: "sessionSource" }],
+          metrics: [{ name: "sessions" }],
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+          limit: 50,
+        },
+        {
+          dateRanges: [
+            { startDate: `${anio}-01-01`, endDate: "today", name: "este" },
+            { startDate: `${anio - 1}-01-01`, endDate: `${anio - 1}-12-31`, name: "pasado" },
+          ],
+          dimensions: [{ name: "month" }],
+          metrics: [{ name: "activeUsers" }],
+          limit: 40,
+        },
+        {
+          dateRanges: [{ startDate: "today", endDate: "today" }],
+          metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+        },
+      ],
+    }),
+  ]);
+  const [rKpis, rSerie, rPaginas, rPaises, rDispositivos] = informes(respuestaA);
+  const [rFuentes, rMensual, rHoy] = informes(respuestaB);
 
-  // 1. Indicadores: con dos periodos, Google añade la dimensión dateRange con el nombre de cada uno.
-  const filaDe = (nombre: string) => (rKpis?.rows ?? []).find((f) => dim(f) === nombre);
+  // 1. Indicadores del periodo frente al anterior.
+  const filaDe = (nombre: string) => (rKpis?.rows ?? []).find((f) => periodoDe(f) === nombre);
   const fa = filaDe("actual");
   const fb = filaDe("anterior");
   const valor = (f: Fila | undefined, i: number) => (f ? met(f, i) : 0);
@@ -169,13 +204,14 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
     rebote: kpi(Math.round(valor(fa, 4) * 1000) / 10, Math.round(valor(fb, 4) * 1000) / 10),
   };
 
-  // 2. Serie diaria, con los días sin visitas en cero.
+  // 2. Serie diaria hasta ayer, con los días sin visitas en cero.
   const porFecha = new Map<string, { usuarios: number; vistas: number }>();
   for (const f of rSerie?.rows ?? []) {
     const fecha = fechaDeGA(dim(f));
     if (fecha) porFecha.set(fecha, { usuarios: met(f, 0), vistas: met(f, 1) });
   }
-  const serie = ultimosDias(hoyEnLima(), dias).map((fecha) => ({ fecha, ...(porFecha.get(fecha) ?? { usuarios: 0, vistas: 0 }) }));
+  const ayer = ultimosDias(hoy, 2)[0];
+  const serie = ultimosDias(ayer, dias).map((fecha) => ({ fecha, ...(porFecha.get(fecha) ?? { usuarios: 0, vistas: 0 }) }));
 
   // 3. Páginas y productos más vistos (D-86).
   const filasPaginas = rPaginas?.rows ?? [];
@@ -196,19 +232,55 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
       href: `/producto/${buildProductUrl(p.nombre, p.codigoUrl)}`,
       vistas,
     }));
-  const paginas = filasPaginas.slice(0, 10).map((f) => ({ ruta: dim(f), vistas: met(f) }));
+  const totalUsuarios = kpis.usuarios.actual;
+  const paginas = filasPaginas.slice(0, 8).map((f) => ({
+    ruta: dim(f),
+    vistas: met(f, 0),
+    usuarios: met(f, 1),
+    porcentaje: totalUsuarios ? Math.round((met(f, 1) / totalUsuarios) * 1000) / 10 : 0,
+  }));
 
-  // 4. Origen y dispositivos.
-  const origenes = (rOrigenes?.rows ?? []).map((f) => ({ canal: nombreCanal(dim(f)), sesiones: met(f) }));
-  const dispositivos = (rDispositivos?.rows ?? []).map((f) => ({ tipo: nombreDispositivo(dim(f)), usuarios: met(f) }));
+  // 4. Países (código ISO; el nombre lo pone el navegador en español).
+  const paises = (rPaises?.rows ?? []).map((f) => {
+    const codigo = dim(f);
+    return { codigo: /^[A-Z]{2}$/.test(codigo) ? codigo : "", usuarios: met(f) };
+  });
+
+  // 5. Dispositivos con su variación.
+  const porDispositivo = new Map<string, { actual: number; anterior: number }>();
+  for (const f of rDispositivos?.rows ?? []) {
+    const tipo = dimSinPeriodo(f);
+    const previo = porDispositivo.get(tipo) ?? { actual: 0, anterior: 0 };
+    if (periodoDe(f) === "actual") previo.actual += met(f);
+    else previo.anterior += met(f);
+    porDispositivo.set(tipo, previo);
+  }
+  const dispositivos = [...porDispositivo.entries()]
+    .filter(([, v]) => v.actual > 0)
+    .sort((a, b) => b[1].actual - a[1].actual)
+    .map(([tipo, v]) => ({ tipo: nombreDispositivo(tipo), usuarios: v.actual, variacion: variacion(v.actual, v.anterior) }));
+
+  // 6. Fuentes, meses y hoy.
+  const fuentes = agruparFuentes((rFuentes?.rows ?? []).map((f) => ({ fuente: dim(f), sesiones: met(f) })));
+  const mensual = Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, esteAnio: 0, anioPasado: 0 }));
+  for (const f of rMensual?.rows ?? []) {
+    const mes = Number(dimSinPeriodo(f));
+    if (!Number.isInteger(mes) || mes < 1 || mes > 12) continue;
+    if (periodoDe(f) === "este") mensual[mes - 1].esteAnio += met(f);
+    else mensual[mes - 1].anioPasado += met(f);
+  }
+  const filaHoy = rHoy?.rows?.[0];
 
   const datos: AnalyticsResumen = {
     rango,
     kpis,
+    hoy: { usuarios: filaHoy ? met(filaHoy, 0) : 0, vistas: filaHoy ? met(filaHoy, 1) : 0 },
     serie,
+    mensual,
     masVistos,
     paginas,
-    origenes,
+    paises,
+    fuentes,
     dispositivos,
     actualizado: new Date().toISOString(),
   };

@@ -67,3 +67,46 @@ export const nombreCanal = (canal: string): string => CANALES[canal] ?? canal;
 
 const DISPOSITIVOS: Record<string, string> = { mobile: "Celular", desktop: "Computadora", tablet: "Tablet", "smart tv": "TV" };
 export const nombreDispositivo = (tipo: string): string => DISPOSITIVOS[tipo] ?? tipo;
+
+const FUENTES: Record<string, string> = {
+  "(direct)": "Directo",
+  "(not set)": "Sin identificar",
+  google: "Google",
+  bing: "Bing",
+  yahoo: "Yahoo",
+  "facebook.com": "Facebook",
+  "m.facebook.com": "Facebook",
+  "l.facebook.com": "Facebook",
+  "lm.facebook.com": "Facebook",
+  "instagram.com": "Instagram",
+  "l.instagram.com": "Instagram",
+  "tiktok.com": "TikTok",
+  "chatgpt.com": "ChatGPT",
+};
+export const nombreFuente = (fuente: string): string => FUENTES[fuente.toLowerCase()] ?? fuente;
+
+/**
+ * Une las fuentes con el mismo nombre visible (m.facebook.com y facebook.com → Facebook), deja las `top`
+ * principales y suma el resto en "Otros". Porcentajes con 1 decimal sobre el total de sesiones.
+ */
+export function agruparFuentes(
+  filas: { fuente: string; sesiones: number }[],
+  top = 4,
+): { fuente: string; sesiones: number; porcentaje: number }[] {
+  const porNombre = new Map<string, number>();
+  for (const f of filas) {
+    const nombre = nombreFuente(f.fuente);
+    porNombre.set(nombre, (porNombre.get(nombre) ?? 0) + Math.max(0, f.sesiones));
+  }
+  const ordenadas = [...porNombre.entries()].sort((a, b) => b[1] - a[1]);
+  const total = ordenadas.reduce((s, [, n]) => s + n, 0);
+  if (!total) return [];
+  const principales = ordenadas.slice(0, top);
+  const resto = ordenadas.slice(top).reduce((s, [, n]) => s + n, 0);
+  if (resto > 0) principales.push(["Otros", resto]);
+  return principales.map(([fuente, sesiones]) => ({
+    fuente,
+    sesiones,
+    porcentaje: Math.round((sesiones / total) * 1000) / 10,
+  }));
+}

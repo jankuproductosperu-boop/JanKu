@@ -6,6 +6,7 @@ export type KpiAnalytics = { actual: number; anterior: number; variacion: number
 
 export type AnalyticsResumen = {
   rango: RangoAnalytics;
+  /** Mismo criterio que Google Analytics: el periodo termina AYER (hoy aún está incompleto). */
   kpis: {
     usuarios: KpiAnalytics;
     sesiones: KpiAnalytics;
@@ -15,12 +16,20 @@ export type AnalyticsResumen = {
     /** Porcentaje 0–100. */
     rebote: KpiAnalytics;
   };
-  /** Un punto por día del rango, del más antiguo a hoy (días sin datos = 0). */
+  /** Hoy hasta ahora (para el Resumen). */
+  hoy: { usuarios: number; vistas: number };
+  /** Un punto por día del rango, del más antiguo a ayer (días sin datos = 0). */
   serie: { fecha: string; usuarios: number; vistas: number }[];
+  /** Usuarios por mes: este año frente al año pasado. `mes` 1–12. */
+  mensual: { mes: number; esteAnio: number; anioPasado: number }[];
   masVistos: { productoId: string; nombre: string; href: string; vistas: number }[];
-  paginas: { ruta: string; vistas: number }[];
-  origenes: { canal: string; sesiones: number }[];
-  dispositivos: { tipo: string; usuarios: number }[];
+  /** `porcentaje`: parte de los usuarios del periodo que vio la página (0–100). */
+  paginas: { ruta: string; vistas: number; usuarios: number; porcentaje: number }[];
+  /** `codigo`: país ISO de 2 letras ("PE"), o "" si Google no lo sabe. */
+  paises: { codigo: string; usuarios: number }[];
+  /** Las 4 fuentes principales y "Otros"; `porcentaje` de las sesiones. */
+  fuentes: { fuente: string; sesiones: number; porcentaje: number }[];
+  dispositivos: { tipo: string; usuarios: number; variacion: number | null }[];
   actualizado: string;
 };
 
