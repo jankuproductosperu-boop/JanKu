@@ -140,7 +140,7 @@ export default function FavoritosPage() {
       </div>
 
       {/* Banner inferior */}
-      <div className="mt-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white text-center">
+      <div className="mt-12 bg-gradient-to-r from-[#2C2C6C] to-[#241B57] rounded-2xl p-8 text-white text-center">
         <h2 className="text-2xl font-bold mb-4">
           ¿Listo para comprar?
         </h2>
@@ -149,7 +149,7 @@ export default function FavoritosPage() {
         </p>
         <Link
           href="/"
-          className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition"
+          className="inline-block bg-white text-[#2C2C6C] px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition"
         >
           Seguir Comprando
         </Link>

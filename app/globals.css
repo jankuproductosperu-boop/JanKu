@@ -12,6 +12,23 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Fase 23c: en la tienda, la escala "indigo" de Tailwind es el azul de Janku (#2C2C6C).
+   Así todos los botones y acentos indigo-* dejan de verse morados. Va fuera de capas, por eso
+   gana a los valores por defecto de Tailwind; el panel la vuelve a definir dentro de .panel. */
+:root {
+  --color-indigo-50: #eeeef8;
+  --color-indigo-100: #dedff1;
+  --color-indigo-200: #c0c1e4;
+  --color-indigo-300: #9b9cd2;
+  --color-indigo-400: #6d6eb5;
+  --color-indigo-500: #4a4a95;
+  --color-indigo-600: #2c2c6c;
+  --color-indigo-700: #241b57;
+  --color-indigo-800: #1f1a4a;
+  --color-indigo-900: #1a163d;
+  --color-indigo-950: #110e29;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

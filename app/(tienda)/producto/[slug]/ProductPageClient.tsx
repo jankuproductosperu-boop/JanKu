@@ -470,7 +470,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
       )}
 
       {/* Información adicional */}
-    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 md:p-8">
+    <div className="bg-[#2C2C6C]/5 rounded-xl p-6 md:p-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Información de Compra</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Precios Cómodos */}

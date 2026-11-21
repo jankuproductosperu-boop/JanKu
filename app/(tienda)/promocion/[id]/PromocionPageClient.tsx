@@ -51,18 +51,19 @@ export default function PromocionPageClient({
 
   const getEtiquetaColor = (tipo: string) => {
     switch (tipo) {
+      // Fase 23c: colores planos de la paleta de Janku, sin degradados.
       case "Combo":
-        return "bg-gradient-to-r from-red-500 to-red-600";
+        return "bg-[#2C2C6C]";
       case "2x1":
-        return "bg-gradient-to-r from-orange-500 to-orange-600";
+        return "bg-orange-600";
       case "Descuento":
-        return "bg-gradient-to-r from-purple-500 to-purple-600";
+        return "bg-red-600";
       case "Oferta":
-        return "bg-gradient-to-r from-pink-500 to-pink-600";
+        return "bg-green-600";
       case "Nuevo":
-        return "bg-gradient-to-r from-blue-500 to-blue-600";
+        return "bg-blue-600";
       default:
-        return "bg-gradient-to-r from-gray-500 to-gray-600";
+        return "bg-gray-600";
     }
   };
 

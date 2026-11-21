@@ -110,7 +110,7 @@ export default function CarritoPage() {
             <div className="lg:col-span-2 space-y-4">
               {/* Aviso de descuento activo o próximo a desbloquear */}
               {nivelDescuentoAplicado ? (
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl p-4 flex items-center gap-3 shadow-md">
+                <div className="bg-green-600 text-white rounded-xl p-4 flex items-center gap-3 shadow-md">
                   <Sparkles className="w-6 h-6 flex-shrink-0" />
                   <div>
                     <p className="font-bold">¡Descuento aplicado!</p>

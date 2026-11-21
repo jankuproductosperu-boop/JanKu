@@ -40,18 +40,19 @@ export default function PromocionesPage() {
 
   const getEtiquetaColor = (tipo: string) => {
     switch (tipo) {
+      // Fase 23c: colores planos de la paleta de Janku, sin degradados.
       case "Combo":
-        return "bg-gradient-to-r from-red-500 to-red-600";
+        return "bg-[#2C2C6C]";
       case "2x1":
-        return "bg-gradient-to-r from-orange-500 to-orange-600";
+        return "bg-orange-600";
       case "Descuento":
-        return "bg-gradient-to-r from-purple-500 to-purple-600";
+        return "bg-red-600";
       case "Oferta":
-        return "bg-gradient-to-r from-pink-500 to-pink-600";
+        return "bg-green-600";
       case "Nuevo":
-        return "bg-gradient-to-r from-blue-500 to-blue-600";
+        return "bg-blue-600";
       default:
-        return "bg-gradient-to-r from-gray-500 to-gray-600";
+        return "bg-gray-600";
     }
   };
 
@@ -132,7 +133,7 @@ return (
         )}
 
         {/* Imagen */}
-        <div className="relative w-full aspect-square bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 overflow-hidden">
+        <div className="relative w-full aspect-square bg-[#2C2C6C]/5 overflow-hidden">
           {currentImage && (
             <Image
               src={currentImage}
@@ -166,7 +167,7 @@ return (
 
           {/* Mensaje de confirmación */}
           {showAddedMessage && (
-            <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center z-30 backdrop-blur-sm">
+            <div className="absolute inset-0 bg-green-600/95 flex items-center justify-center z-30 backdrop-blur-sm">
               <div className="text-white text-center animate-bounce">
                 <div className="text-4xl mb-2">✓</div>
                 <p className="font-bold text-sm">¡Agregado!</p>
@@ -189,7 +190,7 @@ return (
         )}
 
         {/* Sección de precio - MEJORADA */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 mb-3">
+        <div className="bg-[#2C2C6C]/5 rounded-lg p-3 mb-3">
           {promotion.precioAnterior && (
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-gray-400 line-through text-xs">
@@ -206,7 +207,7 @@ return (
         </div>
 
         {/* Botón de acción */}
-        <button className="w-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 hover:from-yellow-500 hover:via-yellow-600 hover:to-amber-600 text-gray-900 font-bold py-2.5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs lg:text-sm">
+        <button className="w-full bg-[#2C2C6C] hover:bg-[#241B57] text-white font-bold py-2.5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs lg:text-sm">
           Ver detalles de la oferta
         </button>
       </div>
