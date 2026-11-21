@@ -3,6 +3,7 @@ import mongoose, { type ClientSession } from "mongoose";
 import { connectDB } from "@/server/db";
 import { conflicto, entradaInvalida, noEncontrado } from "@/server/http/errors";
 import { extractCodigoUrl } from "@/lib/productUrl";
+import { esNovedad } from "@/lib/novedades";
 import { estadoDeStock } from "@/lib/stock";
 import { stockTotal, tieneVariantes } from "@/lib/variantes";
 import Product from "@/models/Product";
@@ -80,46 +81,34 @@ export type FiltroCatalogo =
   | { tipo: "relacionados"; id: string };
 
 /**
- * Subconjunto del catálogo público, con la misma proyección y el mismo orden natural que
- * listarProductosPublicos: las páginas siguen aplicando su propio orden y filtros sobre lo que reciben,
- * así el resultado visible no cambia (N1-1); solo viaja menos.
+ * Subconjunto del catálogo público. Se parte de listarProductosPublicos (la misma consulta y el mismo
+ * orden que siempre) y se aplica la MISMA regla que antes aplicaba cada página en el navegador. Así lo
+ * visible no cambia por construcción (N1-1): solo viaja menos al navegador.
  */
 export async function listarProductosPublicosFiltrados(f: FiltroCatalogo): Promise<ProductTipo[]> {
-  await connectDB();
-  let filtro: Record<string, unknown>;
-  let limite = 0;
-
+  const todos = await listarProductosPublicos();
   switch (f.tipo) {
-    case "ids":
-      filtro = { _id: { $in: f.ids } };
-      break;
+    case "ids": {
+      const buscados = new Set(f.ids);
+      return todos.filter((p) => buscados.has(p._id));
+    }
     case "categoria":
       // Igual que la página de categoría: el producto lleva ese slug entre sus categorías.
-      filtro = { categoriaSlugs: f.slug };
-      break;
-    case "home":
+      return todos.filter((p) => p.categoriaSlugs?.includes(f.slug));
+    case "home": {
       // Lo que usa el inicio: los marcados para el inicio y las novedades vigentes (D-58).
-      filtro = { $or: [{ mostrarEnHome: true }, { nuevoHasta: { $gt: new Date() } }] };
-      break;
+      const ahora = Date.now();
+      return todos.filter((p) => p.mostrarEnHome === true || esNovedad(p, ahora));
+    }
     case "relacionados": {
       // Misma regla que tenía la ficha: misma categoría principal o mismo nombre de categoría, hasta 8.
-      const base = await Product.findOne({ _id: f.id, ...FILTRO_PUBLICO })
-        .select({ categoriaSlug: 1, categoria: 1 })
-        .lean<{ categoriaSlug?: string | null; categoria?: string | null }>();
+      const base = todos.find((p) => p._id === f.id);
       if (!base) return [];
-      filtro = {
-        _id: { $ne: f.id },
-        $or: [{ categoriaSlug: base.categoriaSlug ?? null }, { categoria: base.categoria ?? null }],
-      };
-      limite = 8;
-      break;
+      return todos
+        .filter((p) => p._id !== base._id && (p.categoriaSlug === base.categoriaSlug || p.categoria === base.categoria))
+        .slice(0, 8);
     }
   }
-
-  const consulta = Product.find({ ...filtro, ...FILTRO_PUBLICO }).select(CAMPOS_PRIVADOS);
-  if (limite) consulta.limit(limite);
-  const productos = await consulta.lean().exec();
-  return (Array.isArray(productos) ? productos : []).map(aPublico);
 }
 
 export async function obtenerProductoPublicoPorId(id: string): Promise<ProductTipo> {
