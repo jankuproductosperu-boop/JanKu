@@ -130,21 +130,63 @@ function GraficoDiario({ serie }: { serie: AnalyticsResumen["serie"] }) {
   );
 }
 
-/** Barras horizontales con el valor al final (usuarios por país). */
-function BarrasHorizontales({ filas }: { filas: { etiqueta: React.ReactNode; clave: string; valor: number }[] }) {
+/** Paso "redondo" del eje (1, 2, 2.5 o 5 × potencia de 10) para unas 4 marcas. */
+function pasoDelEje(max: number): number {
+  const bruto = Math.max(1, max) / 4;
+  const base = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const opciones = [1, 2, 2.5, 5, 10].map((m) => m * base);
+  return opciones.find((o) => o >= bruto) ?? 10 * base;
+}
+
+/**
+ * Barras horizontales como el modelo de referencia: eje a la izquierda con los nombres, barras gruesas
+ * con su cifra al final y eje inferior con marcas. El alto crece con el número de filas.
+ * La fila con más usuarios se resalta en coral.
+ */
+function BarrasPaises({ filas }: { filas: { etiqueta: string; clave: string; valor: number }[] }) {
+  const W = 420;
+  const izq = 112; // espacio para los nombres
+  const der = 44; // espacio para la cifra al final de la barra más larga
+  const alto = 30; // grosor de cada barra
+  const hueco = 16; // espacio entre barras
+  const arriba = 6;
+  const ejeAlto = 34;
   const max = Math.max(1, ...filas.map((f) => f.valor));
+  const paso = pasoDelEje(max);
+  const tope = Math.ceil(max / paso) * paso;
+  const marcas = Array.from({ length: Math.round(tope / paso) + 1 }, (_, i) => i * paso);
+  const ancho = W - izq - der;
+  const H = arriba + filas.length * (alto + hueco) - hueco + ejeAlto;
+  const x = (v: number) => izq + (v / tope) * ancho;
+  const yBase = H - ejeAlto + 8;
+
   return (
-    <ul className="space-y-3.5">
-      {filas.map((f) => (
-        <li key={f.clave} className="grid grid-cols-[minmax(0,7.5rem)_1fr] items-center gap-3 text-sm">
-          <span className="truncate text-right text-[var(--muted)]">{f.etiqueta}</span>
-          <span className="flex items-center gap-2 min-w-0">
-            <span className="h-6 rounded-[3px] bg-[#299cdb]" style={{ width: `${Math.max(2, (f.valor / max) * 85)}%` }} />
-            <span className="text-xs font-medium">{miles(f.valor)}</span>
-          </span>
-        </li>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Usuarios por país">
+      {filas.map((f, i) => {
+        const y = arriba + i * (alto + hueco);
+        const destacado = i === 0;
+        return (
+          <g key={f.clave}>
+            <text x={izq - 10} y={y + alto / 2 + 4} textAnchor="end" fontSize="12" fill="var(--muted)">
+              {f.etiqueta.length > 16 ? `${f.etiqueta.slice(0, 15)}…` : f.etiqueta}
+            </text>
+            <rect x={izq} y={y} width={Math.max(2, x(f.valor) - izq)} height={alto} rx="2" fill={destacado ? "#f06548" : "#299cdb"}>
+              <title>{`${f.etiqueta}: ${miles(f.valor)} usuarios`}</title>
+            </rect>
+            <text x={x(f.valor) + 10} y={y + alto / 2 + 4} fontSize="12" fill="var(--ink)">{miles(f.valor)}</text>
+          </g>
+        );
+      })}
+      {/* Ejes */}
+      <line x1={izq} x2={izq} y1={arriba - 6} y2={yBase} stroke="var(--muted)" strokeOpacity="0.5" />
+      <line x1={izq} x2={izq + ancho} y1={yBase} y2={yBase} stroke="var(--muted)" strokeOpacity="0.5" />
+      {marcas.map((v) => (
+        <g key={v}>
+          <line x1={x(v)} x2={x(v)} y1={yBase} y2={yBase + 5} stroke="var(--muted)" strokeOpacity="0.5" />
+          <text x={x(v)} y={yBase + 20} textAnchor="middle" fontSize="12" fill="var(--muted)">{miles(v)}</text>
+        </g>
       ))}
-    </ul>
+    </svg>
   );
 }
 
@@ -429,15 +471,11 @@ function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | n
           {d.paises.length === 0 ? (
             <SinDatos />
           ) : (
-            <BarrasHorizontales
+            <BarrasPaises
               filas={d.paises.map((p) => ({
                 clave: p.codigo || "?",
                 valor: p.usuarios,
-                etiqueta: (
-                  <>
-                    <span aria-hidden="true">{bandera(p.codigo)}</span> {nombrePais(p.codigo)}
-                  </>
-                ),
+                etiqueta: `${bandera(p.codigo)} ${nombrePais(p.codigo)}`,
               }))}
             />
           )}
