@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { fetchWithCache } from "@/lib/cache";
 import { carritoConEntregaGratis } from "@/lib/shipping";
-import type { Product } from "@/types";
+import { idsParaCatalogo } from "@/lib/catalogo";
+import { useProductosPorIds } from "@/hooks/useProductosPorIds";
 import { lineaId } from "@/lib/variantes";
 import { enlaceWhatsAppCarrito } from "@/lib/whatsapp";
 import { SITE } from "@/lib/siteConfig";
@@ -30,16 +29,8 @@ export default function CarritoPage() {
 
   // Q1 (fase 16b): el delivery en Huancayo es gratis solo si algún producto del carrito lo tiene (D-71).
   // Solo se muestra; el servidor decide al crear el pedido. null = cargando.
-  const [productosPublicos, setProductosPublicos] = useState<Product[] | null>(null);
-  useEffect(() => {
-    let activo = true;
-    fetchWithCache<Product[]>("/api/products").then((p) => {
-      if (activo) setProductosPublicos(p);
-    });
-    return () => {
-      activo = false;
-    };
-  }, []);
+  // Fase 24: solo los productos que están en el carrito, no el catálogo entero.
+  const productosPublicos = useProductosPorIds(idsParaCatalogo(cart));
   const deliveryGratis = productosPublicos ? carritoConEntregaGratis(cart, productosPublicos) : null;
 
   const totales: Totales = {

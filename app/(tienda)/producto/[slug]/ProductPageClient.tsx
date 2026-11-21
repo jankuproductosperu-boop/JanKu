@@ -73,7 +73,8 @@ export default function ProductPageClient({ product }: { product: Product }) {
   useEffect(() => {
     const loadRelatedProducts = async () => {
       try {
-        const allProducts = await fetchWithCache<Product[]>("/api/products");
+        // Fase 24: el servidor ya aplica la misma regla y el límite de 8; el filtro de abajo se conserva.
+        const allProducts = await fetchWithCache<Product[]>(`/api/products?relacionados=${product._id}`);
 
         let related = allProducts.filter(p =>
           p._id !== product._id &&

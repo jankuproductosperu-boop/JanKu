@@ -144,6 +144,22 @@ const CHECKS = [
   // Fase 23b: estadísticas de Google Analytics, solo superadmin.
   { nombre: "GET /api/admin/analytics (sin cookie)", metodo: "GET", ruta: "/api/admin/analytics", espera: estado(401) },
   { nombre: "GET /api/admin/analytics/realtime (sin cookie)", metodo: "GET", ruta: "/api/admin/analytics/realtime", espera: estado(401) },
+  // Fase 24: catálogo filtrado en el servidor (misma forma: arreglo) y páginas para Google.
+  ...["?ids=000000000000000000000000", "?categoria=no-existe", "?home=1", "?relacionados=000000000000000000000000"].map((q) => ({
+    nombre: `GET /api/products${q} (arreglo, sin campos privados)`,
+    metodo: "GET",
+    ruta: `/api/products${q}`,
+    espera: (res, texto) => {
+      const base = esArregloJson(res, texto);
+      if (base !== true) return base;
+      const fugas = ['"precioCosto"', '"proveedor"', '"stockCantidad"'].filter((c) => texto.includes(c));
+      return fugas.length ? `el cuerpo contiene ${fugas.join(", ")}` : true;
+    },
+  })),
+  { nombre: "GET /api/products?ids=malo (400)", metodo: "GET", ruta: "/api/products?ids=malo", espera: estado(400) },
+  { nombre: "GET /categoria-que-no-existe (página, 200)", metodo: "GET", ruta: "/categoria-que-no-existe", espera: esHtml },
+  { nombre: "GET /sitemap.xml", metodo: "GET", ruta: "/sitemap.xml", espera: estado(200) },
+  { nombre: "GET /robots.txt", metodo: "GET", ruta: "/robots.txt", espera: estado(200) },
 ];
 
 async function main() {

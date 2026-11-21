@@ -74,7 +74,7 @@ export default function HomeProducts() {
         setLoading(true);
 
         const [productsData, bannersData] = await Promise.all([
-          fetchWithCache<Product[]>("/api/products"),
+          fetchWithCache<Product[]>("/api/products?home=1"), // fase 24: no el catálogo entero
           fetchWithCache<Banner[]>("/api/banners")
         ]);
 

@@ -8,13 +8,14 @@ import { useCart } from "@/context/CartContext";
 import { useUser } from "@/context/UserContext";
 import { SITE } from "@/lib/siteConfig";
 import { redondear2 } from "@/lib/money";
-import { fetchWithCache } from "@/lib/cache";
 import { carritoConEntregaGratis } from "@/lib/shipping";
+import { idsParaCatalogo } from "@/lib/catalogo";
+import { useProductosPorIds } from "@/hooks/useProductosPorIds";
 import { lineaId } from "@/lib/variantes";
 import { normalizarTelefono } from "@/lib/phone";
 import { CheckoutForm } from "@/Components/Checkout/CheckoutForm";
 import { OrderSummary } from "@/Components/Checkout/OrderSummary";
-import type { CouponValidateResult, MetodoEntrega, Product } from "@/types";
+import type { CouponValidateResult, MetodoEntrega } from "@/types";
 
 type CuponValido = Extract<CouponValidateResult, { valido: true }>;
 /** `firma` = carrito + teléfono con los que el servidor validó el cupón. Si cambian, el cupón deja de valer. */
@@ -50,17 +51,8 @@ export default function CheckoutPage() {
   }, [router]);
 
   // D-71: solo para mostrar si el delivery es gratis; el servidor vuelve a decidirlo con la base (N1-5).
-  const [productosPublicos, setProductosPublicos] = useState<Product[] | null>(null);
-  useEffect(() => {
-    if (!SITE.checkoutHabilitado) return;
-    let activo = true;
-    fetchWithCache<Product[]>("/api/products").then((p) => {
-      if (activo) setProductosPublicos(p);
-    });
-    return () => {
-      activo = false;
-    };
-  }, []);
+  // Fase 24: solo los productos que están en el carrito, no el catálogo entero.
+  const productosPublicos = useProductosPorIds(SITE.checkoutHabilitado ? idsParaCatalogo(cart) : "");
 
   if (!SITE.checkoutHabilitado || !listo || isChecking) return <div className="min-h-screen" />;
 

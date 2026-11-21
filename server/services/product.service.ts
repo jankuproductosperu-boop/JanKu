@@ -72,6 +72,56 @@ export async function listarProductosPublicos(): Promise<ProductTipo[]> {
   return (Array.isArray(productos) ? productos : []).map(aPublico);
 }
 
+/** Filtros opcionales de GET /api/products (fase 24). Sin ninguno, la respuesta es la de siempre. */
+export type FiltroCatalogo =
+  | { tipo: "ids"; ids: string[] }
+  | { tipo: "categoria"; slug: string }
+  | { tipo: "home" }
+  | { tipo: "relacionados"; id: string };
+
+/**
+ * Subconjunto del catálogo público, con la misma proyección y el mismo orden natural que
+ * listarProductosPublicos: las páginas siguen aplicando su propio orden y filtros sobre lo que reciben,
+ * así el resultado visible no cambia (N1-1); solo viaja menos.
+ */
+export async function listarProductosPublicosFiltrados(f: FiltroCatalogo): Promise<ProductTipo[]> {
+  await connectDB();
+  let filtro: Record<string, unknown>;
+  let limite = 0;
+
+  switch (f.tipo) {
+    case "ids":
+      filtro = { _id: { $in: f.ids } };
+      break;
+    case "categoria":
+      // Igual que la página de categoría: el producto lleva ese slug entre sus categorías.
+      filtro = { categoriaSlugs: f.slug };
+      break;
+    case "home":
+      // Lo que usa el inicio: los marcados para el inicio y las novedades vigentes (D-58).
+      filtro = { $or: [{ mostrarEnHome: true }, { nuevoHasta: { $gt: new Date() } }] };
+      break;
+    case "relacionados": {
+      // Misma regla que tenía la ficha: misma categoría principal o mismo nombre de categoría, hasta 8.
+      const base = await Product.findOne({ _id: f.id, ...FILTRO_PUBLICO })
+        .select({ categoriaSlug: 1, categoria: 1 })
+        .lean<{ categoriaSlug?: string | null; categoria?: string | null }>();
+      if (!base) return [];
+      filtro = {
+        _id: { $ne: f.id },
+        $or: [{ categoriaSlug: base.categoriaSlug ?? null }, { categoria: base.categoria ?? null }],
+      };
+      limite = 8;
+      break;
+    }
+  }
+
+  const consulta = Product.find({ ...filtro, ...FILTRO_PUBLICO }).select(CAMPOS_PRIVADOS);
+  if (limite) consulta.limit(limite);
+  const productos = await consulta.lean().exec();
+  return (Array.isArray(productos) ? productos : []).map(aPublico);
+}
+
 export async function obtenerProductoPublicoPorId(id: string): Promise<ProductTipo> {
   await connectDB();
   const producto = await Product.findOne({ _id: id, ...FILTRO_PUBLICO }).select(CAMPOS_PRIVADOS).lean();

@@ -318,3 +318,11 @@ pendiente ──► confirmado ──► enviado ──► entregado
 **D-85 · Estadísticas desde GA4 con cuenta de servicio de solo lectura.** El servidor firma un JWT con `jose` (sin dependencia nueva), pide un token a Google y consulta la Data API; los informes se guardan 10 min en memoria y el tiempo real 1 min. La clave vive solo en variables de entorno y nunca va a logs ni respuestas. Sin credenciales, la API responde 503 `ANALYTICS_NO_CONFIGURADO` y el panel explica cómo conectar; si Google falla, 502 con mensaje fijo. Permiso nuevo `estadisticas.ver`, solo superadmin.
 
 **D-86 · «Más vistos» desde Analytics** (rutas `/producto/{slug}` cruzadas con el catálogo por `codigoUrl`) en lugar del contador propio de la 21b: sin escrituras por visita ni endpoint público nuevo. Las cifras solo cuentan a quien aceptó las cookies (D-75): sirven para comparar, no como total.
+
+---
+
+## Catálogo en el servidor (fase 24, primera parte)
+
+*Aprobada por el dueño el 2026-11-20 (Q2 y Q3 por defecto; Q1 aplazada).*
+
+**D-87 · Cada página pide solo su parte del catálogo.** `GET /api/products` acepta filtros opcionales `?ids=` (hasta 100), `?categoria=`, `?home=1` y `?relacionados=`; sin filtros responde igual que siempre (N1-6) y los parámetros desconocidos se ignoran. Misma proyección pública (sin costos ni stock exacto, D-68) y mismo orden natural: cada página sigue aplicando su propio orden y filtros, así lo visible no cambia (N1-1). La página de categoría se genera en el servidor en cada visita (sin caché: los cambios del panel se ven al instante) con título y descripción para Google. Se añaden `/sitemap.xml` y `/robots.txt`, generados al pedirlos (el build no se conecta a la base). **Aplazado:** la paginación «cargar más» (Q1) hasta que el catálogo crezca, y la búsqueda, que calcula sus filtros sobre el catálogo entero.

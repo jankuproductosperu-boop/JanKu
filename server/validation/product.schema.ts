@@ -118,3 +118,20 @@ export const reordenarSchema = z.object({
 
 export type ProductoCrear = z.infer<typeof productoCrearSchema>;
 export type ProductoActualizar = z.infer<typeof productoActualizarSchema>;
+
+// ── Catálogo público filtrado (fase 24) ─────────────────────────────────────────────────────────────
+// Todos opcionales. Sin ninguno, GET /api/products responde como siempre (N1-6). Los parámetros
+// desconocidos se ignoran (no .strict()) para no romper enlaces o recargas con otros parámetros.
+const MAX_IDS = 100;
+
+export const productosQuerySchema = z.object({
+  ids: z
+    .string()
+    .max(MAX_IDS * 25)
+    .transform((s) => s.split(",").map((x) => x.trim()).filter(Boolean))
+    .pipe(z.array(objectId).min(1).max(MAX_IDS))
+    .optional(),
+  categoria: z.string().trim().min(1).max(100).regex(/^[a-z0-9-]+$/i, "Categoría inválida").optional(),
+  home: z.literal("1").optional(),
+  relacionados: objectId.optional(),
+});

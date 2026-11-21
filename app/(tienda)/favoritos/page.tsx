@@ -21,7 +21,8 @@ export default function FavoritosPage() {
   const handleAddToCart = async (favorite: FavoriteProduct) => {
     // Si el producto tiene variantes hay que elegir una: se lleva a la ficha, igual que la tarjeta (D-65).
     try {
-      const productos = await fetchWithCache<Product[]>("/api/products");
+      // Fase 24: solo este producto, no el catálogo entero.
+      const productos = await fetchWithCache<Product[]>(`/api/products?ids=${encodeURIComponent(favorite._id)}`);
       const actual = productos.find((p) => p._id === favorite._id);
       if (actual && tieneVariantes(actual)) {
         router.push(`/producto/${buildProductUrl(favorite.nombre, favorite.codigoUrl)}`);
