@@ -20,7 +20,7 @@ Modelos de MongoDB nuevos y modificados, campo por campo, índices y scripts de 
 | `couponredemptions` | `CouponRedemption` | **Nuevo** | 18 |
 | `complaints` | `Complaint` | **Nuevo** | 22b |
 | `counters` | `Counter` | **Nuevo** | 22b |
-| `categories`, `banners`, `promotions`, `discounttiers` | — | Sin cambios de esquema | — |
+| `categories`, `banners`, `promotions`, `discounttiers` | — | Sin cambios de esquema. `Category.padre` (13b, opcional) se usa desde la fase 25: slug de la madre; ausente o `""` = categoría principal; un solo nivel (D-88) | — |
 | `loginblocks`, `userloginblocks` | — | Dejan de usarse; **se conservan** | 07 |
 
 ---

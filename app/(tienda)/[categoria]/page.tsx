@@ -3,6 +3,7 @@ import { cache } from "react";
 import { listarCategorias } from "@/server/services/category.service";
 import { listarBannersActivos } from "@/server/services/banner.service";
 import { listarProductosPublicosFiltrados } from "@/server/services/product.service";
+import { hijasDe, madreDe } from "@/lib/categorias";
 import CategoriaClient from "./CategoriaClient";
 
 // Fase 24: la categoría se resuelve en el servidor. Antes el navegador descargaba el catálogo entero,
@@ -16,7 +17,13 @@ const cargarCategoria = cache(async (slug: string) => {
   const categorias = await listarCategorias();
   // Misma regla que antes: se busca entre todas las categorías por su slug.
   const category = categorias.find((c) => c.slug === slug) ?? null;
-  if (!category) return { category: null, products: [], banners: [] };
+  if (!category) return { category: null, products: [], banners: [], subcategorias: [], madre: null };
+
+  // Fase 25 (D-88): subcategorías activas (botones bajo el título) y, si es hija, su madre activa (ruta).
+  const subcategorias = hijasDe(slug, categorias).map((c) => ({ slug: c.slug, nombre: c.nombre }));
+  const slugMadre = madreDe(category);
+  const m = slugMadre ? categorias.find((c) => c.slug === slugMadre && c.activo !== false) : undefined;
+  const madre = m ? { slug: m.slug, nombre: m.nombre } : null;
 
   const [productos, bannersActivos] = await Promise.all([
     listarProductosPublicosFiltrados({ tipo: "categoria", slug }),
@@ -27,23 +34,32 @@ const cargarCategoria = cache(async (slug: string) => {
     (a, b) => (a.ordenPorCategoria?.[slug] ?? Infinity) - (b.ordenPorCategoria?.[slug] ?? Infinity),
   );
   const banners = bannersActivos.filter((b) => b.ubicaciones && b.ubicaciones.includes(slug) && b.activo);
-  return { category, products, banners };
+  return { category, products, banners, subcategorias, madre };
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categoria } = await params;
-  const { category } = await cargarCategoria(categoria);
+  const { category, madre } = await cargarCategoria(categoria);
   if (!category) return { title: "Categoría no encontrada" };
+  const titulo = madre ? `${category.nombre} · ${madre.nombre}` : category.nombre;
   const descripcion = category.descripcion || `Compra ${category.nombre} en Janku, tienda online en Huancayo.`;
   return {
-    title: category.nombre,
+    title: titulo,
     description: descripcion,
-    openGraph: { title: category.nombre, description: descripcion, type: "website" },
+    openGraph: { title: titulo, description: descripcion, type: "website" },
   };
 }
 
 export default async function CategoryPage({ params }: Props) {
   const { categoria } = await params;
-  const { category, products, banners } = await cargarCategoria(categoria);
-  return <CategoriaClient category={category} products={products} banners={banners} />;
+  const { category, products, banners, subcategorias, madre } = await cargarCategoria(categoria);
+  return (
+    <CategoriaClient
+      category={category}
+      products={products}
+      banners={banners}
+      subcategorias={subcategorias}
+      madre={madre}
+    />
+  );
 }

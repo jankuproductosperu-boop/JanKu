@@ -6,9 +6,11 @@ import { extractCodigoUrl } from "@/lib/productUrl";
 import { esNovedad } from "@/lib/novedades";
 import { estadoDeStock } from "@/lib/stock";
 import { stockTotal, tieneVariantes } from "@/lib/variantes";
+import { slugsDeCategoria } from "@/lib/categorias";
 import Product from "@/models/Product";
 import StockMovement from "@/models/StockMovement";
 import { ajustarStock, asegurarColeccionMovimientos } from "@/server/services/inventory.service";
+import { listarCategorias } from "@/server/services/category.service";
 import type {
   ProductoActualizar,
   ProductoCrear,
@@ -92,9 +94,12 @@ export async function listarProductosPublicosFiltrados(f: FiltroCatalogo): Promi
       const buscados = new Set(f.ids);
       return todos.filter((p) => buscados.has(p._id));
     }
-    case "categoria":
-      // Igual que la página de categoría: el producto lleva ese slug entre sus categorías.
-      return todos.filter((p) => p.categoriaSlugs?.includes(f.slug));
+    case "categoria": {
+      // Igual que la página de categoría: el producto lleva ese slug entre sus categorías. Desde la fase 25
+      // (D-88) la madre reúne también los de sus subcategorías activas; sin subcategorías es lo mismo que antes.
+      const slugs = new Set(slugsDeCategoria(f.slug, await listarCategorias()));
+      return todos.filter((p) => p.categoriaSlugs?.some((s) => slugs.has(s)) ?? false);
+    }
     case "home": {
       // Lo que usa el inicio: los marcados para el inicio y las novedades vigentes (D-58).
       const ahora = Date.now();

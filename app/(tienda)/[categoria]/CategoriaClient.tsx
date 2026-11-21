@@ -8,6 +8,7 @@ import type { Product, Banner, Category } from "@/types";
 
 type SortOption = "default" | "price-asc" | "price-desc" | "name-asc" | "name-desc";
 type StockFilter = "all" | "Disponible" | "Limitado";
+type Enlace = { slug: string; nombre: string };
 
 function BannerLarge({ banner }: { banner: Banner }) {
   const content = (
@@ -37,10 +38,16 @@ export default function CategoriaClient({
   category,
   products,
   banners,
+  subcategorias = [],
+  madre = null,
 }: {
   category: Category | null;
   products: Product[];
   banners: Banner[];
+  /** Fase 25 (D-88): hijas activas; vacío = la página se ve igual que antes. */
+  subcategorias?: Enlace[];
+  /** Si esta categoría es una subcategoría, su madre (para la ruta «Hogar › Cocina»). */
+  madre?: Enlace | null;
 }) {
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
@@ -95,11 +102,37 @@ export default function CategoriaClient({
       
       {/* Header de categoría con filtros */}
       <div className="mb-6">
+        {madre && (
+          <nav aria-label="Ruta" className="text-sm text-gray-500 mb-1">
+            <Link href={`/${madre.slug}`} className="hover:text-indigo-600 hover:underline">
+              {madre.nombre}
+            </Link>
+            <span className="mx-1.5" aria-hidden="true">›</span>
+            <span className="text-gray-700">{category.nombre}</span>
+          </nav>
+        )}
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{category.nombre}</h1>
         {category.descripcion && (
           <p className="text-gray-600 text-sm md:text-base mb-4">{category.descripcion}</p>
         )}
         
+        {subcategorias.length > 0 && (
+          <nav aria-label="Subcategorías" className="flex gap-2 overflow-x-auto pb-1 mb-4 -mx-1 px-1">
+            <span className="shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold bg-indigo-600 text-white" aria-current="page">
+              Todo
+            </span>
+            {subcategorias.map((s) => (
+              <Link
+                key={s.slug}
+                href={`/${s.slug}`}
+                className="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:border-indigo-600 hover:text-indigo-600 transition"
+              >
+                {s.nombre}
+              </Link>
+            ))}
+          </nav>
+        )}
+
         {/* Barra de filtros */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4">
           <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">

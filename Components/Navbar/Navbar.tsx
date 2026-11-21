@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, ShoppingCart, Heart, ChevronDown, Facebook, Instagram, Youtube, Music2, Truck, Plane, BadgePercent, User, Menu, X, LogOut, UserCircle } from "lucide-react";
 import { fetchWithCache } from "@/lib/cache";
+import { categoriasPrincipales } from "@/lib/categorias";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useUser } from "@/context/UserContext";
@@ -50,7 +51,8 @@ export default function Navbar() {
     const loadCategories = async () => {
       try {
         const data = await fetchWithCache<CategoriaConOrden[]>("/api/categories");
-        const activeCategories = (Array.isArray(data) ? data : [])
+        // Fase 25 (D-88): el menú lista solo las principales; las subcategorías salen en la página de su madre.
+        const activeCategories = categoriasPrincipales(Array.isArray(data) ? data : [])
           .filter((c: CategoriaConOrden) => c.activo)
           .sort((a: CategoriaConOrden, b: CategoriaConOrden) => a.orden - b.orden);
         setCategories(activeCategories);
