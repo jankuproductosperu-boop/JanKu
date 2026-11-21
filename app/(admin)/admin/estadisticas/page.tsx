@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, AlertTriangle, Clock, TrendingDown, Users } from "lucide-react";
+import { Activity, AlertTriangle, Clock, MapPin, TrendingDown, Users } from "lucide-react";
 import type { AnalyticsResumen, AnalyticsTiempoReal, KpiAnalytics, RangoAnalytics } from "@/types";
 import { formatearDuracion } from "@/lib/analytics";
 import Seccion from "@/app/(admin)/admin/_components/Seccion";
@@ -236,19 +236,155 @@ function SinConexion() {
   );
 }
 
-function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | null }) {
+/** En lugar del mapa: de qué ciudades llegan (para una tienda local dice más que un mapa mundial). */
+function TarjetaCiudades({ d }: { d: AnalyticsResumen }) {
+  const [principal, ...resto] = d.ciudades;
+  return (
+    <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm flex flex-col min-w-0">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--line)]">
+        <h2 className="font-semibold text-[16px]">Usuarios por ciudad</h2>
+        <span className="rounded-md bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-xs font-semibold">
+          {miles(d.kpis.usuarios.actual)} usuarios
+        </span>
+      </div>
+      {!principal ? (
+        <div className="p-5"><SinDatos /></div>
+      ) : (
+        <>
+          <div className="p-5 space-y-4 flex-1">
+            <div className="flex items-center gap-4">
+              <span className="w-14 h-14 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] grid place-items-center flex-none">
+                <MapPin className="w-6 h-6" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Ciudad principal</p>
+                <p className="text-xl font-semibold truncate">{principal.ciudad}</p>
+                <p className="text-sm text-[var(--muted)]">{principal.porcentaje.toFixed(1)} % de tus usuarios</p>
+              </div>
+            </div>
+            <ul className="space-y-2.5">
+              {d.ciudades.slice(0, 5).map((c, i) => (
+                <li key={c.ciudad} className="text-sm">
+                  <div className="flex justify-between mb-1">
+                    <span className="truncate pr-3">{c.ciudad}</span>
+                    <span className="text-[var(--muted)]">{c.porcentaje.toFixed(1)} %</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-[var(--bg)] overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, c.porcentaje)}%`, background: PALETA[i % PALETA.length] }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <table className="w-full text-sm border-t border-dashed border-[var(--line)]">
+            <thead className="text-left text-[var(--muted)] bg-[var(--bg)]">
+              <tr>
+                <th className="px-5 py-2.5 font-medium">Ciudad</th>
+                <th className="px-3 py-2.5 font-medium text-right">Usuarios</th>
+                <th className="px-5 py-2.5 font-medium text-right">Vistas</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[principal, ...resto].slice(0, 6).map((c) => (
+                <tr key={c.ciudad} className="border-t border-[var(--line)]">
+                  <td className="px-5 py-2 truncate max-w-[160px]">{c.ciudad}</td>
+                  <td className="px-3 py-2 text-right">{miles(c.usuarios)}</td>
+                  <td className="px-5 py-2 text-right">{miles(c.vistas)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Audiencia: visitas por día o usuarios por mes, con sus tres cifras arriba (como en el modelo). */
+function TarjetaAudiencia({ d }: { d: AnalyticsResumen }) {
+  const [vista, setVista] = useState<"dia" | "mes">("dia");
   const paginasPorSesion = d.kpis.sesiones.actual ? d.kpis.vistas.actual / d.kpis.sesiones.actual : 0;
   const mesActual = new Date().getMonth() + 1;
   const esteAnio = d.mensual.reduce((s, m) => s + m.esteAnio, 0);
   const mismoPeriodoPasado = d.mensual.filter((m) => m.mes <= mesActual).reduce((s, m) => s + m.anioPasado, 0);
   const mejorMes = d.mensual.reduce((a, b) => (b.esteAnio > a.esteAnio ? b : a), d.mensual[0]);
+  const cifras =
+    vista === "dia"
+      ? [
+          { valor: miles(d.kpis.vistas.actual), extra: <Flecha v={d.kpis.vistas.variacion} />, etiqueta: "Vistas de página" },
+          { valor: miles(d.kpis.usuarios.actual), extra: <Flecha v={d.kpis.usuarios.variacion} />, etiqueta: "Usuarios" },
+          { valor: paginasPorSesion.toFixed(2), extra: null, etiqueta: "Páginas por sesión" },
+        ]
+      : [
+          { valor: miles(esteAnio), extra: null, etiqueta: "Usuarios este año" },
+          {
+            valor: miles(mismoPeriodoPasado),
+            extra: <Flecha v={mismoPeriodoPasado ? Math.round(((esteAnio - mismoPeriodoPasado) / mismoPeriodoPasado) * 1000) / 10 : null} />,
+            etiqueta: "Mismo periodo del año pasado",
+          },
+          { valor: mejorMes?.esteAnio ? MESES[mejorMes.mes - 1] : "—", extra: null, etiqueta: "Mejor mes" },
+        ];
+
+  return (
+    <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm min-w-0">
+      <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--line)]">
+        <h2 className="font-semibold text-[16px]">Audiencia</h2>
+        <div className="flex gap-1.5" role="tablist" aria-label="Vista de la audiencia">
+          {(
+            [
+              { valor: "dia", etiqueta: "Por día" },
+              { valor: "mes", etiqueta: "Por mes" },
+            ] as const
+          ).map((o) => (
+            <button
+              key={o.valor}
+              role="tab"
+              aria-selected={vista === o.valor}
+              onClick={() => setVista(o.valor)}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                vista === o.valor ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95"
+              }`}
+            >
+              {o.etiqueta}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-3 border-b border-dashed border-[var(--line)] text-center">
+        {cifras.map((x, i) => (
+          <div key={x.etiqueta} className={`py-4 px-2 ${i ? "border-l border-dashed border-[var(--line)]" : ""}`}>
+            <div className="text-lg font-semibold inline-flex items-center gap-2">
+              {x.valor} {x.extra}
+            </div>
+            <div className="text-xs text-[var(--muted)]">{x.etiqueta}</div>
+          </div>
+        ))}
+      </div>
+      <div className="p-5">
+        {vista === "dia" ? (
+          <>
+            <div className="flex gap-4 text-xs text-[var(--muted)] mb-3">
+              <span className="flex items-center gap-1.5"><i className="w-3 h-0.5" style={{ background: PALETA[0] }} /> Vistas</span>
+              <span className="flex items-center gap-1.5"><i className="w-3 h-0.5" style={{ background: PALETA[3] }} /> Usuarios</span>
+            </div>
+            <GraficoDiario serie={d.serie} />
+          </>
+        ) : (
+          <GraficoMensual mensual={d.mensual} />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | null }) {
   const maxProducto = Math.max(1, ...d.masVistos.map((p) => p.vistas));
   const totalDispositivos = d.dispositivos.reduce((s, x) => s + x.usuarios, 0) || 1;
 
   return (
     <>
-      {/* Fila 1: aviso + indicadores · visitas por día · países */}
-      <div className="grid gap-5 xl:grid-cols-3">
+      {/* Fila 1: aviso + indicadores · ciudades (en lugar del mapa) · países */}
+      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-[1.5fr_1fr_0.9fr]">
         <div className="space-y-5 min-w-0">
           <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm overflow-hidden">
             <div className="flex items-start gap-2.5 px-5 py-3 bg-[var(--warn-soft)] text-[var(--warn)] text-sm">
@@ -287,29 +423,7 @@ function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | n
           </div>
         </div>
 
-        <Tarjeta titulo="Visitas por día">
-          <div className="flex gap-4 text-xs text-[var(--muted)] mb-3">
-            <span className="flex items-center gap-1.5"><i className="w-3 h-0.5" style={{ background: PALETA[0] }} /> Vistas</span>
-            <span className="flex items-center gap-1.5"><i className="w-3 h-0.5" style={{ background: PALETA[3] }} /> Usuarios</span>
-          </div>
-          <GraficoDiario serie={d.serie} />
-          <table className="mt-4 w-full text-sm">
-            <thead className="text-left text-[var(--muted)]">
-              <tr className="border-b border-[var(--line)]">
-                <th className="py-2 font-medium">Vistas</th>
-                <th className="py-2 font-medium">Páginas por sesión</th>
-                <th className="py-2 font-medium">Variación</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="py-2.5 font-semibold">{miles(d.kpis.vistas.actual)}</td>
-                <td className="py-2.5 font-semibold">{paginasPorSesion.toFixed(2)}</td>
-                <td className="py-2.5"><Flecha v={d.kpis.vistas.variacion} /></td>
-              </tr>
-            </tbody>
-          </table>
-        </Tarjeta>
+        <TarjetaCiudades d={d} />
 
         <Tarjeta titulo="Usuarios por país">
           {d.paises.length === 0 ? (
@@ -330,28 +444,9 @@ function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | n
         </Tarjeta>
       </div>
 
-      {/* Fila 2: usuarios por mes · productos más vistos */}
+      {/* Fila 2: audiencia (por día o por mes) · productos más vistos */}
       <div className="grid gap-5 xl:grid-cols-2">
-        <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm min-w-0">
-          <div className="px-5 py-4 border-b border-[var(--line)]">
-            <h2 className="font-semibold text-[16px]">Usuarios por mes</h2>
-          </div>
-          <div className="grid grid-cols-3 border-b border-dashed border-[var(--line)] text-center">
-            {[
-              { valor: miles(esteAnio), etiqueta: "Este año" },
-              { valor: <Flecha v={mismoPeriodoPasado ? Math.round(((esteAnio - mismoPeriodoPasado) / mismoPeriodoPasado) * 1000) / 10 : null} />, etiqueta: "Frente al año pasado" },
-              { valor: mejorMes?.esteAnio ? MESES[mejorMes.mes - 1] : "—", etiqueta: "Mejor mes" },
-            ].map((x, i) => (
-              <div key={x.etiqueta} className={`py-4 ${i ? "border-l border-dashed border-[var(--line)]" : ""}`}>
-                <div className="text-lg font-semibold">{x.valor}</div>
-                <div className="text-xs text-[var(--muted)]">{x.etiqueta}</div>
-              </div>
-            ))}
-          </div>
-          <div className="p-5">
-            <GraficoMensual mensual={d.mensual} />
-          </div>
-        </section>
+        <TarjetaAudiencia d={d} />
 
         <Tarjeta titulo="Productos más vistos" extra={<span className="text-xs text-[var(--muted)]">Vistas de la ficha</span>}>
           {d.masVistos.length === 0 ? (

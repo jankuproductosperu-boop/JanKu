@@ -185,11 +185,18 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
           dateRanges: [{ startDate: "today", endDate: "today" }],
           metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
         },
+        {
+          dateRanges: [actual],
+          dimensions: [{ name: "city" }],
+          metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+          limit: 8,
+        },
       ],
     }),
   ]);
   const [rKpis, rSerie, rPaginas, rPaises, rDispositivos] = informes(respuestaA);
-  const [rFuentes, rMensual, rHoy] = informes(respuestaB);
+  const [rFuentes, rMensual, rHoy, rCiudades] = informes(respuestaB);
 
   // 1. Indicadores del periodo frente al anterior.
   const filaDe = (nombre: string) => (rKpis?.rows ?? []).find((f) => periodoDe(f) === nombre);
@@ -246,6 +253,17 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
     return { codigo: /^[A-Z]{2}$/.test(codigo) ? codigo : "", usuarios: met(f) };
   });
 
+  // 4b. Ciudades (en lugar de un mapa: para una tienda local dice más).
+  const ciudades = (rCiudades?.rows ?? []).map((f) => {
+    const nombre = dim(f);
+    return {
+      ciudad: !nombre || nombre === "(not set)" ? "Sin identificar" : nombre,
+      usuarios: met(f, 0),
+      vistas: met(f, 1),
+      porcentaje: totalUsuarios ? Math.round((met(f, 0) / totalUsuarios) * 1000) / 10 : 0,
+    };
+  });
+
   // 5. Dispositivos con su variación.
   const porDispositivo = new Map<string, { actual: number; anterior: number }>();
   for (const f of rDispositivos?.rows ?? []) {
@@ -280,6 +298,7 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
     masVistos,
     paginas,
     paises,
+    ciudades,
     fuentes,
     dispositivos,
     actualizado: new Date().toISOString(),

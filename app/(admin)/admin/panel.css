@@ -39,19 +39,19 @@
 }
 
 .panel[data-theme="dark"] {
-  --bg: #1a1d21;
-  --surface: #212529;
+  --bg: #141619;
+  --surface: #1c1f23;
   --ink: #ced4da;
   --muted: #878a99;
-  --line: #32383e;
+  --line: #2a2e33;
   --navy: #14173b;
   --navy-ink: #eef0ff;
   --navy-mute: #a6abd8;
   --accent: #5d7fe6;
-  --accent-soft: #223056;
-  --navy-soft: #2a2f34;
+  --accent-soft: #1d2847;
+  --navy-soft: #24282d;
   --navy-tint: #9fb4ff;
-  --field: #262a2f;
+  --field: #202327;
   --sombra: rgb(0 0 0 / 0.45);
   --ok: #4fd1a1;
   --ok-soft: #173b2e;
@@ -59,14 +59,14 @@
   --warn-soft: #44340f;
   --bad: #f8a5a0;
   --bad-soft: #4a1f1d;
-  --sb-bg: #212529;
+  --sb-bg: #1c1f23;
   --sb-ink: #ced4da;
   --sb-mute: #878a99;
   --sb-hover: rgb(255 255 255 / 0.05);
   --sb-active-bg: rgb(93 127 230 / 0.18);
   --sb-active-ink: #ffffff;
   --sb-active-icon: #9fb4ff;
-  --sb-borde: #32383e;
+  --sb-borde: #2a2e33;
 }
 
 /* Fase 23a: la escala "indigo" de Tailwind se redefine como azul Janku dentro del panel.

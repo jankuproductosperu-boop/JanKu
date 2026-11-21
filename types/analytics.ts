@@ -27,6 +27,8 @@ export type AnalyticsResumen = {
   paginas: { ruta: string; vistas: number; usuarios: number; porcentaje: number }[];
   /** `codigo`: país ISO de 2 letras ("PE"), o "" si Google no lo sabe. */
   paises: { codigo: string; usuarios: number }[];
+  /** Ciudades con más usuarios; `porcentaje` sobre los usuarios del periodo (0–100). */
+  ciudades: { ciudad: string; usuarios: number; vistas: number; porcentaje: number }[];
   /** Las 4 fuentes principales y "Otros"; `porcentaje` de las sesiones. */
   fuentes: { fuente: string; sesiones: number; porcentaje: number }[];
   dispositivos: { tipo: string; usuarios: number; variacion: number | null }[];

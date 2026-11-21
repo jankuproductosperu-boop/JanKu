@@ -120,7 +120,7 @@ export default function Personalizador({ abierto, onCerrar }: { abierto: boolean
 
   const temas: Opcion<Tema>[] = [
     { valor: "claro", etiqueta: "Claro", muestra: <Mini /> },
-    { valor: "oscuro", etiqueta: "Oscuro", muestra: <Mini barra="#212529" fondo="#1a1d21" tarjeta="#2a2f34" /> },
+    { valor: "oscuro", etiqueta: "Oscuro", muestra: <Mini barra="#1c1f23" fondo="#141619" tarjeta="#24282d" /> },
   ];
   const tamanos: Opcion<TamanoBarra>[] = [
     { valor: "normal", etiqueta: "Normal", muestra: <Mini /> },
