@@ -162,8 +162,8 @@ function BarrasPaises({ filas }: { filas: { etiqueta: string; clave: string; val
         style={{ gridTemplateRows: `repeat(${filas.length}, minmax(46px, 72px))` }}
       >
         {filas.map((f, i) => (
-          <div key={f.clave} className="grid grid-cols-[7.5rem_1fr] items-center min-h-0 h-full">
-            <span className="pr-3 text-right text-[13px] text-[var(--muted)] truncate" title={f.etiqueta}>
+          <div key={f.clave} className="grid grid-cols-[6.5rem_1fr] items-center min-h-0 h-full">
+            <span className="pr-2.5 text-right text-[11.5px] text-[var(--muted)] truncate" title={f.etiqueta}>
               {f.etiqueta}
             </span>
             <div className={`relative h-full border-l ${eje} pr-12 flex items-center`}>
@@ -172,20 +172,20 @@ function BarrasPaises({ filas }: { filas: { etiqueta: string; clave: string; val
                 style={{ width: pct(f.valor), minWidth: 3, background: i === 0 ? "#f06548" : "#299cdb" }}
                 title={`${f.etiqueta}: ${miles(f.valor)} usuarios`}
               />
-              <span className="ml-2.5 text-[13px] text-[var(--ink)] whitespace-nowrap">{miles(f.valor)}</span>
+              <span className="ml-2 text-[11.5px] text-[var(--ink)] whitespace-nowrap">{miles(f.valor)}</span>
             </div>
           </div>
         ))}
       </div>
       {/* Eje inferior con sus marcas */}
-      <div className="grid grid-cols-[7.5rem_1fr]">
+      <div className="grid grid-cols-[6.5rem_1fr]">
         <span />
         <div className={`border-t ${eje} pr-12`}>
           <div className="relative h-7">
             {marcas.map((v) => (
               <span key={v} className="absolute top-0 -translate-x-1/2 flex flex-col items-center" style={{ left: pct(v) }}>
                 <span className={`h-1.5 border-l ${eje}`} />
-                <span className="text-xs text-[var(--muted)] mt-0.5">{miles(v)}</span>
+                <span className="text-[11px] text-[var(--muted)] mt-0.5">{miles(v)}</span>
               </span>
             ))}
           </div>
