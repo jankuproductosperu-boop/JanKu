@@ -65,11 +65,14 @@ function Tarjeta({
   extra,
   children,
   className = "",
+  cuerpo = "",
 }: {
   titulo: string;
   extra?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /** Clases extra del cuerpo (por ejemplo, para que un gráfico llene el alto). */
+  cuerpo?: string;
 }) {
   return (
     <section className={`rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm flex flex-col min-w-0 ${className}`}>
@@ -77,7 +80,7 @@ function Tarjeta({
         <h2 className="font-semibold text-[16px]">{titulo}</h2>
         {extra}
       </div>
-      <div className="p-5 flex-1">{children}</div>
+      <div className={`p-5 flex-1 ${cuerpo}`}>{children}</div>
     </section>
   );
 }
@@ -139,54 +142,56 @@ function pasoDelEje(max: number): number {
 }
 
 /**
- * Barras horizontales como el modelo de referencia: eje a la izquierda con los nombres, barras gruesas
- * con su cifra al final y eje inferior con marcas. El alto crece con el número de filas.
+ * Barras horizontales como el modelo de referencia: nombres a la izquierda contra el eje, barras gruesas
+ * con su cifra al final y eje inferior con marcas. Hecho con HTML (no SVG) para que llene el alto de la
+ * tarjeta sin encogerse: cada fila mide entre 46 y 72 px y la barra ocupa el 62 % de su fila.
  * La fila con más usuarios se resalta en coral.
  */
 function BarrasPaises({ filas }: { filas: { etiqueta: string; clave: string; valor: number }[] }) {
-  const W = 420;
-  const izq = 112; // espacio para los nombres
-  const der = 44; // espacio para la cifra al final de la barra más larga
-  const alto = 30; // grosor de cada barra
-  const hueco = 16; // espacio entre barras
-  const arriba = 6;
-  const ejeAlto = 34;
   const max = Math.max(1, ...filas.map((f) => f.valor));
   const paso = pasoDelEje(max);
   const tope = Math.ceil(max / paso) * paso;
   const marcas = Array.from({ length: Math.round(tope / paso) + 1 }, (_, i) => i * paso);
-  const ancho = W - izq - der;
-  const H = arriba + filas.length * (alto + hueco) - hueco + ejeAlto;
-  const x = (v: number) => izq + (v / tope) * ancho;
-  const yBase = H - ejeAlto + 8;
+  const pct = (v: number) => `${(v / tope) * 100}%`;
+  const eje = "border-[color-mix(in_srgb,var(--muted)_45%,transparent)]";
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Usuarios por país">
-      {filas.map((f, i) => {
-        const y = arriba + i * (alto + hueco);
-        const destacado = i === 0;
-        return (
-          <g key={f.clave}>
-            <text x={izq - 10} y={y + alto / 2 + 4} textAnchor="end" fontSize="12" fill="var(--muted)">
-              {f.etiqueta.length > 16 ? `${f.etiqueta.slice(0, 15)}…` : f.etiqueta}
-            </text>
-            <rect x={izq} y={y} width={Math.max(2, x(f.valor) - izq)} height={alto} rx="2" fill={destacado ? "#f06548" : "#299cdb"}>
-              <title>{`${f.etiqueta}: ${miles(f.valor)} usuarios`}</title>
-            </rect>
-            <text x={x(f.valor) + 10} y={y + alto / 2 + 4} fontSize="12" fill="var(--ink)">{miles(f.valor)}</text>
-          </g>
-        );
-      })}
-      {/* Ejes */}
-      <line x1={izq} x2={izq} y1={arriba - 6} y2={yBase} stroke="var(--muted)" strokeOpacity="0.5" />
-      <line x1={izq} x2={izq + ancho} y1={yBase} y2={yBase} stroke="var(--muted)" strokeOpacity="0.5" />
-      {marcas.map((v) => (
-        <g key={v}>
-          <line x1={x(v)} x2={x(v)} y1={yBase} y2={yBase + 5} stroke="var(--muted)" strokeOpacity="0.5" />
-          <text x={x(v)} y={yBase + 20} textAnchor="middle" fontSize="12" fill="var(--muted)">{miles(v)}</text>
-        </g>
-      ))}
-    </svg>
+    <div className="flex flex-col h-full min-h-[360px]" role="img" aria-label="Usuarios por país">
+      <div
+        className="flex-1 grid content-center"
+        style={{ gridTemplateRows: `repeat(${filas.length}, minmax(46px, 72px))` }}
+      >
+        {filas.map((f, i) => (
+          <div key={f.clave} className="grid grid-cols-[7.5rem_1fr] items-center min-h-0 h-full">
+            <span className="pr-3 text-right text-[13px] text-[var(--muted)] truncate" title={f.etiqueta}>
+              {f.etiqueta}
+            </span>
+            <div className={`relative h-full border-l ${eje} pr-12 flex items-center`}>
+              <div
+                className="h-[62%] max-h-[36px] min-h-[24px] rounded-r-[3px]"
+                style={{ width: pct(f.valor), minWidth: 3, background: i === 0 ? "#f06548" : "#299cdb" }}
+                title={`${f.etiqueta}: ${miles(f.valor)} usuarios`}
+              />
+              <span className="ml-2.5 text-[13px] text-[var(--ink)] whitespace-nowrap">{miles(f.valor)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Eje inferior con sus marcas */}
+      <div className="grid grid-cols-[7.5rem_1fr]">
+        <span />
+        <div className={`border-t ${eje} pr-12`}>
+          <div className="relative h-7">
+            {marcas.map((v) => (
+              <span key={v} className="absolute top-0 -translate-x-1/2 flex flex-col items-center" style={{ left: pct(v) }}>
+                <span className={`h-1.5 border-l ${eje}`} />
+                <span className="text-xs text-[var(--muted)] mt-0.5">{miles(v)}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -467,7 +472,7 @@ function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | n
 
         <TarjetaCiudades d={d} />
 
-        <Tarjeta titulo="Usuarios por país">
+        <Tarjeta titulo="Usuarios por país" cuerpo="flex flex-col">
           {d.paises.length === 0 ? (
             <SinDatos />
           ) : (
