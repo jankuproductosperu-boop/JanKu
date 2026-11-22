@@ -2,6 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { imagenCloudinary, srcSetCloudinary } from '@/lib/imagenCloudinary';
+
+// Fase 27b (D-92): en el celular la imagen ocupa el ancho menos el relleno; desde md, media fila de 6xl.
+const ANCHOS_BENEFICIOS = [400, 600, 800, 1100] as const;
+const SIZES_BENEFICIOS = '(max-width: 767px) calc(100vw - 48px), 524px';
 
 export default function IntroJanKuSection({ 
   marca = 'JanKu',
@@ -82,7 +87,9 @@ export default function IntroJanKuSection({
           <div className="relative rounded-3xl overflow-hidden">
             {imagenUrl ? (
               <img
-                src={imagenUrl}
+                src={imagenCloudinary(imagenUrl, 1100)}
+                srcSet={srcSetCloudinary(imagenUrl, ANCHOS_BENEFICIOS)}
+                sizes={SIZES_BENEFICIOS}
                 alt={`${marca} - Imagen promocional`}
                 className="w-full h-auto rounded-3xl"
               />

@@ -11,6 +11,11 @@ import {
   Brush,
   Glasses, Box, Pencil
 } from "lucide-react";
+import { imagenCloudinary, srcSetCloudinary } from "@/lib/imagenCloudinary";
+
+// Fase 27b (D-92): el carrusel ocupa el 90 % del ancho, hasta 1000 px; cada imagen se pide a ese tamaño.
+const ANCHOS_PROMO = [480, 720, 960, 1280] as const;
+const SIZES_PROMO = "(max-width: 1111px) 90vw, 1000px";
 
 export default function CarruselCategorias() {
   const carruselRef = useRef<HTMLDivElement | null>(null);
@@ -110,7 +115,9 @@ React.useEffect(() => {
             {promoImages.map((img, i) => (
               <img
                 key={i}
-                src={img}
+                src={imagenCloudinary(img, 1280)}
+                srcSet={srcSetCloudinary(img, ANCHOS_PROMO)}
+                sizes={SIZES_PROMO}
                 alt={`promo-${i}`}
                 className="w-full h-full object-contain shrink-0"
                 fetchPriority={i === 0 ? "high" : "low"}
@@ -131,6 +138,7 @@ React.useEffect(() => {
     {/* BOTÓN IZQUIERDO — pegado al carrusel */}
     <button
       onClick={() => mover("left")}
+      aria-label="Categorías anteriores"
       className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white p-3 rounded-full backdrop-blur-md transition">
       <ChevronLeft />
     </button>
@@ -160,6 +168,7 @@ React.useEffect(() => {
     {/* BOTÓN DERECHO — pegado al carrusel */}
     <button
       onClick={() => mover("right")}
+      aria-label="Más categorías"
       className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white p-3 rounded-full backdrop-blur-md transition">
       <ChevronRight />
     </button>

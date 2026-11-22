@@ -1,7 +1,46 @@
-import Image from "next/image";
 import Link from "next/link";
+import { preload } from "react-dom";
 import ProductCard from "@/Components/ProductCard/ProductCard";
+import { imagenCloudinary, srcSetCloudinary } from "@/lib/imagenCloudinary";
 import type { Product, Banner } from "@/types";
+
+// Fase 27b (D-92): cada banner se pide a Cloudinary al ancho en que se ve. Es una <img> con srcSet
+// porque next/image, con unoptimized en next.config, no arma srcSet. Mismo marcado que daba
+// next/image con `fill` y `priority`: posición absoluta y precarga.
+const ESTILO_FILL = {
+  position: "absolute",
+  height: "100%",
+  width: "100%",
+  left: 0,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  color: "transparent",
+} as const;
+
+function ImagenBanner({ banner, anchos, sizes }: { banner: Banner; anchos: readonly number[]; sizes: string }) {
+  const src = imagenCloudinary(banner.imagenUrl, anchos[anchos.length - 1]);
+  const srcSet = srcSetCloudinary(banner.imagenUrl, anchos);
+  preload(src, { as: "image", imageSrcSet: srcSet, imageSizes: sizes });
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- D-92
+    <img
+      src={src}
+      srcSet={srcSet}
+      sizes={sizes}
+      alt={banner.titulo}
+      decoding="async"
+      className="object-contain"
+      style={ESTILO_FILL}
+    />
+  );
+}
+
+// Dos por fila en toda pantalla, dentro de un contenedor de 1000 px como máximo.
+const ANCHOS_BANNER_MITAD = [320, 480, 640, 800] as const;
+const SIZES_BANNER_MITAD = "(max-width: 1000px) 50vw, 500px";
+const ANCHOS_BANNER_ANCHO = [480, 640, 828, 1080, 1280, 1600, 2000] as const;
+const SIZES_BANNER_ANCHO = "(max-width: 1000px) 100vw, 1000px";
 
 function BannerBox({ banner, placeholder }: { banner?: Banner; placeholder?: string }) {
   if (!banner) {
@@ -16,14 +55,7 @@ function BannerBox({ banner, placeholder }: { banner?: Banner; placeholder?: str
 
   const content = (
     <div className="w-full aspect-[16/9] rounded-md overflow-hidden relative transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">
-      <Image
-        src={banner.imagenUrl}
-        alt={banner.titulo}
-        fill
-        className="object-contain"
-        priority
-        sizes="(max-width: 768px) 100vw, 50vw"
-      />
+      <ImagenBanner banner={banner} anchos={ANCHOS_BANNER_MITAD} sizes={SIZES_BANNER_MITAD} />
     </div>
   );
 
@@ -45,14 +77,7 @@ function BannerFullWidth({ banner }: { banner?: Banner }) {
 
   return (
     <div className="w-full aspect-[16/5] rounded-md overflow-hidden relative">
-      <Image
-        src={banner.imagenUrl}
-        alt={banner.titulo}
-        fill
-        className="object-contain"
-        sizes="(max-width: 768px) 100vw, 50vw"
-        priority
-      />
+      <ImagenBanner banner={banner} anchos={ANCHOS_BANNER_ANCHO} sizes={SIZES_BANNER_ANCHO} />
     </div>
   );
 }

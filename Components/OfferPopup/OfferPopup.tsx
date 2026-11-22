@@ -1,13 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { preload } from "react-dom";
 import { X } from "lucide-react";
+import { imagenCloudinary, srcSetCloudinary } from "@/lib/imagenCloudinary";
 import { debeMostrarPopup, type CierrePopup } from "@/lib/popup";
 import type { PopupPublico } from "@/types";
 
 const CLAVE_CIERRE = "popup-oferta-cierre";
+
+// Fase 27b (D-92): la imagen se pide al tamaño en que se ve (420 px; más en pantallas densas).
+const ANCHOS_POPUP = [420, 680, 840] as const;
+const SIZES_POPUP = "(max-width: 460px) 90vw, 420px";
 
 function leerCierre(): CierrePopup | null {
   try {
@@ -39,6 +44,13 @@ export default function OfferPopup() {
       .then((p: PopupPublico | null) => {
         if (!activo || !p || !p.imagenUrl || !p.enlace) return;
         if (!debeMostrarPopup(leerCierre(), p.version)) return;
+        // La imagen empieza a bajar ya, durante la pausa; el popup sale a la misma hora, pero completo.
+        preload(imagenCloudinary(p.imagenUrl, 840), {
+          as: "image",
+          imageSrcSet: srcSetCloudinary(p.imagenUrl, ANCHOS_POPUP),
+          imageSizes: SIZES_POPUP,
+          fetchPriority: "high",
+        });
         temporizador = setTimeout(() => { if (activo) setPopup(p); }, 800);
       })
       .catch(() => { /* sin popup: la tienda carga normal */ });
@@ -97,14 +109,18 @@ export default function OfferPopup() {
         >
           <X className="h-4 w-4" />
         </button>
-        <Image
-          src={popup.imagenUrl}
+        {/* eslint-disable-next-line @next/next/no-img-element -- D-92: srcSet de Cloudinary; next/image lo quita con unoptimized */}
+        <img
+          src={imagenCloudinary(popup.imagenUrl, 840)}
+          srcSet={srcSetCloudinary(popup.imagenUrl, ANCHOS_POPUP)}
+          sizes={SIZES_POPUP}
           alt="Oferta"
           width={840}
           height={840}
-          sizes="(max-width: 460px) 90vw, 420px"
+          decoding="async"
+          fetchPriority="high"
           className="h-auto w-full"
-          priority
+          style={{ color: "transparent" }}
         />
         <div className="p-3">
           {externo ? (
