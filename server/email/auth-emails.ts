@@ -101,3 +101,45 @@ export async function enviarEmailBienvenida(email: string, nombre: string) {
     `,
   });
 }
+// ── Fase 26b: aviso de inicio de sesión en el panel desde una IP nueva ─────────
+
+const ROL_VISIBLE: Record<string, string> = { superadmin: "Superadministrador", gestor: "Gestor", ventas: "Ventas" };
+
+/**
+ * `esPropio`: va al propio administrador; si no, a un superadmin que vigila la cuenta de otro.
+ * La IP solo viaja en el correo: en la base se guarda su HMAC.
+ */
+export async function enviarAvisoAccesoNuevo(
+  email: string,
+  d: { nombre: string; username: string; rol: string; ip: string; fecha: Date; esPropio: boolean },
+) {
+  const fecha = d.fecha.toLocaleString("es-PE", { timeZone: "America/Lima", dateStyle: "long", timeStyle: "short" });
+  const quien = d.esPropio
+    ? "Se inició sesión en tu cuenta del panel desde una IP que no habías usado antes."
+    : `Se inició sesión en la cuenta de <strong>${escapeHtml(d.nombre)}</strong> (${escapeHtml(d.username)}, ${escapeHtml(ROL_VISIBLE[d.rol] ?? d.rol)}) desde una IP que no había usado antes.`;
+  const queHacer = d.esPropio
+    ? "Si fuiste tú, no tienes que hacer nada. Si no fuiste tú, cambia tu contraseña en el panel y avisa al superadministrador."
+    : "Si no lo esperabas, desactiva esa cuenta o cámbiale la contraseña en Usuarios: eso cierra sus sesiones.";
+
+  await sendEmail({
+    to: email,
+    subject: "Nuevo inicio de sesión en el panel de Janku",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: #2C2C6C; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0;">JANKU</h1>
+        </div>
+        <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
+          <h2 style="color: #2C2C6C;">Nuevo inicio de sesión 🔐</h2>
+          <p style="color: #555;">${quien}</p>
+          <table style="color: #555; font-size: 14px; margin: 20px 0;">
+            <tr><td style="padding: 4px 12px 4px 0;"><strong>Fecha</strong></td><td>${escapeHtml(fecha)}</td></tr>
+            <tr><td style="padding: 4px 12px 4px 0;"><strong>IP</strong></td><td>${escapeHtml(d.ip)}</td></tr>
+          </table>
+          <p style="color: #555;">${queHacer}</p>
+          <p style="color: #999; font-size: 13px;">Este aviso se envía una sola vez por cada IP nueva.</p>
+        </div>
+      </div>
+    `,
+  });
+}

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ClipboardList, Package, FolderTree, Archive, ListOrdered,
   Tag, Ticket, Sparkles, Image as ImageIcon, MessageSquare, MapPin, Users, BookOpen, ExternalLink, BarChart3,
+  ShieldCheck,
 } from "lucide-react";
 import type { Permiso } from "@/types";
 
@@ -26,6 +27,8 @@ const MENU: Item[] = [
   { href: "/admin/banners", etiqueta: "Banners", permiso: "catalogo.editar", icono: ImageIcon },
   { href: "/admin/popup", etiqueta: "Popup de oferta", permiso: "catalogo.editar", icono: MessageSquare },
   { grupo: "Equipo", href: "/admin/usuarios", etiqueta: "Usuarios", permiso: "admins.gestionar", icono: Users },
+  // Fase 26b: la verificación en dos pasos de la cuenta propia; la ve cualquier rol.
+  { href: "/admin/seguridad", etiqueta: "Seguridad", icono: ShieldCheck },
 ];
 
 export default function AdminSidebar({

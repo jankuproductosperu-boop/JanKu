@@ -4,7 +4,7 @@ import { connectDB } from "@/server/db";
 import AdminUser from "@/models/AdminUser";
 import User from "@/models/User";
 import { COOKIE_ADMIN, COOKIE_USER, leerCookie, verificarAdmin, verificarUser } from "@/server/auth/session";
-import { noAutorizado, prohibido } from "@/server/http/errors";
+import { AppError, noAutorizado, prohibido } from "@/server/http/errors";
 import { log } from "@/server/logger";
 import { ROLES, permisosDe, tienePermiso } from "@/lib/permissions";
 import type { AdminRol, AdminSession, Permiso, SessionUser } from "@/types";
@@ -16,6 +16,7 @@ type AdminDoc = {
   activo?: boolean;
   tokenVersion?: number;
   rol?: unknown; // el campo llega en la fase 09
+  totp?: { activo?: boolean; secretoCifrado?: string } | null; // fase 26b
 };
 
 type UserDoc = {
@@ -31,8 +32,22 @@ function esRol(x: unknown): x is AdminRol {
   return typeof x === "string" && (ROLES as readonly string[]).includes(x);
 }
 
-/** Lanza noAutorizado() si no hay sesión válida; prohibido() si falta el permiso. */
-export async function requireAdmin(permiso?: Permiso): Promise<AdminSession> {
+export type OpcionesAdmin = {
+  /**
+   * Fase 26b: deja pasar a un superadmin que aún no activó la 2FA. Solo para /api/auth/check y
+   * /api/admin/seguridad/**, que es donde la activa.
+   */
+  permitirSin2fa?: boolean;
+};
+
+/** Código del 403 cuando la 2FA es obligatoria y falta. El panel lo usa para llevar a Seguridad. */
+export const CODIGO_2FA_REQUERIDA = "2FA_REQUERIDA";
+
+/**
+ * Lanza noAutorizado() si no hay sesión válida; prohibido() si falta el permiso. Fase 26b: un
+ * superadmin sin 2FA activa recibe 403 2FA_REQUERIDA salvo con `permitirSin2fa`.
+ */
+export async function requireAdmin(permiso?: Permiso, opciones: OpcionesAdmin = {}): Promise<AdminSession> {
   const token = await leerCookie(COOKIE_ADMIN);
   if (!token) throw noAutorizado();
 
@@ -41,7 +56,7 @@ export async function requireAdmin(permiso?: Permiso): Promise<AdminSession> {
 
   await connectDB();
   const doc = await AdminUser.findById(claims.id)
-    .select("username nombre rol activo tokenVersion")
+    .select("username nombre rol activo tokenVersion totp.activo totp.secretoCifrado")
     .lean<AdminDoc>();
 
   if (!doc || doc.activo === false || (doc.tokenVersion ?? 0) !== claims.tv) throw noAutorizado();
@@ -58,9 +73,15 @@ export async function requireAdmin(permiso?: Permiso): Promise<AdminSession> {
     throw noAutorizado();
   }
 
+  // Misma regla que totpActiva() en admin-user.service: marca activa Y secreto guardado.
+  const totpActivo = doc.totp?.activo === true && !!doc.totp.secretoCifrado;
+  if (rol === "superadmin" && !totpActivo && !opciones.permitirSin2fa) {
+    throw new AppError(403, "Activa la verificación en dos pasos para usar el panel", CODIGO_2FA_REQUERIDA);
+  }
+
   if (permiso && !tienePermiso(rol, permiso)) throw prohibido();
 
-  return { id: claims.id, username: doc.username, nombre: doc.nombre, rol, permisos: permisosDe(rol) };
+  return { id: claims.id, username: doc.username, nombre: doc.nombre, rol, permisos: permisosDe(rol), totpActivo };
 }
 
 /**

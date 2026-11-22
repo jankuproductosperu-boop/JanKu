@@ -10,10 +10,13 @@ export function useAdminSession(): {
   admin: AdminSesionVisible | null;
   cargando: boolean;
   puede: (p: Permiso) => boolean;
+  /** Fase 26b: superadmin sin verificación en dos pasos; el panel solo deja abrir Seguridad. */
+  activar2fa: boolean;
 } {
   const router = useRouter();
   const [admin, setAdmin] = useState<AdminSesionVisible | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [activar2fa, setActivar2fa] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -25,7 +28,10 @@ export function useAdminSession(): {
           return;
         }
         const data = await res.json();
-        if (activo) setAdmin(data.admin ?? null);
+        if (activo) {
+          setAdmin(data.admin ?? null);
+          setActivar2fa(data.activar2fa === true);
+        }
       } catch {
         router.push("/login-admin");
       } finally {
@@ -40,5 +46,5 @@ export function useAdminSession(): {
 
   const puede = (p: Permiso) => !!admin && admin.permisos.includes(p);
 
-  return { admin, cargando, puede };
+  return { admin, cargando, puede, activar2fa };
 }

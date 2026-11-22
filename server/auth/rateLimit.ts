@@ -2,7 +2,17 @@ import "server-only";
 import { connectDB } from "@/server/db";
 import RateLimit from "@/models/RateLimit";
 
-export type Politica = "login-admin" | "login-user" | "register" | "resend-verif" | "forgot" | "order" | "coupon" | "reclamo";
+export type Politica =
+  | "login-admin"
+  | "login-2fa"
+  | "seguridad"
+  | "login-user"
+  | "register"
+  | "resend-verif"
+  | "forgot"
+  | "order"
+  | "coupon"
+  | "reclamo";
 export type TipoClave = "ip" | "email" | "user";
 
 type Regla = { max: number; ventanaMs: number; bloqueoMs?: number };
@@ -11,6 +21,10 @@ const POLITICAS: Record<string, Regla> = {
   "login-admin:ip": { max: 3, ventanaMs: 3_600_000, bloqueoMs: 900_000 },
   // Por cuenta (aprobado por el dueño el 2026-11-13): un acierto de OTRA cuenta no lo reinicia.
   "login-admin:user": { max: 5, ventanaMs: 3_600_000, bloqueoMs: 900_000 },
+  // Fase 26b: segundo paso del login (código o código de rescate) y cambios en /admin/seguridad,
+  // que piden contraseña y código. 5 fallos en 15 min bloquean 15 min esa cuenta.
+  "login-2fa:user": { max: 5, ventanaMs: 900_000, bloqueoMs: 900_000 },
+  "seguridad:user": { max: 5, ventanaMs: 900_000, bloqueoMs: 900_000 },
   "login-user:ip": { max: 5, ventanaMs: 3_600_000, bloqueoMs: 900_000 },
   "register:ip": { max: 3, ventanaMs: 3_600_000 },
   "resend-verif:email": { max: 3, ventanaMs: 3_600_000 },

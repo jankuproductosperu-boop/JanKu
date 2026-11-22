@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import AdminSidebar from "@/app/(admin)/admin/_components/AdminSidebar";
 import AdminTopbar from "@/app/(admin)/admin/_components/AdminTopbar";
 import Personalizador, { BotonPersonalizador } from "@/app/(admin)/admin/_components/Personalizador";
@@ -7,10 +8,22 @@ import { useTema } from "@/app/(admin)/admin/_components/useTema";
 import { usePreferenciasPanel } from "@/app/(admin)/admin/_components/usePreferenciasPanel";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
 
+const RUTA_SEGURIDAD = "/admin/seguridad";
+
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [personalizando, setPersonalizando] = useState(false);
-  const { admin, cargando, puede } = useAdminSession();
+  const { admin, cargando, puede: puedeSesion, activar2fa } = useAdminSession();
+  const pathname = usePathname();
+  const router = useRouter();
+  // Fase 26b: el superadmin sin 2FA solo puede estar en Seguridad (el servidor responde 403 en lo demás).
+  const enSeguridad = pathname === RUTA_SEGURIDAD;
+  const bloqueadoPor2fa = activar2fa && !enSeguridad;
+  const puede = activar2fa ? () => false : puedeSesion;
+
+  useEffect(() => {
+    if (bloqueadoPor2fa) router.replace(RUTA_SEGURIDAD);
+  }, [bloqueadoPor2fa, router]);
   const { tema, alternar } = useTema();
   const prefs = usePreferenciasPanel();
 
@@ -44,7 +57,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                   <p className="text-[var(--muted)] font-medium">Verificando acceso...</p>
                 </div>
               </div>
-            ) : admin ? children : null}
+            ) : admin && !bloqueadoPor2fa ? children : null}
           </main>
         </div>
       </div>

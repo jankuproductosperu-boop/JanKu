@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import { connectDB } from "@/server/db";
 import AdminUser from "@/models/AdminUser";
 import bcrypt from "bcryptjs";
-import { firmarAdmin, ponerCookieAdmin } from "@/server/auth/session";
+import { firmarAdmin, firmarPendiente2fa, ponerCookie2fa, ponerCookieAdmin } from "@/server/auth/session";
 import { obtenerIP } from "@/server/auth/ip";
 import { consultar, registrarIntento, reiniciar } from "@/server/auth/rateLimit";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { log } from "@/server/logger";
 import { loginAdminCuerpoSchema } from "@/server/validation/auth.schema";
+import { registrarAccesoAdmin, totpActiva } from "@/server/services/admin-user.service";
 
 // Hash bcrypt (coste 12) de un valor aleatorio que nadie conoce. Se compara contra él cuando el
 // usuario no existe, para que el tiempo de respuesta no revele qué usuarios existen.
@@ -118,7 +119,21 @@ export async function POST(request: Request) {
       reiniciar("login-admin", "ip", clientIP),
       reiniciar("login-admin", "user", cuenta),
     ]);
-    await AdminUser.findByIdAndUpdate(user._id, { ultimoAcceso: new Date() });
+
+    // ── 7. Fase 26b: con 2FA activa la contraseña no basta ───────────────
+    // Se entrega solo la cookie admin-2fa (5 min, no vale como sesión) y el cliente pide el código.
+    // Misma forma de respuesta (N1-6) con el campo opcional `requiere2fa`.
+    if (totpActiva(user)) {
+      await ponerCookie2fa(await firmarPendiente2fa({ id: user._id.toString(), tokenVersion: user.tokenVersion ?? 0 }));
+      log.info("login_admin.requiere_2fa", { ip: clientIP });
+      return NextResponse.json(
+        { success: true, username: user.username, requiere2fa: true },
+        { headers: SECURITY_HEADERS }
+      );
+    }
+
+    // ultimoAcceso y, si la IP es nueva, el aviso por correo (fase 26b).
+    await registrarAccesoAdmin(user._id.toString(), clientIP);
 
     const token = await firmarAdmin({
       id: user._id.toString(),

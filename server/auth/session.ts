@@ -4,9 +4,13 @@ import { cookies } from "next/headers";
 
 export const COOKIE_ADMIN = "admin-token";
 export const COOKIE_USER = "user-token";
+/** Fase 26b: contraseña correcta, falta el código. Solo sirve para POST /api/auth/login/2fa. */
+export const COOKIE_ADMIN_2FA = "admin-2fa";
 
 const DURACION_ADMIN_S = 60 * 60 * 8; // 8 horas
 const DURACION_USER_S = 60 * 60 * 24 * 7; // 7 días
+const DURACION_2FA_S = 60 * 5; // 5 minutos para escribir el código
+const RUTA_COOKIE_2FA = "/api/auth/login"; // el navegador solo la envía al login y a su segundo paso
 const ALG = "HS256"; // el mismo algoritmo con que se firmaban los tokens antes de la fase 08: siguen siendo válidos
 
 function secreto(nombre: "JWT_SECRET" | "USER_JWT_SECRET"): Uint8Array {
@@ -30,6 +34,20 @@ export async function firmarAdmin(a: {
     .setSubject(a.id)
     .setIssuedAt()
     .setExpirationTime(`${DURACION_ADMIN_S}s`)
+    .sign(secreto("JWT_SECRET"));
+}
+
+/**
+ * Fase 26b. `typ: "admin-2fa"`: verificarAdmin la rechaza (leerBase exige "admin"), así que esta
+ * cookie nunca vale como sesión aunque alguien la copie en admin-token. `tv` ata el paso pendiente a
+ * la versión de sesiones: si entretanto se cambia la contraseña o la 2FA, ya no sirve.
+ */
+export async function firmarPendiente2fa(a: { id: string; tokenVersion: number }): Promise<string> {
+  return new SignJWT({ tv: a.tokenVersion, typ: "admin-2fa" })
+    .setProtectedHeader({ alg: ALG })
+    .setSubject(a.id)
+    .setIssuedAt()
+    .setExpirationTime(`${DURACION_2FA_S}s`)
     .sign(secreto("JWT_SECRET"));
 }
 
@@ -77,6 +95,15 @@ export async function verificarAdmin(token: string): Promise<ClaimsAdmin | null>
   return payload ? leerBase(payload, "admin") : null;
 }
 
+export async function verificarPendiente2fa(token: string): Promise<ClaimsAdmin | null> {
+  const payload = await verificar(token, secreto("JWT_SECRET"));
+  if (!payload || payload.typ !== "admin-2fa") return null;
+  const id = payload.sub;
+  const tv = payload.tv;
+  if (typeof id !== "string" || !id || typeof tv !== "number" || !Number.isInteger(tv)) return null;
+  return { id, tv };
+}
+
 export async function verificarUser(token: string): Promise<ClaimsUser | null> {
   const payload = await verificar(token, secreto("USER_JWT_SECRET"));
   if (!payload) return null;
@@ -110,6 +137,15 @@ export async function ponerCookieUser(token: string): Promise<void> {
   (await cookies()).set(COOKIE_USER, token, opcionesCookie(DURACION_USER_S));
 }
 
+export async function ponerCookie2fa(token: string): Promise<void> {
+  (await cookies()).set(COOKIE_ADMIN_2FA, token, { ...opcionesCookie(DURACION_2FA_S), path: RUTA_COOKIE_2FA });
+}
+
+/** Se borra con la misma ruta con que se puso. */
+export async function borrarCookie2fa(): Promise<void> {
+  (await cookies()).set(COOKIE_ADMIN_2FA, "", { ...opcionesCookie(0), path: RUTA_COOKIE_2FA });
+}
+
 export async function borrarCookieAdmin(): Promise<void> {
   (await cookies()).delete(COOKIE_ADMIN);
 }
@@ -119,6 +155,8 @@ export async function borrarCookieUser(): Promise<void> {
 }
 
 /** Lee el valor crudo de una cookie de sesión (para los guards). */
-export async function leerCookie(nombre: typeof COOKIE_ADMIN | typeof COOKIE_USER): Promise<string | undefined> {
+export async function leerCookie(
+  nombre: typeof COOKIE_ADMIN | typeof COOKIE_USER | typeof COOKIE_ADMIN_2FA,
+): Promise<string | undefined> {
   return (await cookies()).get(nombre)?.value;
 }

@@ -165,6 +165,13 @@ const CHECKS = [
   { nombre: "GET /categoria-que-no-existe (página, 200)", metodo: "GET", ruta: "/categoria-que-no-existe", espera: esHtml },
   { nombre: "GET /sitemap.xml", metodo: "GET", ruta: "/sitemap.xml", espera: estado(200) },
   { nombre: "GET /robots.txt", metodo: "GET", ruta: "/robots.txt", espera: estado(200) },
+  // Fase 26b: verificación en dos pasos. Sin cookie admin-2fa no se cuenta ningún intento.
+  { nombre: "POST /api/auth/login/2fa (sin cookie)", metodo: "POST", ruta: "/api/auth/login/2fa", cuerpo: { codigo: "000000" }, espera: estado(401) },
+  { nombre: "GET /admin/seguridad (sin cookie)", metodo: "GET", ruta: "/admin/seguridad", espera: redirige("/login-admin") },
+  { nombre: "GET /api/admin/seguridad (sin cookie)", metodo: "GET", ruta: "/api/admin/seguridad", espera: estado(401) },
+  ...["iniciar", "confirmar", "desactivar", "codigos-rescate"].map((n) => ({
+    nombre: `POST /api/admin/seguridad/${n} (sin cookie)`, metodo: "POST", ruta: `/api/admin/seguridad/${n}`, cuerpo: {}, espera: estado(401),
+  })),
 ];
 
 async function main() {
