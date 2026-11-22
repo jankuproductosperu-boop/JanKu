@@ -35,6 +35,14 @@ const cabeceras = (res) => {
   return faltan.length ? `faltan cabeceras: ${faltan.join(", ")}` : true;
 };
 
+// Fase 27 (D-91): página de 404 de la tienda servida en streaming (200, noindex y el texto de la marca).
+const noEncontradoEnStreaming = (res, texto) => {
+  const base = esHtml(res);
+  if (base !== true) return base;
+  if (!/<meta name="robots" content="noindex"/.test(texto)) return "falta <meta name=\"robots\" content=\"noindex\">";
+  return texto.includes("No encontramos esta página") ? true : "no muestra la página de 404 de la tienda";
+};
+
 const paginas = [
   "/", "/promociones", "/carrito", "/favoritos", "/busqueda?q=a", "/contacto",
   "/terminos", "/privacidad", "/cambios-y-devoluciones", "/envios", "/cookies",
@@ -57,6 +65,12 @@ const CHECKS = [
   { nombre: "GET /api/auth/check (sin cookie)", metodo: "GET", ruta: "/api/auth/check", espera: estado(401) },
   { nombre: "GET /api/auth-user/check (sin cookie)", metodo: "GET", ruta: "/api/auth-user/check", espera: estado(401) },
   { nombre: "Cabeceras de seguridad en GET /", metodo: "GET", ruta: "/", espera: cabeceras },
+  // Fase 27 (D-91): el inicio llega con sus productos en el HTML y un producto inexistente muestra el 404 de la tienda.
+  {
+    nombre: "GET / trae productos en el HTML", metodo: "GET", ruta: "/",
+    espera: (res, texto) => (esHtml(res) === true && texto.includes('href="/producto/') ? true : "el HTML del inicio no trae enlaces de producto"),
+  },
+  { nombre: "GET /producto/no-existe-zzzzzzzz", metodo: "GET", ruta: "/producto/no-existe-zzzzzzzz", espera: (res, texto) => noEncontradoEnStreaming(res, texto) },
   // Campos vacíos se rechazan antes de registrarIntento: no consume intentos.
   { nombre: "POST /api/auth/login con {}", metodo: "POST", ruta: "/api/auth/login", cuerpo: {}, espera: estado(400) },
   // Fase 26a: cuerpos con tipos equivocados responden 400 (antes podían terminar en 500). No gastan límites.
@@ -120,7 +134,9 @@ const CHECKS = [
   { nombre: "GET /api/admin/orders/000000000000000000000000 (sin cookie)", metodo: "GET", ruta: "/api/admin/orders/000000000000000000000000", espera: estado(401) },
   { nombre: "PATCH /api/admin/orders/000000000000000000000000 (sin cookie)", metodo: "PATCH", ruta: "/api/admin/orders/000000000000000000000000", cuerpo: {}, espera: estado(401) },
   { nombre: "POST /api/admin/orders/expire (sin cookie)", metodo: "POST", ruta: "/api/admin/orders/expire", cuerpo: {}, espera: estado(401) },
-  { nombre: "GET /pedido/JK-000000-XXXX (sin token)", metodo: "GET", ruta: "/pedido/JK-000000-XXXX", espera: estado(404) },
+  // Fase 27 (D-91): con el esqueleto de carga la página se envía en streaming, así que un pedido inexistente
+  // (o sin acceso) responde 200 con la página de 404 y noindex, en vez del estado 404.
+  { nombre: "GET /pedido/JK-000000-XXXX (sin token)", metodo: "GET", ruta: "/pedido/JK-000000-XXXX", espera: (res, texto) => noEncontradoEnStreaming(res, texto) },
   // Fase 16b: puntos de entrega. El público devuelve un arreglo; el admin exige sesión.
   { nombre: "GET /api/delivery-points", metodo: "GET", ruta: "/api/delivery-points", espera: esArregloJson },
   { nombre: "GET /api/admin/delivery-points (sin cookie)", metodo: "GET", ruta: "/api/admin/delivery-points", espera: estado(401) },
