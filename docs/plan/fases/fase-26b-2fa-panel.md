@@ -42,3 +42,17 @@ Dependencia posible: una librería pequeña para dibujar el QR en el navegador (
 ## 5. Verificación
 
 Pruebas de TOTP con los vectores oficiales; prueba manual completa en janku-dev: activar, entrar, código equivocado, código repetido, código de rescate, desactivar y script de emergencia. Fase 00.
+
+## 6. Ejecución (2026-11-21, rama `fase-26b-2fa-panel`)
+
+Respuestas del dueño: Q1–Q4 por defecto; obligatoria para superadmin **bloqueando** el panel (solo Seguridad) hasta activarla; **sin migración 005** (campo ausente = desactivada); QR con `uqr@0.1.3`; lista de archivos ampliada. Decisión D-90.
+
+**Archivos.** Nuevos: `lib/totp.ts` + `lib/__tests__/totp.test.ts` (vectores RFC 4226/6238), `server/auth/totp.ts`, `server/validation/seguridad.schema.ts`, `app/api/auth/login/2fa/route.ts`, `app/api/admin/seguridad/{route,iniciar,confirmar,desactivar,codigos-rescate}`, `app/(admin)/admin/seguridad/page.tsx`, `scripts/admin/desactivar-2fa.mjs`. Cambiados: `models/AdminUser.ts`, `types/admin.ts`, `server/auth/{session,guards,rateLimit}.ts`, `server/services/admin-user.service.ts`, `server/email/auth-emails.ts`, `app/api/auth/{login,check}/route.ts`, `app/(admin)/login-admin/page.tsx`, `app/(admin)/admin/_components/{AdminShell,AdminSidebar,useAdminSession}`, `scripts/smoke.mjs`, `.env.example`, `package.json` (uqr), documentos.
+
+**Rutas nuevas.** `POST /api/auth/login/2fa` `{ codigo }` · `GET /api/admin/seguridad` · `POST /api/admin/seguridad/iniciar` `{ password }` → `{ secreto, uri }` · `POST …/confirmar` `{ codigo }` → `{ codigosRescate }` · `POST …/desactivar` `{ password, codigo }` → estado · `POST …/codigos-rescate` `{ password, codigo }` → `{ codigosRescate }`. Campos opcionales añadidos: `requiere2fa` en el login; `admin.totpActivo` y `activar2fa` en `/api/auth/check`.
+
+**Orden para producción (lo hace el dueño).**
+1. Copia de `jankuDB` con `node scripts/backup/respaldar.mjs`.
+2. Generar una clave nueva para producción (distinta de la de desarrollo) y ponerla como `TOTP_ENC_KEY` en Render **antes** del push. Sin ella el superadmin queda limitado a la pantalla Seguridad, que avisa de que falta.
+3. Push y despliegue. Al entrar, el superadmin activa la 2FA en Seguridad y guarda los 8 códigos de rescate.
+4. Si se pierde la clave o el celular y los códigos: `node scripts/admin/desactivar-2fa.mjs` contra esa base.

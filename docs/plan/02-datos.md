@@ -62,6 +62,11 @@ en otro caso         → "Disponible"
 |---|---|---|---|
 | `rol` | `String`, enum `["superadmin","gestor","ventas"]` | `"gestor"` | Los existentes pasan a `superadmin` con la migración 001 |
 | `tokenVersion` | `Number` | `0` | Se incrementa para cerrar todas las sesiones de ese admin |
+| `totp` | subdocumento `{ secretoCifrado, activo, activadoEn, ultimoPaso, secretoPendienteCifrado, pendienteEn }` | ausente | Fase 26b (D-90). Ausente o `activo !== true` = 2FA desactivada. Secretos cifrados con AES-256-GCM (`TOTP_ENC_KEY`). `ultimoPaso` impide reutilizar un código. El pendiente vale 10 min al activarla. Al desactivar queda `{ activo: false }` (no se borra) |
+| `codigosRescate` | `[String]` | ausente | Fase 26b. HMAC-SHA256 de los códigos de rescate sin usar (8 al activar o regenerar); cada uso hace `$pull` |
+| `ipsConocidas` | `[String]` | ausente | Fase 26b. HMAC-SHA256 de las últimas 20 IP desde las que entró; una IP nueva dispara el aviso por correo. Nunca la IP en claro |
+
+Ninguno de los campos de la fase 26b sale por la API (`CAMPOS_PUBLICOS` del servicio no los incluye).
 
 Se añade la interfaz `IAdminUser` y el modelo queda tipado (`model<IAdminUser>`).
 
@@ -274,6 +279,7 @@ Tabla para `stockCantidad` ausente en la 002 (la misma que usó `scripts/legacy/
 No hacen falta migraciones para:
 - `tokenVersion` en `users` / `adminusers`: el código lee "ausente" como 0.
 - `telefono` en `users`: ausente = `""`.
+- `totp`, `codigosRescate` e `ipsConocidas` en `adminusers` (fase 26b): ausente = 2FA desactivada y ninguna IP conocida. El primer acceso de cada admin tras desplegar envía un aviso de IP nueva.
 - Colecciones nuevas: se crean solas al primer insert. La 003 solo adelanta la creación de índices para no depender de `autoIndex` en producción.
 - Cupones: `coupons` y `couponredemptions` crean sus índices con `autoIndex` (colecciones vacías, creación instantánea). El ejecutor de la fase 18 añade sus dos índices únicos a `003-indices.mjs` como paso de esa fase.
 

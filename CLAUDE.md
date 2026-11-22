@@ -137,6 +137,8 @@ Sin `try/catch` genérico (lo cubre `handle`), sin `connectDB()`, sin importar m
 
 `MONGODB_URI` · `JWT_SECRET` · `USER_JWT_SECRET` · `CLOUDINARY_CLOUD_NAME` · `CLOUDINARY_API_KEY` · `CLOUDINARY_API_SECRET` · `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` · `RESEND_API_KEY` · `FROM_EMAIL` · `NEXT_PUBLIC_SITE_URL` · `NEXT_PUBLIC_GA_ID` · `NEXT_PUBLIC_CHECKOUT_ENABLED` (solo `"true"` activa el checkout; se lee al construir)
 
+Verificación en dos pasos del panel (fase 26b): `TOTP_ENC_KEY` (32 bytes en base64, distinta en desarrollo y producción). Sin ella no se puede activar la 2FA y el superadmin queda limitado a Seguridad; si se pierde, los admins con 2FA entran solo tras `scripts/admin/desactivar-2fa.mjs`.
+
 Estadísticas del panel (fase 23b, opcionales: sin ellas la pantalla explica cómo conectar): `GA_PROPERTY_ID` (número de la propiedad GA4) · `GA_SA_EMAIL` · `GA_SA_PRIVATE_KEY` (cuenta de servicio con rol Lector).
 
 Pendiente futuro, sin uso hoy: `ADMIN_NOTIFY_EMAIL` (aviso de pedido nuevo, cuando se hagan los correos de pedido).
