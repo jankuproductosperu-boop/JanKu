@@ -5,6 +5,7 @@ import { hashearToken } from "@/server/auth/tokens";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { enviarEmailBienvenida } from "@/server/email/auth-emails";
 import { log } from "@/server/logger";
+import { verificarCuerpoSchema } from "@/server/validation/auth.schema";
 
 // ── GET: solo COMPRUEBA que el token es válido, NO verifica la cuenta ───────
 // Esto evita que escáneres de seguridad de email (Outlook Safe Links, Gmail,
@@ -61,15 +62,25 @@ export async function GET(request: NextRequest) {
 // ── POST: aquí SÍ se verifica la cuenta — requiere acción explícita del usuario
 export async function POST(request: NextRequest) {
   try {
-    let body: { token?: string };
+    let crudo: unknown;
     try {
-      body = await request.json();
+      crudo = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Formato inválido" },
         { status: 400, headers: SECURITY_HEADERS }
       );
     }
+
+    // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
+    const cuerpo = verificarCuerpoSchema.safeParse(crudo);
+    if (!cuerpo.success) {
+      return NextResponse.json(
+        { error: "Formato inválido" },
+        { status: 400, headers: SECURITY_HEADERS }
+      );
+    }
+    const body = cuerpo.data;
 
     const { token } = body;
 

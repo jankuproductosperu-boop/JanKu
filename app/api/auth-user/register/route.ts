@@ -11,6 +11,7 @@ import { obtenerIP } from "@/server/auth/ip";
 import { enviarEmailVerificacion } from "@/server/email/auth-emails";
 import { headers } from "next/headers";
 import { LEGAL } from "@/lib/siteConfig";
+import { registroCuerpoSchema } from "@/server/validation/auth.schema";
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,15 +28,25 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 2. Parsear body ───────────────────────────────────────────────────
-    let body: { nombre?: string; email?: string; password?: string; aceptaTerminos?: unknown };
+    let crudo: unknown;
     try {
-      body = await request.json();
+      crudo = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Formato inválido" },
         { status: 400, headers: SECURITY_HEADERS }
       );
     }
+
+    // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
+    const cuerpo = registroCuerpoSchema.safeParse(crudo);
+    if (!cuerpo.success) {
+      return NextResponse.json(
+        { error: "Formato inválido" },
+        { status: 400, headers: SECURITY_HEADERS }
+      );
+    }
+    const body = cuerpo.data;
 
     const { nombre, email, password } = body;
 

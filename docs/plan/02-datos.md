@@ -284,3 +284,22 @@ Cada migración se aplica **antes** de desplegar el código de su fase, en este 
 ### 4.4 Reversa
 
 Las migraciones solo añaden campos o índices. Revertir el código basta: los campos extra son ignorados por el código anterior. Si aun así hay que restaurar, la copia en `backups/` contiene los documentos originales.
+
+## 5. Copias de seguridad (fase 26a, D-89)
+
+MongoDB Atlas M0 no hace copias automáticas. La copia la hace el dueño con el script, sin `--apply` (solo lee):
+
+```
+node scripts/backup/respaldar.mjs
+```
+
+- Usa la base de `MONGODB_URI` en `.env.local`. Para copiar producción, se cambia la URI a `jankuDB`, se copia y se vuelve a `janku-dev`.
+- Deja `backups/respaldo-<base>-<fecha>/` con un `.json` por colección (EJSON canónico) y `manifiesto.json`. `backups/` está fuera de git.
+- **Contiene datos personales y hashes de contraseñas:** se guarda en un lugar privado.
+- **Rutina:** una vez por semana y antes de cada migración.
+
+Restaurar (simula por defecto; con `--apply`, solo el dueño, repone los documentos cuyo `_id` falta, sin sobrescribir ni borrar):
+
+```
+node scripts/backup/restaurar.mjs backups/respaldo-<base>-<fecha> [--coleccion products] [--apply]
+```

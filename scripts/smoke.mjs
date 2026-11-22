@@ -59,6 +59,11 @@ const CHECKS = [
   { nombre: "Cabeceras de seguridad en GET /", metodo: "GET", ruta: "/", espera: cabeceras },
   // Campos vacíos se rechazan antes de registrarIntento: no consume intentos.
   { nombre: "POST /api/auth/login con {}", metodo: "POST", ruta: "/api/auth/login", cuerpo: {}, espera: estado(400) },
+  // Fase 26a: cuerpos con tipos equivocados responden 400 (antes podían terminar en 500). No gastan límites.
+  { nombre: "POST /api/auth/login con [] (400)", metodo: "POST", ruta: "/api/auth/login", cuerpo: [], espera: estado(400) },
+  { nombre: "POST /api/auth-user/forgot-password email arreglo (400)", metodo: "POST", ruta: "/api/auth-user/forgot-password", cuerpo: { email: ["a@b.co"] }, espera: estado(400) },
+  { nombre: "POST /api/auth-user/reset-password token arreglo (400)", metodo: "POST", ruta: "/api/auth-user/reset-password", cuerpo: { token: ["x"], password: "x" }, espera: estado(400) },
+  { nombre: "POST /api/auth-user/verify-email token número (400)", metodo: "POST", ruta: "/api/auth-user/verify-email", cuerpo: { token: 5 }, espera: estado(400) },
   // Fase 08
   { nombre: "GET /api/admin/cualquier-cosa (sin cookie)", metodo: "GET", ruta: "/api/admin/cualquier-cosa", espera: estado(401) },
   {

@@ -9,6 +9,7 @@ import { anularIntento, consultar, registrarIntento, reiniciar } from "@/server/
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { obtenerIP } from "@/server/auth/ip";
 import { log } from "@/server/logger";
+import { loginUserCuerpoSchema } from "@/server/validation/auth.schema";
 
 // ── Config de bloqueo por CUENTA (independiente del bloqueo por IP) ──────────
 const MAX_INTENTOS_CUENTA = 5;
@@ -37,15 +38,25 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 2. Parsear y validar body ─────────────────────────────────────────
-    let body: { email?: string; password?: string };
+    let crudo: unknown;
     try {
-      body = await request.json();
+      crudo = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Formato inválido" },
         { status: 400, headers: SECURITY_HEADERS }
       );
     }
+
+    // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
+    const cuerpo = loginUserCuerpoSchema.safeParse(crudo);
+    if (!cuerpo.success) {
+      return NextResponse.json(
+        { error: "Formato inválido" },
+        { status: 400, headers: SECURITY_HEADERS }
+      );
+    }
+    const body = cuerpo.data;
 
     const { email, password } = body;
 

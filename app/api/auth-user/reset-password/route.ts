@@ -6,15 +6,23 @@ import { validarPassword } from "@/server/auth/validators";
 import { hashearToken } from "@/server/auth/tokens";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { log } from "@/server/logger";
+import { restablecerCuerpoSchema } from "@/server/validation/auth.schema";
 
 export async function POST(request: NextRequest) {
   try {
-    let body: { token?: string; password?: string };
+    let crudo: unknown;
     try {
-      body = await request.json();
+      crudo = await request.json();
     } catch {
       return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
     }
+
+    // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
+    const cuerpo = restablecerCuerpoSchema.safeParse(crudo);
+    if (!cuerpo.success) {
+      return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
+    }
+    const body = cuerpo.data;
 
     const { token, password } = body;
 

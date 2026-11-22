@@ -7,6 +7,7 @@ import { requireUser } from "@/server/auth/guards";
 import { borrarCookieUser } from "@/server/auth/session";
 import { log } from "@/server/logger";
 import { normalizarTelefono } from "@/lib/phone";
+import { perfilActualizarCuerpoSchema, perfilEliminarCuerpoSchema } from "@/server/validation/auth.schema";
 
 // requireUser() va fuera del try: su 401 lo responde handle().
 
@@ -34,22 +35,19 @@ export const GET = handle(async () => {
 export const PUT = handle(async (request: NextRequest) => {
   const { id: userId } = await requireUser();
   try {
-    let body: {
-      nombre?: string;
-      telefono?: unknown;
-      direccion?: {
-        calle?: string;
-        ciudad?: string;
-        departamento?: string;
-        codigoPostal?: string;
-      };
-    };
-
+    let crudo: unknown;
     try {
-      body = await request.json();
+      crudo = await request.json();
     } catch {
       return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
     }
+
+    // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
+    const cuerpo = perfilActualizarCuerpoSchema.safeParse(crudo);
+    if (!cuerpo.success) {
+      return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
+    }
+    const body = cuerpo.data;
 
     // Solo permitir actualizar nombre, celular y dirección — no email ni password desde aquí
     const updateData: Record<string, unknown> = {};
@@ -110,15 +108,25 @@ export const PUT = handle(async (request: NextRequest) => {
 export const DELETE = handle(async (request: NextRequest) => {
   const { id: userId } = await requireUser();
   try {
-    let body: { password?: string };
+    let crudo: unknown;
     try {
-      body = await request.json();
+      crudo = await request.json();
     } catch {
       return NextResponse.json(
         { error: "Formato inválido" },
         { status: 400, headers: SECURITY_HEADERS }
       );
     }
+
+    // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
+    const cuerpo = perfilEliminarCuerpoSchema.safeParse(crudo);
+    if (!cuerpo.success) {
+      return NextResponse.json(
+        { error: "Formato inválido" },
+        { status: 400, headers: SECURITY_HEADERS }
+      );
+    }
+    const body = cuerpo.data;
 
     if (!body.password) {
       return NextResponse.json(

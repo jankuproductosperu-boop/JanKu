@@ -99,10 +99,11 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           },
-          // Protección XSS básica para browsers antiguos
+          // Fase 26a (D-89): filtro XSS antiguo desactivado, como recomienda OWASP. Está retirado de los
+          // navegadores actuales y, donde queda, puede usarse para filtrar datos. La defensa real es la CSP.
           {
             key: 'X-XSS-Protection',
-            value: '1; mode=block',
+            value: '0',
           },
         ],
       },
