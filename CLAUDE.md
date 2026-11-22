@@ -148,12 +148,11 @@ Nunca abras `.env.local` para copiar valores.
 | Servicio | Uso |
 |---|---|
 | MongoDB Atlas | Base de producción y base de desarrollo separada (`janku-dev`) |
-| Cloudinary | Imágenes de productos, banners, promociones y popup |
+| Cloudinary | Imágenes de productos, banners, promociones, popup y las fijas de la tienda (`estaticas/`); las de la tienda se piden a su ancho con `lib/imagenCloudinary.ts` (D-92) |
 | Resend | Correos de cuenta (verificación, bienvenida, recuperación) |
 | Render | Hosting; despliega al hacer push a `main` |
 | Cloudflare | DNS de `jan-ku.com` en modo "DNS only" (sin proxy; ver `lib/clientIp.ts`) |
 | Google Analytics | Medición (`NEXT_PUBLIC_GA_ID`) |
-| postimg.cc | Algunas imágenes fijas antiguas |
 
 ## 9. Dónde está el porqué
 
