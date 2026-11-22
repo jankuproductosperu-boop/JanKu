@@ -23,6 +23,30 @@ export const dynamic = "force-dynamic";
 const POSICIONES: PosicionBannerInicio[] = ["top-left", "top-right", "middle-full", "bottom-left", "bottom-right"];
 type BannersInicio = Partial<Record<PosicionBannerInicio, Banner>>;
 
+// Los productos del inicio viajan dentro del HTML (payload de React). Solo se envían los campos que lee
+// ProductCard: con el producto completo (descripciones, características, SEO, WhatsApp) el HTML pesaba
+// unas 4 veces más y retrasaba la primera pintura. De `imagenes` y `imagenesAdicionales` la tarjeta solo
+// usa la portada y la imagen al pasar el ratón, así que se recortan sin cambiar lo que se ve.
+function paraTarjeta(p: Product): Product {
+  const tarjeta: Product = {
+    _id: p._id,
+    nombre: p.nombre,
+    precio: p.precio,
+    slug: p.slug,
+    codigoUrl: p.codigoUrl,
+    stock: p.stock,
+    imagenPrincipal: p.imagenPrincipal,
+    imagenes: p.imagenes?.slice(0, 2),
+    imagenesAdicionales: p.imagenesAdicionales?.slice(0, 1),
+    imagenUrl: p.imagenUrl,
+    deliveryHuancayo: p.deliveryHuancayo,
+    nuevoHasta: p.nuevoHasta,
+    variantes: p.variantes,
+  };
+  // Sin claves vacías: cada `undefined` también ocupa sitio en el HTML.
+  return Object.fromEntries(Object.entries(tarjeta).filter(([, valor]) => valor !== undefined)) as Product;
+}
+
 async function cargarInicio(): Promise<{ novedades: Product[]; products: Product[]; banners: BannersInicio }> {
   const [productos, bannersActivos] = await Promise.all([
     listarProductosPublicosFiltrados({ tipo: "home" }),
@@ -50,7 +74,7 @@ async function cargarInicio(): Promise<{ novedades: Product[]; products: Product
     if (banner) banners[posicion] = banner;
   }
 
-  return { novedades, products, banners };
+  return { novedades: novedades.map(paraTarjeta), products: products.map(paraTarjeta), banners };
 }
 
 export default async function Home() {
