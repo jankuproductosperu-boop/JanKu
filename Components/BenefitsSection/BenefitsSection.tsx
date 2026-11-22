@@ -5,7 +5,7 @@ import { ShieldCheck, TrendingUp, Users } from 'lucide-react';
 
 export default function IntroJanKuSection({ 
   marca = 'JanKu',
-  imagenUrl = 'https://i.postimg.cc/bJ08pV2g/benefitsection-img.webp' // ✅ Nueva prop para la imagen
+  imagenUrl = 'https://res.cloudinary.com/janku/image/upload/v1795323223/estaticas/benefitsection-img.webp' // ✅ Nueva prop para la imagen
 }) {
   return (
     <section className="bg-white py-24 px-6 overflow-hidden">

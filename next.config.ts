@@ -6,15 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
     remotePatterns: [
-      // Mantenido para el logo del negocio
-      {
-        protocol: 'https',
-        hostname: 'i.postimg.cc',
-      },
-      {
-        protocol: 'https',
-        hostname: 'postimg.cc',
-      },
+      // postimg.cc retirado en la fase 27 (D-91): sus imágenes fijas viven ahora en Cloudinary
       // Cloudinary — dos entradas consolidadas en una
       {
         protocol: 'https',
@@ -54,7 +46,7 @@ const nextConfig: NextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https://res.cloudinary.com https://i.postimg.cc https://postimg.cc https://img.jan-ku.com https://img.youtube.com",
+      "img-src 'self' data: https://res.cloudinary.com https://img.jan-ku.com https://img.youtube.com",
       "font-src 'self' data:",
       "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com",
       "frame-src https://www.youtube.com",

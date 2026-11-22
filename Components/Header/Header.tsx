@@ -78,9 +78,9 @@ export default function CarruselCategorias() {
 
   // Slider automático (promociones)
 const promoImages = [
-    "https://i.postimg.cc/Y2fqH01Z/banner-header-01.webp",
-    "https://i.postimg.cc/ryCFksSv/banner-header-02.webp",
-    "https://i.postimg.cc/v8LHsTWC/banner-header-03.webp",
+    "https://res.cloudinary.com/janku/image/upload/v1795323220/estaticas/banner-header-01.webp",
+    "https://res.cloudinary.com/janku/image/upload/v1795323221/estaticas/banner-header-02.webp",
+    "https://res.cloudinary.com/janku/image/upload/v1795323222/estaticas/banner-header-03.webp",
 ];
 
 const [currentSlide, setCurrentSlide] = React.useState(0);
