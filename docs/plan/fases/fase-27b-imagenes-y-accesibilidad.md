@@ -1,6 +1,6 @@
 # Fase 27b · Imágenes a su tamaño y accesibilidad
 
-> **Propuesta (2026-11-22), espera aprobación del dueño.** Modelo: Opus 5.5. Va antes de la 26c (Turnstile), que queda para el final.
+> **Aprobada por el dueño (2026-11-22).** Modelo: Opus 5.5. Va antes de la 26c (Turnstile), que queda para el final.
 
 > Riesgo bajo. La tienda se ve igual salvo R4 (colores de las etiquetas de stock), que el dueño aprueba con una captura antes de cerrar (N1-1).
 
