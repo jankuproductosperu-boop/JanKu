@@ -133,12 +133,13 @@
       }
     };
 
+    // Fase 27b: tonos con contraste suficiente (Limitado lleva texto oscuro sobre amarillo).
     const getStockColor = (stock?: string) => {
       switch (stock) {
-        case "Disponible": return "bg-green-500";
-        case "Limitado": return "bg-yellow-500";
-        case "Agotado": return "bg-red-500";
-        default: return "bg-gray-500";
+        case "Disponible": return "bg-green-700 text-white";
+        case "Limitado": return "bg-yellow-400 text-gray-900";
+        case "Agotado": return "bg-red-600 text-white";
+        default: return "bg-gray-500 text-white";
       }
     };
 
@@ -176,7 +177,7 @@
             <div
               className={`absolute ${
                 compact ? "top-1 right-1 text-[10px] px-1.5 py-0.5" : "top-2 right-2 text-xs px-2 py-1"
-              } ${getStockColor(product.stock)} text-white rounded-full font-semibold z-10`}
+              } ${getStockColor(product.stock)} rounded-full font-semibold z-10`}
             >
               {product.stock}
             </div>
@@ -277,11 +278,11 @@
 
           {product.deliveryHuancayo && !compact && (
             <div className="flex items-center gap-1 mt-1">
-              <svg className="w-3 h-3 md:w-4 md:h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-3 h-3 md:w-4 md:h-4 text-green-700" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
                 <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
               </svg>
-              <span className="text-[10px] md:text-xs text-green-600 font-medium">
+              <span className="text-[10px] md:text-xs text-green-700 font-medium">
                 Delivery gratis
               </span>
             </div>

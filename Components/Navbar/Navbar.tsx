@@ -111,7 +111,8 @@ export default function Navbar() {
               placeholder="Encuentra lo que buscas..."
               className="w-full outline-none text-sm"
             />
-            <button type="submit" className="cursor-pointer">
+            {/* Fase 27b: nombre para lectores de pantalla y área táctil de 28 px; el margen negativo no mueve nada */}
+            <button type="submit" aria-label="Buscar" className="cursor-pointer p-1 -m-1">
               <Search className="w-5 h-5 text-gray-600 hover:text-gray-800" />
             </button>
           </form>
@@ -119,14 +120,18 @@ export default function Navbar() {
           <div className="flex items-center gap-4 text-white text-lg">
             {/* Redes sociales */}
             <div className="max-[480px]:hidden flex items-center gap-4">
-              <a href="https://www.facebook.com/jankuproductos/" target="_blank" rel="noopener noreferrer"><Facebook className="w-5 h-5" /></a>
-              <a href="https://www.instagram.com/janku_productos?igsh=M2pmNXFxMTN1cGQ1" target="_blank" rel="noopener noreferrer"><Instagram className="w-5 h-5" /></a>
-              <a href="https://www.youtube.com/@JanKuProductos" target="_blank" rel="noopener noreferrer"><Youtube className="w-5 h-5" /></a>
-              <a href="https://www.tiktok.com/@jankuproductos?_r=1&_t=ZS-94VFUQs3mDc" target="_blank" rel="noopener noreferrer"><Music2 className="w-5 h-5" /></a>
+              <a href="https://www.facebook.com/jankuproductos/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><Facebook className="w-5 h-5" /></a>
+              <a href="https://www.instagram.com/janku_productos?igsh=M2pmNXFxMTN1cGQ1" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
+              <a href="https://www.youtube.com/@JanKuProductos" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><Youtube className="w-5 h-5" /></a>
+              <a href="https://www.tiktok.com/@jankuproductos?_r=1&_t=ZS-94VFUQs3mDc" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><Music2 className="w-5 h-5" /></a>
             </div>
 
             {/* Favoritos */}
-            <Link href="/favoritos" className="relative cursor-pointer">
+            <Link
+              href="/favoritos"
+              aria-label={favoritesCount > 0 ? `Favoritos (${favoritesCount})` : "Favoritos"}
+              className="relative cursor-pointer"
+            >
               <Heart className="w-6 h-6" />
               {favoritesCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -136,7 +141,7 @@ export default function Navbar() {
             </Link>
 
             {/* Carrito */}
-            <Link href="/carrito" className="cursor-pointer">
+            <Link href="/carrito" aria-label="Carrito" className="cursor-pointer">
               <ShoppingCart className="w-6 h-6" />
             </Link>
           </div>
@@ -148,7 +153,12 @@ export default function Navbar() {
         <div className="w-full px-6 py-2 flex items-center justify-between text-sm max-w-[1000px] border-t border-white">
 
           {/* Botón menú móvil */}
-          <button className="md:hidden text-white text-2xl z-50" onClick={() => setOpenMobile(!openMobile)}>
+          <button
+            className="md:hidden text-white text-2xl z-50"
+            onClick={() => setOpenMobile(!openMobile)}
+            aria-label={openMobile ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={openMobile}
+          >
             {openMobile ? <X /> : <Menu />}
           </button>
 
