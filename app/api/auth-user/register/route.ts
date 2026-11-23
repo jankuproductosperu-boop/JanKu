@@ -122,7 +122,8 @@ export async function POST(request: NextRequest) {
           tokenVerificacion: tokenHash,
           tokenVerificacionExpira: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
-        await enviarEmailVerificacion(email, usuarioExistente.nombre, token);
+        // Fase 28 (D-95): sin await; la respuesta no espera a Resend y tarda lo mismo en todos los casos.
+        enviarEmailVerificacion(email, usuarioExistente.nombre, token).catch((e) => log.error("correo.verificacion_fallido", e));
         return NextResponse.json(
           { message: "Te enviamos un email de verificación. Revisa tu bandeja." },
           { status: 200, headers: SECURITY_HEADERS }
@@ -154,7 +155,8 @@ export async function POST(request: NextRequest) {
     });
 
     // ── 8. Enviar email de verificación ───────────────────────────────────
-    await enviarEmailVerificacion(email, nombre.trim(), token);
+    // Fase 28 (D-95): sin await. Si Resend falla, la cuenta ya existe y registrarse otra vez reenvía el correo.
+    enviarEmailVerificacion(email, nombre.trim(), token).catch((e) => log.error("correo.verificacion_fallido", e));
 
     log.info("usuario.registrado");
 
@@ -163,7 +165,7 @@ export async function POST(request: NextRequest) {
       { status: 201, headers: SECURITY_HEADERS }
     );
   } catch (error) {
-    console.error("❌ Error en registro:", error);
+    log.error("registro.error", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }

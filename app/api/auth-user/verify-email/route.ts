@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       { status: 200, headers: SECURITY_HEADERS }
     );
   } catch (error) {
-    console.error("❌ Error comprobando token de verificación:", error);
+    log.error("verificacion.comprobar_error", error);
     return NextResponse.json(
       { valido: false, error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }
@@ -120,12 +120,8 @@ export async function POST(request: NextRequest) {
       tokenVerificacionExpira: null,
     });
 
-    // Enviar email de bienvenida
-    try {
-      await enviarEmailBienvenida(user.email, user.nombre);
-    } catch {
-      console.error("Error enviando email de bienvenida");
-    }
+    // Email de bienvenida sin await (fase 28, D-95): la verificación no espera a Resend.
+    enviarEmailBienvenida(user.email, user.nombre).catch((e) => log.error("correo.bienvenida_fallido", e));
 
     log.info("usuario.email_verificado");
 
@@ -134,7 +130,7 @@ export async function POST(request: NextRequest) {
       { status: 200, headers: SECURITY_HEADERS }
     );
   } catch (error) {
-    console.error("❌ Error verificando email:", error);
+    log.error("verificacion.error", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }

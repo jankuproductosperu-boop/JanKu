@@ -91,7 +91,9 @@ export async function POST(request: NextRequest) {
       tokenResetPasswordUsado: false,
     });
 
-    await enviarEmailResetPassword(user.email, user.nombre, token);
+    // Fase 28 (D-95): sin await. Esperar a Resend solo cuando la cuenta existe hacía la respuesta más lenta
+    // (o un 500 si Resend fallaba) y dejaba adivinar qué correos tienen cuenta (N1-4).
+    enviarEmailResetPassword(user.email, user.nombre, token).catch((e) => log.error("correo.recuperacion_fallido", e));
 
     log.info("forgot.enviado", { ip: clientIP });
 
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
       { status: 200, headers: SECURITY_HEADERS }
     );
   } catch (error) {
-    console.error("❌ Error en forgot-password:", error);
+    log.error("forgot.error", error);
     return NextResponse.json(
       { error: "Error en el servidor" },
       { status: 500, headers: SECURITY_HEADERS }
