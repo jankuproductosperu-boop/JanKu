@@ -1,6 +1,6 @@
 # Fase 23d · Mapa de visitas (Perú y mundo) y barras de países en Estadísticas
 
-> **Propuesta (2026-11-22), espera aprobación del dueño.** Modelo: Opus 5.5. Sigue a la 23b (estadísticas).
+> **Aprobada por el dueño (2026-11-22).** Modelo: Opus 5.5. Sigue a la 23b (estadísticas).
 
 > Riesgo bajo. Solo cambia la pantalla `/admin/estadisticas` (solo superadmin). La tienda no carga nada nuevo (N1-1), sin dependencias nuevas en `package.json`, sin cambios en la base ni en la CSP.
 
@@ -62,3 +62,5 @@ Sin dependencias nuevas en `package.json`. Sin cambios en la tienda, la base, la
 - Barras de países con 1, 3 y 10 países (y con más de 10): mismo alto de tarjeta en los tres casos.
 - El dueño abre Estadísticas con datos reales (en local o tras el despliegue) con 7, 28 y 90 días y comprueba: el selector cambia de mapa, los departamentos y países se pintan, «Sin ubicar» sale vacío o con lo que haya que añadir a los alias, la primera fila no se estira, se ve bien en el celular y en tema oscuro, y los totales cuadran con Google Analytics.
 - `typecheck`, `lint`, `test`, `build` y smoke en verde; fase 00 (la tienda no cambia).
+
+Respuestas del dueño (2026-11-22): Q1–Q4 por defecto. Decisión D-94.
