@@ -7,6 +7,7 @@ import { SECURITY_HEADERS } from "@/server/http/respond";
 import { enviarEmailResetPassword } from "@/server/email/auth-emails";
 import { obtenerIP } from "@/server/auth/ip";
 import { registrarIntento } from "@/server/auth/rateLimit";
+import { comprobarTurnstile, separarTokenTurnstile } from "@/server/auth/turnstile";
 import { log } from "@/server/logger";
 import { headers } from "next/headers";
 import { recuperarCuerpoSchema } from "@/server/validation/auth.schema";
@@ -20,8 +21,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
     }
 
+    // Fase 26c (D-93): turnstileToken es opcional (N1-6); se separa antes del esquema.
+    const turnstile = separarTokenTurnstile(crudo);
+
     // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
-    const cuerpo = recuperarCuerpoSchema.safeParse(crudo);
+    const cuerpo = recuperarCuerpoSchema.safeParse(turnstile.cuerpo);
     if (!cuerpo.success) {
       return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
     }
@@ -49,6 +53,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { message: "Si ese email existe, recibirás un enlace en tu bandeja." },
         { status: 200, headers: SECURITY_HEADERS }
+      );
+    }
+
+    // Turnstile (fase 26c), antes de buscar al usuario. No revela si el correo existe: depende solo del
+    // navegador. Si Cloudflare no responde, se rechaza con un mensaje para reintentar (Q2).
+    const fallo = await comprobarTurnstile(turnstile.token, clientIP, { aceptarSiNoDisponible: false });
+    if (fallo) {
+      return NextResponse.json(
+        { error: fallo.message, code: fallo.code },
+        { status: fallo.status, headers: SECURITY_HEADERS }
       );
     }
 

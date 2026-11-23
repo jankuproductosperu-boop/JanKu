@@ -1,5 +1,6 @@
 import { obtenerIP } from "@/server/auth/ip";
 import { registrarIntento } from "@/server/auth/rateLimit";
+import { comprobarTurnstile, separarTokenTurnstile } from "@/server/auth/turnstile";
 import { demasiadosIntentos } from "@/server/http/errors";
 import { SECURITY_HEADERS, handle, json } from "@/server/http/respond";
 import { crearReclamo } from "@/server/services/complaint.service";
@@ -12,7 +13,11 @@ export const POST = handle(async (req) => {
   const limite = await registrarIntento("reclamo", "ip", ip);
   if (!limite.permitido) throw demasiadosIntentos(limite.minutosRestantes);
 
-  const datos = reclamoCrearSchema.parse(await req.json());
+  // Fase 26c (D-93): turnstileToken es opcional (N1-6) y se saca antes del esquema estricto.
+  const { token, cuerpo } = separarTokenTurnstile(await req.json());
+  const datos = reclamoCrearSchema.parse(cuerpo);
+  const fallo = await comprobarTurnstile(token, ip, { aceptarSiNoDisponible: false });
+  if (fallo) throw fallo;
   const resultado = await crearReclamo(datos, { ip });
   return json(resultado, { status: 201, headers: SECURITY_HEADERS });
 });

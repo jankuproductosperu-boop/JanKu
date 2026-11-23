@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { validarEmail, validarPassword, validarNombre } from "@/server/auth/validators";
 import { generarToken, hashearToken } from "@/server/auth/tokens";
 import { registrarIntento } from "@/server/auth/rateLimit";
+import { comprobarTurnstile, separarTokenTurnstile } from "@/server/auth/turnstile";
 import { log } from "@/server/logger";
 import { SECURITY_HEADERS } from "@/server/http/respond";
 import { obtenerIP } from "@/server/auth/ip";
@@ -38,8 +39,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fase 26c (D-93): turnstileToken es opcional (N1-6); se separa antes del esquema.
+    const turnstile = separarTokenTurnstile(crudo);
+
     // Fase 26a (D-89): un tipo equivocado se trata igual que un JSON mal formado.
-    const cuerpo = registroCuerpoSchema.safeParse(crudo);
+    const cuerpo = registroCuerpoSchema.safeParse(turnstile.cuerpo);
     if (!cuerpo.success) {
       return NextResponse.json(
         { error: "Formato inválido" },
@@ -81,6 +85,15 @@ export async function POST(request: NextRequest) {
     }
 
     const emailNormalizado = email.toLowerCase().trim();
+
+    // ── 3b. Turnstile (fase 26c), antes de tocar usuarios. Si Cloudflare no responde, se rechaza (Q2) ──
+    const fallo = await comprobarTurnstile(turnstile.token, clientIP, { aceptarSiNoDisponible: false });
+    if (fallo) {
+      return NextResponse.json(
+        { error: fallo.message, code: fallo.code },
+        { status: fallo.status, headers: SECURITY_HEADERS }
+      );
+    }
 
     // ── 4. Verificar si el email ya existe ────────────────────────────────
     await connectDB();
