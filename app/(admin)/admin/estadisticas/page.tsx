@@ -43,7 +43,7 @@ function Flecha({ v, inversa = false }: { v: number | null; inversa?: boolean })
   const bueno = inversa ? v <= 0 : v >= 0;
   return (
     <span
-      className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+      className={`inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-semibold ${
         bueno ? "bg-[var(--ok-soft)] text-[var(--ok)]" : "bg-[var(--bad-soft)] text-[var(--bad)]"
       }`}
     >

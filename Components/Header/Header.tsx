@@ -98,7 +98,7 @@ React.useEffect(() => {
   }, 5000); // cambia cada 5 segundos
 
   return () => clearInterval(interval);
-}, []);
+}, [promoImages.length]); // la lista es fija: el efecto corre una vez, como antes (fase 28)
 
   return (
     <section className="w-full bg-gradient-to-b from-[#2C2C6C] via-[#241B57]/90 to-white py-10 select-none">
@@ -113,6 +113,7 @@ React.useEffect(() => {
                 la página) se marca como prioritaria y de carga inmediata.
                 Las demás, al no ser visibles al inicio, se cargan diferidas. */}
             {promoImages.map((img, i) => (
+              // eslint-disable-next-line @next/next/no-img-element -- srcSet de Cloudinary; next/image lo descarta con images.unoptimized (D-92)
               <img
                 key={i}
                 src={imagenCloudinary(img, 1280)}

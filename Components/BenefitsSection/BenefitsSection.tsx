@@ -86,6 +86,7 @@ export default function IntroJanKuSection({
           {/* ✅ Contenedor que se adapta a la imagen */}
           <div className="relative rounded-3xl overflow-hidden">
             {imagenUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- srcSet de Cloudinary; next/image lo descarta con images.unoptimized (D-92)
               <img
                 src={imagenCloudinary(imagenUrl, 1100)}
                 srcSet={srcSetCloudinary(imagenUrl, ANCHOS_BENEFICIOS)}

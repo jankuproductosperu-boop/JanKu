@@ -96,6 +96,7 @@ export default function Navbar() {
       <div className="flex justify-center w-full bg-[#2C2C6C]">
         <div className="w-full py-3 px-6 flex items-center justify-between max-w-[1000px]">
           <Link href="/" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- logo fijo en webp; con images.unoptimized next/image no aporta (D-92, D-95) */}
             <img src="https://res.cloudinary.com/janku/image/upload/v1787182642/janku-logo-oficial_gcnadm.webp" alt="JAN-KU Logo" className="w-10"/>
             <div className="hidden md:flex flex-col items-center h-8">
               <span className="text-2xl font-bold leading-none">JANKU</span>

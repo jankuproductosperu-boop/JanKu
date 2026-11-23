@@ -179,6 +179,7 @@ export default function PromocionesTab({ promotions, onReload }: Props) {
                 <div key={promo._id} className="border border-[var(--line)] rounded-xl p-4 hover:shadow-lg transition bg-[var(--surface)]">
                   {promo.imagenUrl && (
                     <div className="mb-3 rounded-lg overflow-hidden bg-[var(--line)] h-32 md:h-40 flex items-center justify-center relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- miniatura del panel (D-95) */}
                       <img src={promo.imagenUrl} alt={promo.titulo} className="max-h-full max-w-full object-contain" />
                       <div className="absolute top-2 right-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-2 py-1 rounded-full text-xs font-bold">{promo.tipoEtiqueta}</div>
                     </div>

@@ -240,6 +240,7 @@ export default function ProductosLista({ products, categories, onReload, busqued
                 {p.activo === false && <span className="absolute top-2 right-2 z-10 rounded-none bg-gray-800/80 px-2 py-0.5 text-[11px] font-semibold text-white">Inactivo</span>}
                 <Link href={`/admin/productos/${p._id}`} className="relative block aspect-square bg-[var(--accent-soft)]">
                   {(p.imagenUrl || p.imagenPrincipal) && (
+                    // eslint-disable-next-line @next/next/no-img-element -- miniatura del panel (D-95)
                     <img src={p.imagenUrl || getCloudinaryUrl(p.imagenPrincipal || "", 300)} alt={p.nombre} className="w-full h-full object-cover" />
                   )}
                   {esNovedad(p) && <span className="absolute bottom-2 left-2 rounded-none bg-indigo-600 px-2 py-0.5 text-[11px] font-semibold text-white">Nuevo</span>}
@@ -285,6 +286,7 @@ export default function ProductosLista({ products, categories, onReload, busqued
                       <div className="flex items-center gap-3">
                         <span className="w-10 h-10 rounded-lg bg-[var(--accent-soft)] overflow-hidden flex-none grid place-items-center">
                           {(p.imagenUrl || p.imagenPrincipal) && (
+                            // eslint-disable-next-line @next/next/no-img-element -- miniatura del panel (D-95)
                             <img src={p.imagenUrl || getCloudinaryUrl(p.imagenPrincipal || "", 300)} alt="" className="w-full h-full object-cover" />
                           )}
                         </span>

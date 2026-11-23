@@ -185,6 +185,7 @@ export default function BannersTab({ banners, categories, onReload }: Props) {
                       ? b.ubicaciones.map((u, idx) => <span key={idx} className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full font-medium">{u === "" ? "🏠 Home" : `📁 ${categories.find(c => c.slug === u)?.nombre || u}`}</span>)
                       : <span className="inline-block px-3 py-1 bg-[var(--line)] text-[var(--muted)] text-xs rounded-full font-medium">Sin ubicación</span>}
                   </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- miniatura del panel (D-95) */}
                   <div className="mb-3 rounded-lg overflow-hidden bg-[var(--line)]"><img src={b.imagenUrl} alt={b.titulo} className="w-full h-32 object-cover" /></div>
                   {b.enlace && <p className="text-xs text-[var(--muted)] mb-2 truncate">🔗 {b.enlace}</p>}
                   <p className="text-sm mb-3">{b.activo ? "✅ Activo" : "❌ Inactivo"}</p>

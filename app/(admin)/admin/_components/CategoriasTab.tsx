@@ -127,6 +127,7 @@ export default function CategoriasTab({ categories, onReload }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {ordenadas.map(c => (
                 <div key={c._id} className={`border rounded-xl p-4 hover:shadow-lg transition bg-[var(--surface)] ${madreDe(c) ? "border-dashed border-[var(--line)]" : "border-[var(--line)]"}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- miniatura del panel (D-95) */}
                   {c.imagenUrl && <div className="mb-3 rounded-lg overflow-hidden bg-[var(--line)] h-32 md:h-40 flex items-center justify-center"><img src={c.imagenUrl} alt={c.nombre} className="max-h-full max-w-full object-contain" /></div>}
                   {madreDe(c) !== null && <p className="text-xs text-[var(--muted)] mb-1">↳ Subcategoría de {nombreDe(madreDe(c) ?? "")}</p>}
                   <h3 className="font-bold text-base md:text-lg text-[var(--ink)] mb-2">{c.nombre}</h3>
