@@ -9,6 +9,7 @@ import { lineaId } from "@/lib/variantes";
 import { normalizarTelefono } from "@/lib/phone";
 import { DEPARTAMENTOS, esDepartamento } from "@/lib/shipping";
 import { CouponField } from "@/Components/Checkout/CouponField";
+import { MENSAJE_TURNSTILE_PENDIENTE, TURNSTILE_ACTIVO, Turnstile } from "@/Components/Turnstile";
 import { LEGAL } from "@/lib/siteConfig";
 import type {
   CouponValidateResult,
@@ -103,6 +104,9 @@ export function CheckoutForm({
   const [enviando, setEnviando] = useState(false);
   const [acepta, setAcepta] = useState(false); // sin marcar por defecto (fase 22a)
   const enviandoRef = useRef(false); // el estado llega tarde para un doble clic muy rápido
+  // Fase 26c (D-93): token de Turnstile. Cada uno vale una vez: tras un envío fallido se pide otro.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReinicio, setTurnstileReinicio] = useState(0);
 
   // Puntos de entrega activos, sin caché: lo que se edita en el panel se ve al momento. null = cargando.
   const [puntos, setPuntos] = useState<DeliveryPointPublic[] | null>(null);
@@ -181,6 +185,10 @@ export function CheckoutForm({
     const locales = validar();
     setErrores(locales);
     if (Object.keys(locales).length) return;
+    if (TURNSTILE_ACTIVO && !turnstileToken) {
+      setAviso({ texto: MENSAJE_TURNSTILE_PENDIENTE });
+      return;
+    }
 
     enviandoRef.current = true;
     setEnviando(true);
@@ -209,7 +217,8 @@ export function CheckoutForm({
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cuerpo),
+        // turnstileToken va aparte del tipo del pedido: el servidor lo saca antes del esquema (D-93).
+        body: JSON.stringify(turnstileToken ? { ...cuerpo, turnstileToken } : cuerpo),
       });
       const datos: unknown = await res.json().catch(() => null);
 
@@ -235,6 +244,14 @@ export function CheckoutForm({
             : "Este cupón no es válido.";
         onCuponQuitar();
         setErrorCupon(`${mensaje} Quitamos el cupón; puedes confirmar tu pedido sin él.`);
+      } else if (code.startsWith("VERIFICACION_")) {
+        // Turnstile rechazó el token (fase 26c): el mensaje del servidor dice qué hacer.
+        setAviso({
+          texto:
+            datos && typeof datos === "object" && "error" in datos && typeof datos.error === "string"
+              ? datos.error
+              : "No pudimos registrar tu pedido. Inténtalo de nuevo.",
+        });
       } else if (res.status === 429) {
         setAviso({ texto: "Has hecho demasiados pedidos seguidos. Intenta más tarde o escríbenos por WhatsApp." });
       } else if (res.status === 409 || res.status === 400) {
@@ -284,6 +301,10 @@ export function CheckoutForm({
       if (!redirigiendo) {
         enviandoRef.current = false;
         setEnviando(false);
+        if (TURNSTILE_ACTIVO) {
+          setTurnstileToken(null);
+          setTurnstileReinicio((n) => n + 1);
+        }
       }
     }
   }
@@ -583,6 +604,8 @@ export function CheckoutForm({
           . Tengo {LEGAL.edadMinima} años o más.
         </span>
       </label>
+
+      <Turnstile onToken={setTurnstileToken} reinicio={turnstileReinicio} />
 
       <div>
         <button

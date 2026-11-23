@@ -42,14 +42,15 @@ const nextConfig: NextConfig = {
 
   // ── Headers de seguridad HTTP ──────────────────────────────────────────
   async headers() {
+    // Fase 26c (D-93): https://challenges.cloudflare.com (Turnstile) en script-src, frame-src y connect-src.
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://res.cloudinary.com https://img.jan-ku.com https://img.youtube.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com",
-      "frame-src https://www.youtube.com",
+      "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://challenges.cloudflare.com",
+      "frame-src https://www.youtube.com https://challenges.cloudflare.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

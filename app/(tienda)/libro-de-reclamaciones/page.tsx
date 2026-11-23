@@ -3,6 +3,7 @@ import { useState, useSyncExternalStore, type FormEvent } from "react";
 import Link from "next/link";
 import { BookOpen, Printer } from "lucide-react";
 import { LEGAL } from "@/lib/siteConfig";
+import { MENSAJE_TURNSTILE_PENDIENTE, TURNSTILE_ACTIVO, Turnstile } from "@/Components/Turnstile";
 import type { ComplaintBienTipo, ComplaintPublic, ComplaintTipo, TipoDocumento } from "@/types";
 
 // Libro de Reclamaciones virtual (fase 22b). Los datos del proveedor salen de LEGAL; el servidor los copia
@@ -142,6 +143,9 @@ export default function LibroDeReclamacionesPage() {
   const [aviso, setAviso] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [constancia, setConstancia] = useState<Constancia | null>(null);
+  // Fase 26c (D-93): token de Turnstile. Cada uno vale una vez: tras un envío fallido se pide otro.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReinicio, setTurnstileReinicio] = useState(0);
 
   const err = (clave: string) => errores[clave];
   const describe = (clave: string) => (errores[clave] ? { "aria-invalid": true, "aria-describedby": `${clave}-error` } : {});
@@ -149,8 +153,12 @@ export default function LibroDeReclamacionesPage() {
   const enviar = async (e: FormEvent) => {
     e.preventDefault();
     if (enviando || !declara) return;
-    setEnviando(true);
     setErrores({});
+    if (TURNSTILE_ACTIVO && !turnstileToken) {
+      setAviso(MENSAJE_TURNSTILE_PENDIENTE);
+      return;
+    }
+    setEnviando(true);
     setAviso("");
 
     const montoTexto = monto.trim().replace(",", ".");
@@ -183,7 +191,7 @@ export default function LibroDeReclamacionesPage() {
       const res = await fetch("/api/complaints", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cuerpo),
+        body: JSON.stringify(turnstileToken ? { ...cuerpo, turnstileToken } : cuerpo),
       });
       const datos: unknown = await res.json().catch(() => null);
 
@@ -204,7 +212,15 @@ export default function LibroDeReclamacionesPage() {
         return;
       }
 
-      if (res.status === 429) {
+      const code = datos && typeof datos === "object" && "code" in datos ? String(datos.code) : "";
+      if (code.startsWith("VERIFICACION_")) {
+        // Turnstile (fase 26c): el mensaje del servidor dice qué hacer.
+        setAviso(
+          datos && typeof datos === "object" && "error" in datos && typeof datos.error === "string"
+            ? datos.error
+            : "No pudimos registrar tu hoja. Intenta de nuevo o escríbenos a " + LEGAL.correo + ".",
+        );
+      } else if (res.status === 429) {
         setAviso("Enviaste demasiadas hojas seguidas. Intenta más tarde o escríbenos a " + LEGAL.correo + ".");
       } else if (res.status === 400) {
         const fields =
@@ -220,6 +236,11 @@ export default function LibroDeReclamacionesPage() {
       setAviso("Error de conexión. Revisa tu internet e intenta de nuevo.");
     } finally {
       setEnviando(false);
+    }
+    // Llegó aquí sin constancia: el token ya se gastó o pudo gastarse.
+    if (TURNSTILE_ACTIVO) {
+      setTurnstileToken(null);
+      setTurnstileReinicio((n) => n + 1);
     }
   };
 
@@ -605,6 +626,8 @@ export default function LibroDeReclamacionesPage() {
           </span>
         </label>
         {err("declaraVeracidad") && <p className="text-xs text-red-600">{err("declaraVeracidad")}</p>}
+
+        <Turnstile onToken={setTurnstileToken} reinicio={turnstileReinicio} />
 
         {aviso && (
           <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">

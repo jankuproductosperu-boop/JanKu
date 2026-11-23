@@ -3,23 +3,31 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Mail, AlertCircle, CheckCircle } from "lucide-react";
+import { MENSAJE_TURNSTILE_PENDIENTE, TURNSTILE_ACTIVO, Turnstile } from "@/Components/Turnstile";
 
 export default function RecuperarContrasenaPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [exito, setExito] = useState(false);
+  // Fase 26c (D-93): token de Turnstile. Cada uno vale una vez: tras un envío fallido se pide otro.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReinicio, setTurnstileReinicio] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (TURNSTILE_ACTIVO && !turnstileToken) {
+      setError(MENSAJE_TURNSTILE_PENDIENTE);
+      return;
+    }
     setLoading(true);
 
     try {
       const res = await fetch("/api/auth-user/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, ...(turnstileToken ? { turnstileToken } : {}) }),
       });
 
       const data = await res.json();
@@ -28,9 +36,17 @@ export default function RecuperarContrasenaPage() {
         setExito(true);
       } else {
         setError(data.error || "Error al procesar la solicitud");
+        if (TURNSTILE_ACTIVO) {
+          setTurnstileToken(null);
+          setTurnstileReinicio((n) => n + 1);
+        }
       }
     } catch {
       setError("Error de conexión");
+      if (TURNSTILE_ACTIVO) {
+        setTurnstileToken(null);
+        setTurnstileReinicio((n) => n + 1);
+      }
     } finally {
       setLoading(false);
     }
@@ -84,6 +100,8 @@ export default function RecuperarContrasenaPage() {
               />
             </div>
           </div>
+
+          <Turnstile onToken={setTurnstileToken} reinicio={turnstileReinicio} />
 
           {error && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">

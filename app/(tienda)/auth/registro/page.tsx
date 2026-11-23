@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LEGAL } from "@/lib/siteConfig";
+import { MENSAJE_TURNSTILE_PENDIENTE, TURNSTILE_ACTIVO, Turnstile } from "@/Components/Turnstile";
 import { Eye, EyeOff, User, Mail, Lock, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function RegistroPage() {
@@ -12,6 +13,9 @@ export default function RegistroPage() {
   const [error, setError] = useState("");
   const [exito, setExito] = useState(false);
   const [acepta, setAcepta] = useState(false);
+  // Fase 26c (D-93): token de Turnstile. Cada uno vale una vez: tras un envío fallido se pide otro.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReinicio, setTurnstileReinicio] = useState(0);
 
   const requisitos = [
     { label: "Al menos 8 caracteres", cumple: form.password.length >= 8 },
@@ -28,6 +32,10 @@ export default function RegistroPage() {
       setError("Las contraseñas no coinciden");
       return;
     }
+    if (TURNSTILE_ACTIVO && !turnstileToken) {
+      setError(MENSAJE_TURNSTILE_PENDIENTE);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -39,6 +47,7 @@ export default function RegistroPage() {
           email: form.email,
           password: form.password,
           aceptaTerminos: acepta,
+          ...(turnstileToken ? { turnstileToken } : {}),
         }),
       });
 
@@ -48,9 +57,17 @@ export default function RegistroPage() {
         setExito(true);
       } else {
         setError(data.error || "Error al registrarse");
+        if (TURNSTILE_ACTIVO) {
+          setTurnstileToken(null);
+          setTurnstileReinicio((n) => n + 1);
+        }
       }
     } catch {
       setError("Error de conexión");
+      if (TURNSTILE_ACTIVO) {
+        setTurnstileToken(null);
+        setTurnstileReinicio((n) => n + 1);
+      }
     } finally {
       setLoading(false);
     }
@@ -196,6 +213,8 @@ export default function RegistroPage() {
               .
             </span>
           </label>
+
+          <Turnstile onToken={setTurnstileToken} reinicio={turnstileReinicio} />
 
           {/* Error */}
           {error && (
