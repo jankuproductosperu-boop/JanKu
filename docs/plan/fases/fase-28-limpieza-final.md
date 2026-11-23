@@ -1,6 +1,6 @@
 # Fase 28 · Limpieza final: CSP, correos de cuenta, vista previa de imágenes, avisos de lint y documentación
 
-> **Propuesta (2026-11-22), pendiente de aprobación del dueño.** Modelo: Opus 5.5. Sigue a la 23d.
+> **Aprobada por el dueño (2026-11-22).** Modelo: Opus 5.5. Sigue a la 23d.
 
 > Riesgo medio-bajo. Junta en una sola fase la deuda pequeña que quedó en `cierre.md` §4 y en la 23d. La tienda no debe verse distinta (N1-1), pero el cambio de CSP y el del carrusel de la cabecera la tocan: se cierra con la fase 00 **completa**. Sin dependencias nuevas, sin cambios en la base.
 
@@ -51,3 +51,5 @@ Sin dependencias nuevas. Sin cambios en la base, en las rutas ni en las respuest
 - Carrusel de la cabecera igual que antes (cambia solo y con las flechas).
 - `huerfanas.mjs` en seco: informe con el número de imágenes, las referenciadas y las candidatas; el dueño decide si ejecuta `--apply`.
 - Fase 00 completa (la CSP afecta a toda la tienda).
+
+Respuestas del dueño (2026-11-22): Q1–Q3 por defecto. Decisión D-95.
