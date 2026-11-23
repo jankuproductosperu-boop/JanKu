@@ -25,8 +25,10 @@ export type AnalyticsResumen = {
   masVistos: { productoId: string; nombre: string; href: string; vistas: number }[];
   /** `porcentaje`: parte de los usuarios del periodo que vio la página (0–100). */
   paginas: { ruta: string; vistas: number; usuarios: number; porcentaje: number }[];
-  /** `codigo`: país ISO de 2 letras ("PE"), o "" si Google no lo sabe. */
+  /** `codigo`: país ISO de 2 letras ("PE"), o "" si Google no lo sabe. Hasta 100, de más a menos usuarios (fase 23d). */
   paises: { codigo: string; usuarios: number }[];
+  /** Usuarios por región del Perú, con el nombre tal como lo da Google («Junin», «Lima Region»). Fase 23d. */
+  regiones?: { region: string; usuarios: number }[];
   /** Ciudades con más usuarios; `porcentaje` sobre los usuarios del periodo (0–100). */
   ciudades: { ciudad: string; usuarios: number; vistas: number; porcentaje: number }[];
   /** Las 4 fuentes principales y "Otros"; `porcentaje` de las sesiones. */

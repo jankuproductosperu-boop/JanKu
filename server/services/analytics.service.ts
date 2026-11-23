@@ -153,7 +153,8 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
           dimensions: [{ name: "countryId" }],
           metrics: [{ name: "activeUsers" }],
           orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-          limit: 10,
+          // Fase 23d: 100 para el mapa del mundo; las barras siguen mostrando las 10 primeras.
+          limit: 100,
         },
         {
           dateRanges: dosPeriodos,
@@ -192,11 +193,20 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
           orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
           limit: 8,
         },
+        {
+          // Fase 23d: departamentos del Perú para el mapa (Google admite hasta 5 consultas por lote).
+          dateRanges: [actual],
+          dimensions: [{ name: "region" }],
+          metrics: [{ name: "activeUsers" }],
+          dimensionFilter: { filter: { fieldName: "countryId", stringFilter: { matchType: "EXACT", value: "PE" } } },
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+          limit: 50,
+        },
       ],
     }),
   ]);
   const [rKpis, rSerie, rPaginas, rPaises, rDispositivos] = informes(respuestaA);
-  const [rFuentes, rMensual, rHoy, rCiudades] = informes(respuestaB);
+  const [rFuentes, rMensual, rHoy, rCiudades, rRegiones] = informes(respuestaB);
 
   // 1. Indicadores del periodo frente al anterior.
   const filaDe = (nombre: string) => (rKpis?.rows ?? []).find((f) => periodoDe(f) === nombre);
@@ -253,7 +263,10 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
     return { codigo: /^[A-Z]{2}$/.test(codigo) ? codigo : "", usuarios: met(f) };
   });
 
-  // 4b. Ciudades (en lugar de un mapa: para una tienda local dice más).
+  // 4b. Regiones del Perú, con el nombre de Google: el panel las une con el mapa (lib/mapas.ts).
+  const regiones = (rRegiones?.rows ?? []).map((f) => ({ region: dim(f), usuarios: met(f) }));
+
+  // 4c. Ciudades (la tabla bajo el mapa).
   const ciudades = (rCiudades?.rows ?? []).map((f) => {
     const nombre = dim(f);
     return {
@@ -298,6 +311,7 @@ export async function obtenerEstadisticas(rango: RangoAnalytics): Promise<Analyt
     masVistos,
     paginas,
     paises,
+    regiones,
     ciudades,
     fuentes,
     dispositivos,
