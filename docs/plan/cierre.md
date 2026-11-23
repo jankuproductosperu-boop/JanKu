@@ -99,22 +99,22 @@ Detalle por archivo en `linea-base.md`.
 | Severidad | Qué | Nota |
 |---|---|---|
 | ✅ Resuelta | `react-hooks/set-state-in-effect` (3 errores): `busqueda/page.tsx`, `CartContext.tsx`, `FavoritesContext.tsx` | Corregida el 2026-11-19 en la rama `lint-set-state-in-effect` (`useSyncExternalStore` y `useMemo`) |
-| 🟢 Baja | `react-hooks/exhaustive-deps` (1), `@next/next/no-img-element` (11) | Corregirlas cambia render o carga de imágenes: requiere verificación visual propia |
+| ✅ Resuelta | `react-hooks/exhaustive-deps` (1), `@next/next/no-img-element` (11) | Fase 28 (D-95): el efecto del carrusel recibe su dependencia (lista fija, mismo comportamiento) y cada `<img>` intencionado lleva `eslint-disable-next-line` con su motivo. Lint: 0 errores y 0 avisos |
 | 🟢 Baja | `@next/next/no-html-link-for-pages` | Hoy a 0; se mantiene en la lista de reglas que no se corrigen sin revisión visual |
-| 🟠 Media | Catálogo público resuelto en el navegador (M6): cada página descarga todos los productos | Paginación y filtros en servidor fuera del plan |
-| 🟠 Media | CSP con `'unsafe-inline'` (S13) | Fuera del plan |
-| 🟢 Baja | CSP sin `blob:` en `img-src`: la vista previa temporal al subir imagen en el panel se bloquea | `pendientes.md`; la imagen subida se ve bien |
+| ✅ Casi resuelta | Catálogo público resuelto en el navegador (M6): cada página descarga todos los productos | Fase 24 (D-87): cada página pide solo su parte. Queda la búsqueda, que filtra sobre el catálogo entero; «cargar más» aplazado por el dueño (fase 25) hasta que el catálogo crezca |
+| 🟢 Aceptada | CSP con `'unsafe-inline'` (S13) | Fase 28 (D-95): se añade `script-src-attr 'none'` (sin manejadores en atributos). `'unsafe-inline'` sigue en `script-src` y `style-src` por decisión del dueño (Q1): quitarlo exige un nonce y generar toda la tienda en cada visita |
+| ✅ Resuelta | CSP sin `blob:` en `img-src`: la vista previa temporal al subir imagen en el panel se bloquea | Fase 28 (D-95): la vista previa se lee como `data:`; la CSP no se relaja |
 | 🟢 Baja | `strict: false` en `Product` (D-05) | Se mantiene a propósito |
 | 🟢 Baja | Colecciones e índices obsoletos conservados: `loginblocks`, `userloginblocks`, índice `categoriaSlug_1_stock_1_precio_1` | N1-3: no se borran |
-| 🟢 Baja | Sin limpieza de imágenes huérfanas en Cloudinary (incluida la de `/nosotros`) | |
+| 🟢 Baja | Sin limpieza de imágenes huérfanas en Cloudinary (incluida la de `/nosotros`) | Fase 28 (D-95): `scripts/cloudinary/huerfanas.mjs` hace el informe y, con `--apply` (solo el dueño), las mueve a `huerfanas/` sin borrar. Falta que el dueño lo ejecute |
 | 🟠 Media | Sin pasarela de pago | El pago se coordina por WhatsApp |
-| 🟠 Media | Correos de pedido no hechos (confirmación al cliente, aviso al dueño, `ADMIN_NOTIFY_EMAIL`) | Fase 20 recortada; el archivo de la fase queda como referencia |
-| 🟢 Baja | Los correos de cuenta se envían con `await` dentro de la petición de registro y verificación (con timeout de 10 s desde la fase 20) | Comportamiento heredado |
-| 🟢 Baja | `GoogleAnalytics.tsx` podría enviar `page_location` con `?t=` (token del pedido) | Revisar antes de encender el checkout en producción |
-| 🟢 Baja | Imágenes fijas en `postimg.cc` | Fuera del plan |
-| 🟢 Baja | Sin política de privacidad ni términos enlazados en el checkout (Ley 29733) | P20, pendiente del dueño |
+| ⏸ Fuera por decisión del dueño | Correos de pedido no hechos (confirmación al cliente, aviso al dueño, `ADMIN_NOTIFY_EMAIL`) | 2026-11-22: en Perú todo va por WhatsApp. Se retoma solo el aviso al dueño si aparecen pedidos en el panel de clientes que nunca escribieron |
+| ✅ Resuelta | Los correos de cuenta se envían con `await` dentro de la petición de registro y verificación | Fase 28 (D-95): sin `await`, con `.catch` a `log.error`; recuperar contraseña ya no deja adivinar por el tiempo qué correos tienen cuenta |
+| ✅ Resuelta | `GoogleAnalytics.tsx` podría enviar `page_location` con `?t=` (token del pedido) | `page_location` va sin consulta ni fragmento |
+| ✅ Resuelta | Imágenes fijas en `postimg.cc` | Fase 27 (D-91): pasadas a Cloudinary `estaticas/`; postimg fuera de la CSP |
+| ✅ Resuelta | Sin política de privacidad ni términos enlazados en el checkout (Ley 29733) | Fase 22a: enlazados en el checkout y el pie. Los términos completos siguen pendientes de revisión del abogado |
 
-**Propuestas sin fase:** 21b visitas (D-55, `propuestas-panel.md`); interfaz de subcategorías (D-57/D-67); campo distrito en envío a provincia.
+**Propuestas sin fase:** campo distrito en envío a provincia (aplazado por el dueño, 2026-11-22). La 21b de visitas quedó sustituida por las estadísticas de Google Analytics (23b, D-86) y la interfaz de subcategorías se hizo en la fase 25 (D-88).
 
 ---
 

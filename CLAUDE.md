@@ -35,7 +35,7 @@ El plan de reestructuración (fases 01–21) está cerrado; el acta es `docs/pla
 | **N1-9** | **No cambiar mayúsculas/minúsculas de rutas.** `Components/` se queda con C mayúscula; `Infosection.tsx` conserva su nombre. |
 | **N1-10** | **Cerrar en verde.** `npm run typecheck`, `npm run lint` (sin errores nuevos respecto a la línea base), `npm test` y `npm run build` pasan antes de dar una fase por terminada. Si algo falla, se reporta con la salida; no se oculta. |
 
-Línea base de lint vigente: **0 errores** (12 avisos), ver `docs/plan/linea-base.md`.
+Línea base de lint vigente: **0 errores y 0 avisos** (fase 28), ver `docs/plan/linea-base.md`. Un `<img>` a propósito lleva `eslint-disable-next-line` con su motivo.
 
 ## 4. Mapa de carpetas
 
@@ -61,7 +61,10 @@ models/            modelos Mongoose
 types/             tipos compartidos; se importa desde "@/types"
 scripts/
   migrations/      NNN-nombre.mjs + _runner.mjs (simulan por defecto)
-  admin/           crear-admin.mjs, cambiar-password.mjs
+  admin/           crear-admin.mjs, cambiar-password.mjs, desactivar-2fa.mjs
+  backup/          respaldar.mjs (solo lee) y restaurar.mjs (simula por defecto)
+  cloudinary/      huerfanas.mjs: informe de imágenes sin usar; --apply las mueve a huerfanas/ (solo el dueño)
+  mapas/           generar-mapas.mjs: geometría de Estadísticas desde Natural Earth (se ejecuta a mano)
   legacy/          scripts antiguos ya aplicados; no ejecutar
   smoke.mjs        prueba de humo
 public/            favicon, apple-touch-icon, og-image
@@ -128,7 +131,7 @@ Sin `try/catch` genérico (lo cubre `handle`), sin `connectDB()`, sin importar m
 - Guardar el `body` de una petición sin pasarlo por su esquema.
 - Añadir una ruta de escritura sin guard dentro del handler.
 - Unificar los generadores de URL de imagen de `ProductCard` y del panel (cambian lo que se ve).
-- Hacer `await` del envío de un correo dentro de una petición o de una transacción (los correos de cuenta heredados aún lo hacen: deuda en `cierre.md`).
+- Hacer `await` del envío de un correo dentro de una petición o de una transacción: se lanza con `.catch(…log.error…)` (fase 28).
 - Quitar `strict: false` de `Product`.
 - Mostrar o registrar contraseñas, también en el panel de Usuarios.
 - Arreglar "de paso" algo que no está en la tarea: se anota y se reporta.

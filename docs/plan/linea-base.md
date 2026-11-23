@@ -85,3 +85,21 @@ Fecha: 2026-11-19 · Rama `lint-set-state-in-effect` (pedido del dueño, despué
 Carrito y favoritos leen `localStorage` con `useSyncExternalStore` (`hooks/useAlmacenLocal.ts`); la búsqueda calcula la lista filtrada con `useMemo`.
 
 **Referencia de N1-10 desde ahora:** 0 errores de lint.
+
+---
+
+## Actualización · Fase 28
+
+Fecha: 2026-11-22 · Rama `fase-28-limpieza`
+
+| Comando | Resultado |
+|---|---|
+| `npm run typecheck` | 0 errores |
+| `npm test` | 24 archivos, 392 pruebas, pasan |
+| `npm run lint` | **0 errores, 0 avisos** |
+| `npm run build` | Compila sin errores |
+| `npm run smoke` | 94 comprobaciones, todas OK |
+
+Los 11 `no-img-element` se quedan a propósito con `eslint-disable-next-line` y su motivo (D-92, D-95); el `exhaustive-deps` del carrusel se corrigió.
+
+**Referencia de N1-10 desde ahora:** 0 errores y 0 avisos de lint.
