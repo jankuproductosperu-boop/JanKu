@@ -1,5 +1,6 @@
 "use client";
 import { Upload } from "lucide-react";
+import { leerComoDataUrl } from "@/app/(admin)/admin/_components/vistaPrevia";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTE INTERNO – campo de imagen único para Promociones
@@ -18,7 +19,9 @@ export function PromocionImageField({ currentImageUrl, preview, onFileSelect, ti
     if (!file) return;
     if (!file.type.startsWith("image/")) { alert("Solo se permiten imágenes"); return; }
     if (file.size > 5 * 1024 * 1024) { alert("La imagen no puede superar 5MB"); return; }
-    onFileSelect(file, URL.createObjectURL(file));
+    leerComoDataUrl(file)
+      .then((url) => onFileSelect(file, url))
+      .catch(() => onFileSelect(file, ""));
     e.target.value = "";
   };
   const display = preview || currentImageUrl;
@@ -26,6 +29,7 @@ export function PromocionImageField({ currentImageUrl, preview, onFileSelect, ti
     <div className="space-y-2">
       <label className="block text-sm font-medium text-[var(--ink)]">Imagen de la Promoción *</label>
       <div className="flex gap-3 items-start">
+        {/* eslint-disable-next-line @next/next/no-img-element -- vista previa data: o URL ya transformada (D-95) */}
         {display && <img src={display} alt="preview" className="w-24 h-24 object-cover rounded-xl border border-[var(--line)] flex-shrink-0" />}
         <div className="flex-1">
           <label className="cursor-pointer flex items-center gap-2 px-4 py-3 border-2 border-dashed border-[var(--line)] rounded-lg hover:border-indigo-400 hover:bg-indigo-50/30 transition text-sm text-[var(--muted)]">

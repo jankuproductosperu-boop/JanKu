@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { AlertCircle, Upload, X, Star, GripVertical, Loader2 } from "lucide-react";
 import { getCloudinaryUrl, type UploadedImage } from "@/app/(admin)/admin/_components/imageTypes";
+import { leerComoDataUrl } from "@/app/(admin)/admin/_components/vistaPrevia";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTE INTERNO – ImageUploader con drag & drop, reorden y selección de portada
@@ -47,16 +48,19 @@ export function ImageUploader({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [images]);
 
-  const addFiles = useCallback((files: File[]) => {
+  const addFiles = useCallback(async (files: File[]) => {
     const toAdd = files.slice(0, maxImages - images.length);
-    const newImgs: UploadedImage[] = toAdd.map((file, i) => ({
-      public_id: "", secure_url: "",
-      previewUrl: URL.createObjectURL(file), file,
-      isMain: images.length === 0 && i === 0,
-      status: "pending" as const,
-    }));
+    // Vista previa como data: (fase 28, D-95); si un archivo no se puede leer, se muestra sin vista previa.
+    const vistas = await Promise.all(toAdd.map((file) => leerComoDataUrl(file).catch(() => "")));
     setImages((prev) => {
-      const u = [...prev, ...newImgs];
+      // Se cuenta sobre `prev`: mientras se leían los archivos pudo cambiar la lista.
+      const nuevas: UploadedImage[] = toAdd.slice(0, Math.max(0, maxImages - prev.length)).map((file, i) => ({
+        public_id: "", secure_url: "",
+        previewUrl: vistas[i] || undefined, file,
+        isMain: prev.length === 0 && i === 0,
+        status: "pending" as const,
+      }));
+      const u = [...prev, ...nuevas];
       setTimeout(() => onImagesChange(u), 0);
       return u;
     });
@@ -82,7 +86,6 @@ export function ImageUploader({
         });
       } catch {}
     }
-    if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
     setImages((prev) => {
       const u = prev.filter((_, i) => i !== index);
       if (img.isMain && u.length > 0) u[0].isMain = true;
@@ -162,6 +165,7 @@ export function ImageUploader({
                 className={`relative group aspect-square rounded-xl overflow-hidden border-2 transition-all ${img.isMain ? "border-indigo-500 ring-2 ring-indigo-200" : "border-[var(--line)]"} ${dragOverIndex === index ? "scale-105 border-indigo-400 shadow-lg" : ""}`}
               >
                 {imgUrl(img) ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- vista previa data: o miniatura de Cloudinary (D-95)
                   <img src={imgUrl(img)} alt={`Imagen ${index + 1}`} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-[var(--line)] flex items-center justify-center"><Loader2 className="w-6 h-6 text-[var(--muted)] animate-spin" /></div>

@@ -4,6 +4,7 @@ import { Upload } from "lucide-react";
 import { buildProductUrl } from "@/lib/productUrl";
 import type { Popup, PopupDestinoTipo, ProductAdmin, Category, Promotion } from "@/types";
 import { Switch } from "@/app/(admin)/admin/_components/ui";
+import { leerComoDataUrl } from "@/app/(admin)/admin/_components/vistaPrevia";
 
 type Props = {
   popup: Popup | null;
@@ -53,7 +54,9 @@ export default function PopupForm({ popup, products, categories, promotions, onS
     if (!file.type.startsWith("image/")) { alert("Solo se permiten imágenes"); return; }
     if (file.size > 5 * 1024 * 1024) { alert("La imagen no puede superar 5MB"); return; }
     setArchivo(file);
-    setVistaPrevia(URL.createObjectURL(file));
+    leerComoDataUrl(file)
+      .then(setVistaPrevia)
+      .catch(() => setVistaPrevia(""));
     e.target.value = "";
   };
 
