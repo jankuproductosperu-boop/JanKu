@@ -1,16 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Activity, AlertTriangle, Clock, MapPin, TrendingDown, Users } from "lucide-react";
+import { Activity, AlertTriangle, Clock, TrendingDown, Users } from "lucide-react";
 import type { AnalyticsResumen, AnalyticsTiempoReal, KpiAnalytics, RangoAnalytics } from "@/types";
 import { formatearDuracion } from "@/lib/analytics";
 import Seccion from "@/app/(admin)/admin/_components/Seccion";
 import { TarjetaIndicador } from "@/app/(admin)/admin/_components/ui";
 import { useAdminSession } from "@/app/(admin)/admin/_components/useAdminSession";
+import { MapaVisitas, type VistaMapa } from "@/app/(admin)/admin/estadisticas/_mapas/MapaVisitas";
 
 // Estadísticas de Google Analytics (fase 23b). Solo superadmin. Las cifras solo cuentan a quien
 // aceptó las cookies (D-75): sirven para comparar, no como conteo exacto (D-86).
-// Gráficos dibujados aquí mismo en SVG: sin librerías nuevas.
+// Gráficos dibujados aquí mismo en SVG: sin librerías nuevas. Mapa de visitas: fase 23d (D-94).
 
 const RANGOS: { valor: RangoAnalytics; etiqueta: string }[] = [
   { valor: "7d", etiqueta: "7 días" },
@@ -141,13 +142,17 @@ function pasoDelEje(max: number): number {
   return opciones.find((o) => o >= bruto) ?? 10 * base;
 }
 
+/** Barras de países: como mucho estas; el resto se cuenta al pie. */
+const MAX_PAISES = 10;
+
 /**
- * Barras horizontales como el modelo de referencia: nombres a la izquierda contra el eje, barras gruesas
- * con su cifra al final y eje inferior con marcas. Hecho con HTML (no SVG) para que llene el alto de la
- * tarjeta sin encogerse: cada fila mide entre 46 y 72 px y la barra ocupa el 62 % de su fila.
+ * Barras horizontales como el modelo de referencia: nombres a la izquierda contra el eje, barras con su
+ * cifra al final y eje inferior con marcas. Hecho con HTML (no SVG). Fase 23d: el gráfico tiene alto fijo
+ * (en pantallas grandes, el de la fila, que marca la tarjeta del mapa) y las filas se reparten ese alto,
+ * haya 1 o 10 países; el contenido va en posición absoluta para que nunca estire la tarjeta.
  * La fila con más usuarios se resalta en coral.
  */
-function BarrasPaises({ filas }: { filas: { etiqueta: string; clave: string; valor: number }[] }) {
+function BarrasPaises({ filas, resto }: { filas: { etiqueta: string; clave: string; valor: number }[]; resto: number }) {
   const max = Math.max(1, ...filas.map((f) => f.valor));
   const paso = pasoDelEje(max);
   const tope = Math.ceil(max / paso) * paso;
@@ -156,40 +161,45 @@ function BarrasPaises({ filas }: { filas: { etiqueta: string; clave: string; val
   const eje = "border-[color-mix(in_srgb,var(--muted)_45%,transparent)]";
 
   return (
-    <div className="flex flex-col h-full min-h-[360px]" role="img" aria-label="Usuarios por país">
-      <div
-        className="flex-1 grid content-center"
-        style={{ gridTemplateRows: `repeat(${filas.length}, minmax(46px, 72px))` }}
-      >
-        {filas.map((f, i) => (
-          <div key={f.clave} className="grid grid-cols-[6.5rem_1fr] items-center min-h-0 h-full">
-            <span className="pr-2.5 text-right text-[11.5px] text-[var(--muted)] truncate" title={f.etiqueta}>
-              {f.etiqueta}
-            </span>
-            <div className={`relative h-full border-l ${eje} pr-12 flex items-center`}>
-              <div
-                className="h-[62%] max-h-[36px] min-h-[24px] rounded-r-[3px]"
-                style={{ width: pct(f.valor), minWidth: 3, background: i === 0 ? "#f06548" : "#299cdb" }}
-                title={`${f.etiqueta}: ${miles(f.valor)} usuarios`}
-              />
-              <span className="ml-2 text-[11.5px] text-[var(--ink)] whitespace-nowrap">{miles(f.valor)}</span>
+    <div className="relative flex-1 min-h-[380px]" role="img" aria-label="Usuarios por país">
+      <div className="absolute inset-0 flex flex-col">
+        <div className="flex-1 min-h-0 grid" style={{ gridTemplateRows: `repeat(${filas.length}, minmax(0, 1fr))` }}>
+          {filas.map((f, i) => (
+            <div key={f.clave} className="grid grid-cols-[6.5rem_1fr] items-center min-h-0">
+              <span className="pr-2.5 text-right text-[11.5px] text-[var(--muted)] truncate" title={f.etiqueta}>
+                {f.etiqueta}
+              </span>
+              <div className={`relative h-full border-l ${eje} pr-12 flex items-center`}>
+                <div
+                  className="h-[62%] max-h-[40px] min-h-[8px] rounded-r-[3px]"
+                  style={{ width: pct(f.valor), minWidth: 3, background: i === 0 ? "#f06548" : "#299cdb" }}
+                  title={`${f.etiqueta}: ${miles(f.valor)} usuarios`}
+                />
+                <span className="ml-2 text-[11.5px] text-[var(--ink)] whitespace-nowrap">{miles(f.valor)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Eje inferior con sus marcas */}
+        <div className="grid grid-cols-[6.5rem_1fr]">
+          <span />
+          <div className={`border-t ${eje} pr-12`}>
+            <div className="relative h-7">
+              {marcas.map((v, i) => (
+                <span key={v} className="absolute top-0 -translate-x-1/2 flex flex-col items-center" style={{ left: pct(v) }}>
+                  <span className={`h-1.5 border-l ${eje}`} />
+                  {/* Con más de 3 marcas se rotula una sí y otra no: en la columna estrecha las cifras se pisaban. */}
+                  {(marcas.length <= 3 || i % 2 === 0) && <span className="text-[11px] text-[var(--muted)] mt-0.5">{miles(v)}</span>}
+                </span>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
-      {/* Eje inferior con sus marcas */}
-      <div className="grid grid-cols-[6.5rem_1fr]">
-        <span />
-        <div className={`border-t ${eje} pr-12`}>
-          <div className="relative h-7">
-            {marcas.map((v) => (
-              <span key={v} className="absolute top-0 -translate-x-1/2 flex flex-col items-center" style={{ left: pct(v) }}>
-                <span className={`h-1.5 border-l ${eje}`} />
-                <span className="text-[11px] text-[var(--muted)] mt-0.5">{miles(v)}</span>
-              </span>
-            ))}
-          </div>
         </div>
+        {resto > 0 && (
+          <p className="mt-1 text-right text-[11px] text-[var(--muted)]">
+            y {miles(resto)} {resto === 1 ? "país" : "países"} más
+          </p>
+        )}
       </div>
     </div>
   );
@@ -283,65 +293,71 @@ function SinConexion() {
   );
 }
 
-/** En lugar del mapa: de qué ciudades llegan (para una tienda local dice más que un mapa mundial). */
-function TarjetaCiudades({ d }: { d: AnalyticsResumen }) {
-  const [principal, ...resto] = d.ciudades;
+const VISTAS_MAPA: { valor: VistaMapa; etiqueta: string }[] = [
+  { valor: "peru", etiqueta: "Perú" },
+  { valor: "mundo", etiqueta: "Mundo" },
+];
+
+/** Región tal como la da Google, o «Sin identificar» si no la sabe. */
+const nombreRegion = (region: string) => (!region || region === "(not set)" ? "Sin identificar" : region);
+
+/** Mapa de usuarios con selector Perú · Mundo y, debajo, las ciudades (fase 23d: sustituye a «Usuarios por ciudad»). */
+function TarjetaMapa({ d }: { d: AnalyticsResumen }) {
+  const [vista, setVista] = useState<VistaMapa>("peru");
+  const filas = useMemo(
+    () =>
+      vista === "peru"
+        ? (d.regiones ?? []).map((r) => ({ clave: r.region, usuarios: r.usuarios }))
+        : d.paises.map((p) => ({ clave: p.codigo, usuarios: p.usuarios })),
+    [d, vista],
+  );
+
   return (
     <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm flex flex-col min-w-0">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--line)]">
-        <h2 className="font-semibold text-[16px]">Usuarios por ciudad</h2>
-        <span className="rounded-md bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-xs font-semibold">
-          {miles(d.kpis.usuarios.actual)} usuarios
-        </span>
+        <h2 className="font-semibold text-[16px]">Mapa de usuarios</h2>
+        <div className="flex gap-1.5" role="tablist" aria-label="Mapa">
+          {VISTAS_MAPA.map((o) => (
+            <button
+              key={o.valor}
+              role="tab"
+              aria-selected={vista === o.valor}
+              onClick={() => setVista(o.valor)}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                vista === o.valor ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95"
+              }`}
+            >
+              {o.etiqueta}
+            </button>
+          ))}
+        </div>
       </div>
-      {!principal ? (
-        <div className="p-5"><SinDatos /></div>
+      <div className="px-5 pt-4 pb-3">
+        <MapaVisitas vista={vista} filas={filas} nombreDe={vista === "mundo" ? nombrePais : nombreRegion} />
+      </div>
+      {d.ciudades.length === 0 ? (
+        <div className="px-5 py-4 border-t border-dashed border-[var(--line)]"><SinDatos /></div>
       ) : (
-        <>
-          <div className="p-5 space-y-4 flex-1">
-            <div className="flex items-center gap-4">
-              <span className="w-14 h-14 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] grid place-items-center flex-none">
-                <MapPin className="w-6 h-6" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Ciudad principal</p>
-                <p className="text-xl font-semibold truncate">{principal.ciudad}</p>
-                <p className="text-sm text-[var(--muted)]">{principal.porcentaje.toFixed(1)} % de tus usuarios</p>
-              </div>
-            </div>
-            <ul className="space-y-2.5">
-              {d.ciudades.slice(0, 5).map((c, i) => (
-                <li key={c.ciudad} className="text-sm">
-                  <div className="flex justify-between mb-1">
-                    <span className="truncate pr-3">{c.ciudad}</span>
-                    <span className="text-[var(--muted)]">{c.porcentaje.toFixed(1)} %</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-[var(--bg)] overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, c.porcentaje)}%`, background: PALETA[i % PALETA.length] }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <table className="w-full text-sm border-t border-dashed border-[var(--line)]">
-            <thead className="text-left text-[var(--muted)] bg-[var(--bg)]">
-              <tr>
-                <th className="px-5 py-2.5 font-medium">Ciudad</th>
-                <th className="px-3 py-2.5 font-medium text-right">Usuarios</th>
-                <th className="px-5 py-2.5 font-medium text-right">Vistas</th>
+        <table className="w-full text-sm border-t border-dashed border-[var(--line)]">
+          <thead className="text-left text-[var(--muted)] bg-[var(--bg)]">
+            <tr>
+              <th className="px-5 py-2.5 font-medium">Ciudad</th>
+              <th className="px-3 py-2.5 font-medium text-right">Usuarios</th>
+              <th className="px-3 py-2.5 font-medium text-right">Vistas</th>
+              <th className="px-5 py-2.5 font-medium text-right">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {d.ciudades.slice(0, 5).map((c, i) => (
+              <tr key={`${c.ciudad}-${i}`} className="border-t border-[var(--line)]">
+                <td className="px-5 py-2 truncate max-w-[160px]" title={c.ciudad}>{c.ciudad}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{miles(c.usuarios)}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">{miles(c.vistas)}</td>
+                <td className="px-5 py-2 text-right whitespace-nowrap text-[var(--muted)]">{c.porcentaje.toFixed(1)} %</td>
               </tr>
-            </thead>
-            <tbody>
-              {[principal, ...resto].slice(0, 6).map((c) => (
-                <tr key={c.ciudad} className="border-t border-[var(--line)]">
-                  <td className="px-5 py-2 truncate max-w-[160px]">{c.ciudad}</td>
-                  <td className="px-3 py-2 text-right">{miles(c.usuarios)}</td>
-                  <td className="px-5 py-2 text-right">{miles(c.vistas)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+            ))}
+          </tbody>
+        </table>
       )}
     </section>
   );
@@ -430,8 +446,8 @@ function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | n
 
   return (
     <>
-      {/* Fila 1: aviso + indicadores · ciudades (en lugar del mapa) · países */}
-      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-[1.5fr_1fr_0.9fr]">
+      {/* Fila 1: aviso + indicadores · mapa con las ciudades debajo · países (fase 23d) */}
+      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-[1.5fr_1.1fr_0.9fr]">
         <div className="space-y-5 min-w-0">
           <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm overflow-hidden">
             <div className="flex items-start gap-2.5 px-5 py-3 bg-[var(--warn-soft)] text-[var(--warn)] text-sm">
@@ -470,18 +486,19 @@ function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | n
           </div>
         </div>
 
-        <TarjetaCiudades d={d} />
+        <TarjetaMapa d={d} />
 
         <Tarjeta titulo="Usuarios por país" cuerpo="flex flex-col">
           {d.paises.length === 0 ? (
             <SinDatos />
           ) : (
             <BarrasPaises
-              filas={d.paises.map((p) => ({
+              filas={d.paises.slice(0, MAX_PAISES).map((p) => ({
                 clave: p.codigo || "?",
                 valor: p.usuarios,
                 etiqueta: `${bandera(p.codigo)} ${nombrePais(p.codigo)}`,
               }))}
+              resto={Math.max(0, d.paises.length - MAX_PAISES)}
             />
           )}
         </Tarjeta>
