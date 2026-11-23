@@ -139,6 +139,8 @@ Sin `try/catch` genérico (lo cubre `handle`), sin `connectDB()`, sin importar m
 
 Verificación en dos pasos del panel (fase 26b): `TOTP_ENC_KEY` (32 bytes en base64, distinta en desarrollo y producción). Sin ella no se puede activar la 2FA y el superadmin queda limitado a Seguridad; si se pierde, los admins con 2FA entran solo tras `scripts/admin/desactivar-2fa.mjs`.
 
+Captcha contra bots (fase 26c, D-93, opcionales): `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (se lee al construir) · `TURNSTILE_SECRET_KEY`. Solo con las dos se exige Cloudflare Turnstile en registro, checkout, recuperar contraseña y Libro de Reclamaciones; sin ellas todo funciona como antes.
+
 Estadísticas del panel (fase 23b, opcionales: sin ellas la pantalla explica cómo conectar): `GA_PROPERTY_ID` (número de la propiedad GA4) · `GA_SA_EMAIL` · `GA_SA_PRIVATE_KEY` (cuenta de servicio con rol Lector).
 
 Pendiente futuro, sin uso hoy: `ADMIN_NOTIFY_EMAIL` (aviso de pedido nuevo, cuando se hagan los correos de pedido).
@@ -153,6 +155,7 @@ Nunca abras `.env.local` para copiar valores.
 | Render | Hosting; despliega al hacer push a `main` |
 | Cloudflare | DNS de `jan-ku.com` en modo "DNS only" (sin proxy; ver `lib/clientIp.ts`) |
 | Google Analytics | Medición (`NEXT_PUBLIC_GA_ID`) |
+| Cloudflare Turnstile | Captcha casi siempre invisible en registro, checkout, recuperar contraseña y reclamos (D-93) |
 
 ## 9. Dónde está el porqué
 

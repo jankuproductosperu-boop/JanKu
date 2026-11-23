@@ -34,3 +34,5 @@ Frenar pedidos, cuentas, reclamos y correos de recuperación hechos por bots que
 ## 6. Verificación
 
 En local con las claves de prueba que publica Cloudflare (una que siempre aprueba y otra que siempre rechaza); smoke sin claves (todo igual que hoy); fase 00.
+
+Respuestas del dueño (2026-11-22): Q1 y Q2 por defecto. Lista de archivos ampliada con `lib/turnstile.ts` y `lib/__tests__/turnstile.test.ts` (lógica pura con pruebas). Los esquemas no cambian: el token se separa antes de validar. Decisión **D-93** (D-90 ya era la 2FA).

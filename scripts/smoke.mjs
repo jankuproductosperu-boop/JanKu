@@ -188,6 +188,40 @@ const CHECKS = [
   ...["iniciar", "confirmar", "desactivar", "codigos-rescate"].map((n) => ({
     nombre: `POST /api/admin/seguridad/${n} (sin cookie)`, metodo: "POST", ruta: `/api/admin/seguridad/${n}`, cuerpo: {}, espera: estado(401),
   })),
+  // Fase 26c (D-93): Turnstile. La CSP deja cargar el script y el iframe de Cloudflare.
+  {
+    nombre: "CSP permite Turnstile (script-src y frame-src)", metodo: "GET", ruta: "/",
+    espera: (res) => {
+      const csp = res.headers.get("content-security-policy") || "";
+      const falta = ["script-src", "frame-src"].filter((d) => {
+        const directiva = csp.split(";").map((x) => x.trim()).find((x) => x.startsWith(d + " ")) || "";
+        return !directiva.includes("https://challenges.cloudflare.com");
+      });
+      return falta.length ? `falta https://challenges.cloudflare.com en ${falta.join(", ")}` : true;
+    },
+  },
+  // turnstileToken es un campo opcional nuevo (N1-6): no rompe los cuerpos de siempre. Un correo inválido
+  // responde el 200 genérico antes de los límites: no gasta intentos.
+  {
+    nombre: "POST /api/auth-user/forgot-password acepta turnstileToken (200)", metodo: "POST", ruta: "/api/auth-user/forgot-password",
+    cuerpo: { email: "no-es-correo", turnstileToken: "x" }, espera: estado(200),
+  },
+  // El esquema estricto del reclamo no lo trata como campo desconocido. Ojo: cuenta 1 intento del límite de 5/h por IP.
+  {
+    nombre: "POST /api/complaints con solo turnstileToken (400 sin campo desconocido)", metodo: "POST", ruta: "/api/complaints",
+    cuerpo: { turnstileToken: "x" },
+    espera: (res, texto) => {
+      if (res.status !== 400) return `esperado 400, recibido ${res.status}`;
+      let fields = {};
+      try {
+        fields = JSON.parse(texto).fields || {};
+      } catch {
+        return "el cuerpo no es JSON";
+      }
+      const raros = Object.entries(fields).filter(([k, v]) => k === "" || String(v).includes("turnstileToken"));
+      return raros.length ? "el esquema rechaza turnstileToken como campo desconocido" : true;
+    },
+  },
 ];
 
 async function main() {
