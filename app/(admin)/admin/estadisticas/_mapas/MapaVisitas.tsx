@@ -1,23 +1,26 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { escalaDeColor, idDeRegionPeru, radioMarcador, ubicarEnMapa } from "@/lib/mapas";
+import { escalaDeColor, escalaProporcional, idDeRegionPeru, radioMarcador, ubicarEnMapa } from "@/lib/mapas";
 
-// Mapa de visitas (fase 23d, D-94): el Perú por departamentos o el mundo por países, dibujado en SVG sin
-// librerías. La geometría (Natural Earth, generada con scripts/mapas/generar-mapas.mjs) se pide con
-// import() al elegir la vista: ninguna otra pantalla la descarga y la tienda tampoco.
+// Mapa de visitas (fase 23d, D-94): el Perú por departamentos, el zoom de Lima (Lima Metropolitana, Callao y
+// Lima Provincias) o el mundo por países, dibujado en SVG sin librerías. La geometría (Natural Earth, generada
+// con scripts/mapas/generar-mapas.mjs) se pide con import() al elegir la vista: ninguna otra pantalla la
+// descarga y la tienda tampoco.
 
-export type VistaMapa = "peru" | "mundo";
+export type VistaMapa = "peru" | "lima" | "mundo";
 
 type Forma = { id: string; nombre: string; d: string; x: number; y: number };
-type Geometria = { ancho: number; alto: number; huancayo: number[]; formas: Forma[] };
+/** `huancayo` es null cuando la ciudad queda fuera del encuadre (zoom de Lima). */
+type Geometria = { ancho: number; alto: number; huancayo: number[] | null; formas: Forma[] };
 
 const CARGAR: Record<VistaMapa, () => Promise<Geometria>> = {
   peru: () => import("./peru.json").then((m) => m.default),
+  lima: () => import("./lima.json").then((m) => m.default),
   mundo: () => import("./mundo.json").then((m) => m.default),
 };
 
-/** Píxeles que ocupa más o menos el lado mayor de cada mapa en la tarjeta: puntos y marcadores miden igual en las dos vistas. */
-const LADO_PX: Record<VistaMapa, number> = { peru: 300, mundo: 480 };
+/** Píxeles que ocupa más o menos el lado mayor de cada mapa en la tarjeta: puntos y marcadores miden igual en todas las vistas. */
+const LADO_PX: Record<VistaMapa, number> = { peru: 300, lima: 300, mundo: 480 };
 /** Opacidad del tinte por escalón de visitas (0 = sin visitas). */
 const OPACIDAD = [0, 0.16, 0.28, 0.42, 0.58, 0.75];
 const CORAL = "#f06548";
@@ -72,13 +75,22 @@ export function MapaVisitas({ vista, filas, nombreDe }: Props) {
   const calculo = useMemo(() => {
     if (!datos) return null;
     const ids = new Set(datos.formas.map((f) => f.id).filter(Boolean));
-    const idDe = vista === "peru" ? idDeRegionPeru : (c: string) => c || null;
-    const { porId, sinUbicar } = ubicarEnMapa(filas, idDe, ids);
+    const idDe = vista === "mundo" ? (c: string) => c || null : idDeRegionPeru;
+    // El zoom de Lima solo muestra sus tres zonas: el resto del Perú y lo que no se ubica ya salen en la vista Perú.
+    const filasVista =
+      vista === "lima"
+        ? filas.filter((f) => {
+            const id = idDeRegionPeru(f.clave);
+            return id !== null && ids.has(id);
+          })
+        : filas;
+    const { porId, sinUbicar } = ubicarEnMapa(filasVista, idDe, ids);
     const valores = Object.values(porId);
     return {
       porId,
       sinUbicar,
-      escala: escalaDeColor(valores),
+      // Con 3 zonas los cuantiles no sirven: en Lima el tinte va en proporción al mayor.
+      escala: vista === "lima" ? escalaProporcional(valores) : escalaDeColor(valores),
       mayor: Math.max(0, ...valores),
       total: valores.reduce((s, v) => s + v, 0),
       lugares: valores.length,
@@ -89,7 +101,7 @@ export function MapaVisitas({ vista, filas, nombreDe }: Props) {
   const dibujo = useMemo(() => {
     if (!datos || !calculo) return null;
     const paso = 5 * u;
-    const [hx, hy] = datos.huancayo;
+    const origen = datos.huancayo;
     const patron = `mapa-puntos-${vista}`;
     const conVisitas = datos.formas
       .filter((f) => f.id && calculo.porId[f.id])
@@ -101,7 +113,13 @@ export function MapaVisitas({ vista, filas, nombreDe }: Props) {
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
         role="img"
-        aria-label={vista === "peru" ? "Mapa del Perú con los usuarios por departamento" : "Mapa del mundo con los usuarios por país"}
+        aria-label={
+          vista === "peru"
+            ? "Mapa del Perú con los usuarios por departamento"
+            : vista === "lima"
+              ? "Mapa de Lima Metropolitana, el Callao y Lima Provincias con sus usuarios"
+              : "Mapa del mundo con los usuarios por país"
+        }
       >
         <defs>
           <pattern id={patron} width={paso} height={paso} patternUnits="userSpaceOnUse">
@@ -115,26 +133,30 @@ export function MapaVisitas({ vista, filas, nombreDe }: Props) {
               d={f.d}
               data-id={f.id || undefined}
               fill={`url(#${patron})`}
-              style={vista === "peru" ? { stroke: "color-mix(in srgb, var(--muted) 30%, transparent)", strokeWidth: 0.8 * u } : undefined}
+              style={vista !== "mundo" ? { stroke: "color-mix(in srgb, var(--muted) 30%, transparent)", strokeWidth: 0.8 * u } : undefined}
             />
           ))}
           {conVisitas.map(({ f, n }) => (
             <path key={f.id} d={f.d} data-id={f.id} fill="var(--accent)" fillOpacity={OPACIDAD[calculo.escala(n)]} />
           ))}
         </g>
-        <g
-          fill="none"
-          stroke="var(--accent)"
-          strokeOpacity={0.45}
-          strokeWidth={u}
-          strokeDasharray={`${2.5 * u} ${2.5 * u}`}
-          strokeLinecap="round"
-          pointerEvents="none"
-        >
-          {conVisitas.map(({ f, r }) =>
-            Math.hypot(f.x - hx, f.y - hy) > r + 4 * u ? <path key={f.id} d={arco(hx, hy, f.x, f.y)} /> : null,
-          )}
-        </g>
+        {origen && (
+          <g
+            fill="none"
+            stroke="var(--accent)"
+            strokeOpacity={0.45}
+            strokeWidth={u}
+            strokeDasharray={`${2.5 * u} ${2.5 * u}`}
+            strokeLinecap="round"
+            pointerEvents="none"
+          >
+            {conVisitas.map(({ f, r }) =>
+              Math.hypot(f.x - origen[0], f.y - origen[1]) > r + 4 * u ? (
+                <path key={f.id} d={arco(origen[0], origen[1], f.x, f.y)} />
+              ) : null,
+            )}
+          </g>
+        )}
         {conVisitas.map(({ f, r }) => (
           <g key={f.id}>
             <circle
@@ -151,7 +173,9 @@ export function MapaVisitas({ vista, filas, nombreDe }: Props) {
             <circle cx={f.x} cy={f.y} r={r * 0.45} data-id={f.id} fill="var(--accent)" stroke="var(--surface)" strokeWidth={1.2 * u} />
           </g>
         ))}
-        <circle cx={hx} cy={hy} r={3.5 * u} data-id="huancayo" fill={CORAL} stroke="var(--surface)" strokeWidth={1.5 * u} />
+        {origen && (
+          <circle cx={origen[0]} cy={origen[1]} r={3.5 * u} data-id="huancayo" fill={CORAL} stroke="var(--surface)" strokeWidth={1.5 * u} />
+        )}
       </svg>
     );
   }, [datos, calculo, vista, u]);
@@ -224,16 +248,20 @@ export function MapaVisitas({ vista, filas, nombreDe }: Props) {
         <div className="mt-2 space-y-1 text-xs text-[var(--muted)]">
           <p>
             {calculo.lugares === 0
-              ? "Aún no hay visitas ubicadas en este periodo."
-              : `${usuarios(calculo.total)} en ${calculo.lugares} ${
-                  vista === "peru"
-                    ? calculo.lugares === 1
-                      ? "departamento"
-                      : "departamentos"
-                    : calculo.lugares === 1
-                      ? "país"
-                      : "países"
-                }`}
+              ? vista === "lima"
+                ? "Aún no hay visitas de Lima ni del Callao en este periodo."
+                : "Aún no hay visitas ubicadas en este periodo."
+              : vista === "lima"
+                ? `${usuarios(calculo.total)} en Lima y el Callao`
+                : `${usuarios(calculo.total)} en ${calculo.lugares} ${
+                    vista === "peru"
+                      ? calculo.lugares === 1
+                        ? "departamento"
+                        : "departamentos"
+                      : calculo.lugares === 1
+                        ? "país"
+                        : "países"
+                  }`}
           </p>
           {calculo.sinUbicar.length > 0 && (
             <p>

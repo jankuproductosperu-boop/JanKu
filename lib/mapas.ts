@@ -134,6 +134,18 @@ export function escalaDeColor(valores: readonly number[], pasos = 5): (valor: nu
 }
 
 /**
+ * Escala proporcional: escalón 1…`pasos` según la parte del mayor; 0 si no hay visitas. Para mapas con
+ * pocas zonas (el zoom de Lima tiene 3), donde los cuantiles pintarían casi igual 40 y 310 usuarios.
+ */
+export function escalaProporcional(valores: readonly number[], pasos = 5): (valor: number) => number {
+  const mayor = Math.max(0, ...valores.filter((v) => v > 0));
+  return (valor) => {
+    if (!(valor > 0) || !(mayor > 0)) return 0;
+    return Math.min(pasos, Math.max(1, Math.ceil((pasos * valor) / mayor)));
+  };
+}
+
+/**
  * Radio del marcador: crece con la raíz de los usuarios (el área es proporcional), entre `minimo` y
  * `maximo`. 0 si no hay usuarios.
  */

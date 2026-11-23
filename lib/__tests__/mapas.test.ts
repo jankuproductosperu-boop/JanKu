@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { IDS_PERU, escalaDeColor, idDeRegionPeru, normalizarNombre, radioMarcador, ubicarEnMapa } from "@/lib/mapas";
+import {
+  IDS_PERU,
+  escalaDeColor,
+  escalaProporcional,
+  idDeRegionPeru,
+  normalizarNombre,
+  radioMarcador,
+  ubicarEnMapa,
+} from "@/lib/mapas";
 import peru from "@/app/(admin)/admin/estadisticas/_mapas/peru.json";
 import mundo from "@/app/(admin)/admin/estadisticas/_mapas/mundo.json";
+import lima from "@/app/(admin)/admin/estadisticas/_mapas/lima.json";
 
 describe("normalizarNombre", () => {
   it("quita tildes, mayúsculas y signos", () => {
@@ -138,6 +147,18 @@ describe("escalaDeColor", () => {
   it("otro número de pasos", () => expect(escalaDeColor([1, 2, 3], 3)(2)).toBe(2));
 });
 
+describe("escalaProporcional", () => {
+  it("sin valores o sin visitas → 0", () => {
+    expect(escalaProporcional([])(5)).toBe(0);
+    expect(escalaProporcional([3, 4])(0)).toBe(0);
+  });
+  it("un solo valor → el escalón más fuerte", () => expect(escalaProporcional([42])(42)).toBe(5));
+  it("según la parte del mayor: 22 y 40 frente a 310 quedan claros", () => {
+    const escala = escalaProporcional([22, 40, 310]);
+    expect([22, 40, 155, 310].map(escala)).toEqual([1, 1, 3, 5]);
+  });
+});
+
 describe("radioMarcador", () => {
   it("0 usuarios → sin marcador", () => expect(radioMarcador(0, 100)).toBe(0));
   it("el mayor → radio máximo", () => expect(radioMarcador(100, 100)).toBe(12));
@@ -158,8 +179,15 @@ describe("geometría generada", () => {
     expect(IDS_PERU).toHaveLength(26);
   });
 
+  it("el zoom de Lima tiene solo Lima Metropolitana, el Callao y Lima Provincias, sin Huancayo", () => {
+    expect(lima.formas.map((f) => f.id).sort()).toEqual(["PE-CAL", "PE-LIM", "PE-LMA"]);
+    expect(lima.huancayo).toBeNull();
+    // Los nombres de Google caen en esas formas.
+    expect(["Lima", "Lima Region", "Callao"].map(idDeRegionPeru).sort()).toEqual(["PE-CAL", "PE-LIM", "PE-LMA"]);
+  });
+
   it("cada forma tiene trazo y su marcador cae dentro del dibujo", () => {
-    for (const m of [peru, mundo]) {
+    for (const m of [peru, mundo, lima]) {
       for (const f of m.formas) {
         expect(f.d.startsWith("M")).toBe(true);
         expect(f.x).toBeGreaterThanOrEqual(0);

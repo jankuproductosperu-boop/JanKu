@@ -1,4 +1,4 @@
-// Genera los mapas de Estadísticas (fase 23d, D-94): mundo.json y peru.json en
+// Genera los mapas de Estadísticas (fase 23d, D-94): mundo.json, peru.json y lima.json en
 // app/(admin)/admin/estadisticas/_mapas/. Se ejecuta a mano, una vez; el resultado se sube a git.
 //
 // Fuente: Natural Earth (dominio público), versión 5.1.1. Descargar y descomprimir FUERA del repo:
@@ -9,7 +9,8 @@
 //
 // Simplifica, proyecta y calcula un punto interior de cada forma con `npx mapshaper` (versión fija,
 // sin instalarla); luego escribe un JSON compacto { ancho, alto, huancayo, formas: [{ id, nombre, d, x, y }] }
-// con el trazo SVG ya listo (coordenadas enteras, relativas) y el punto del marcador.
+// con el trazo SVG ya listo (coordenadas enteras, relativas) y el punto del marcador. `huancayo` es null
+// si la ciudad cae fuera del encuadre (el mapa de Lima).
 // No toca la base ni llama a ningún servicio salvo npm. Falla si un mapa pasa su presupuesto de peso.
 
 import { spawnSync } from "node:child_process";
@@ -23,6 +24,14 @@ const MAPSHAPER = "mapshaper@0.6.113";
 const DESTINO = fileURLToPath(new URL("../../app/(admin)/admin/estadisticas/_mapas/", import.meta.url));
 const HUANCAYO = [-75.2049, -12.0651]; // lon, lat
 const MARGEN = 24; // unidades del viewBox alrededor del mapa, para que los marcadores no se corten
+
+/** Natural Earth da PE-LIM a las dos Limas; la provincia de Lima es Lima Metropolitana (PE-LMA). */
+function departamento(p) {
+  if (p.name === "Lima Province") return { id: "PE-LMA", nombre: "Lima Metropolitana" };
+  if (p.iso_3166_2 === "PE-LIM") return { id: "PE-LIM", nombre: "Lima Provincias" };
+  return { id: p.iso_3166_2, nombre: p.name };
+}
+const ZONA_LIMA = new Set(["PE-LMA", "PE-CAL", "PE-LIM"]);
 
 const MAPAS = {
   mundo: {
@@ -44,12 +53,21 @@ const MAPAS = {
     simplificar: "interval=900", // metros; 1 unidad del mapa ≈ 2 km
     ladoMayor: 1000,
     presupuesto: 60 * 1024,
-    forma: (p) => {
-      // Natural Earth da PE-LIM a las dos Limas; la provincia de Lima es Lima Metropolitana (PE-LMA).
-      if (p.name === "Lima Province") return { id: "PE-LMA", nombre: "Lima Metropolitana" };
-      if (p.iso_3166_2 === "PE-LIM") return { id: "PE-LIM", nombre: "Lima Provincias" };
-      return { id: p.iso_3166_2, nombre: p.name };
-    },
+    forma: departamento,
+  },
+  lima: {
+    // Zoom de Lima Metropolitana con el Callao y parte de Lima Provincias (unos 140 × 140 km).
+    archivo: "ne_10m_admin_1_states_provinces.shp",
+    filtro: "iso_a2=='PE'",
+    campos: "name,iso_3166_2,type",
+    recorte: "bbox=-77.4,-12.65,-76.1,-11.4", // lon/lat: oeste, sur, este, norte
+    proyeccion: ["merc"],
+    simplificar: "interval=150", // metros; 1 unidad del mapa ≈ 0,15 km
+    ladoMayor: 1000,
+    presupuesto: 30 * 1024,
+    forma: departamento,
+    // Los bordes de Junín u otros vecinos que entren en el recorte no se dibujan.
+    conservar: (s) => ZONA_LIMA.has(s.id),
   },
 };
 
@@ -111,6 +129,7 @@ function generar(nombre, cfg, carpeta, tmp) {
     "-i", shp,
     "-filter", cfg.filtro,
     "-filter-fields", cfg.campos,
+    ...(cfg.recorte ? ["-clip", cfg.recorte] : []),
     "-proj", ...cfg.proyeccion,
     "-simplify", cfg.simplificar, "keep-shapes",
     "-o", formas, "format=geojson",
@@ -119,11 +138,16 @@ function generar(nombre, cfg, carpeta, tmp) {
   ]);
   mapshaper(["-i", huancayo, "-proj", "from=wgs84", ...cfg.proyeccion, "-o", origen, "format=geojson"]);
 
-  const fc = leer(formas).features;
-  const pc = leer(puntos).features;
+  const todasFormas = leer(formas).features;
+  const todosPuntos = leer(puntos).features;
   const hc = leer(origen);
   const hcGeom = hc.type === "FeatureCollection" ? hc.features[0].geometry : hc.type === "Feature" ? hc.geometry : hc.geometries?.[0] ?? hc;
-  if (fc.length !== pc.length) fallar(`${nombre}: ${fc.length} formas y ${pc.length} puntos`);
+  if (todasFormas.length !== todosPuntos.length) fallar(`${nombre}: ${todasFormas.length} formas y ${todosPuntos.length} puntos`);
+  // Formas y puntos van en el mismo orden: se filtran juntos.
+  const quedan = todasFormas.map((f, i) => i).filter((i) => !cfg.conservar || cfg.conservar(cfg.forma(todasFormas[i].properties ?? {})));
+  const fc = quedan.map((i) => todasFormas[i]);
+  const pc = quedan.map((i) => todosPuntos[i]);
+  if (!fc.length) fallar(`${nombre}: no quedó ninguna forma`);
 
   // Límites en coordenadas proyectadas (y hacia arriba).
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -166,7 +190,10 @@ function generar(nombre, cfg, carpeta, tmp) {
   const ids = salida.map((s) => s.id).filter(Boolean);
   if (new Set(ids).size !== ids.length) fallar(`${nombre}: hay ids repetidos`);
 
-  const datos = { ancho, alto, huancayo: [px(hcGeom.coordinates[0]), py(hcGeom.coordinates[1])], formas: salida };
+  const hx = px(hcGeom.coordinates[0]);
+  const hy = py(hcGeom.coordinates[1]);
+  const dentro = hx >= 0 && hx <= ancho && hy >= 0 && hy <= alto;
+  const datos = { ancho, alto, huancayo: dentro ? [hx, hy] : null, formas: salida };
   const texto = JSON.stringify(datos);
   const bytes = Buffer.byteLength(texto);
   const gz = zlib.gzipSync(texto, { level: 9 }).length;
