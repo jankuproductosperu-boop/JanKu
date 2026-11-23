@@ -295,20 +295,21 @@ function SinConexion() {
 
 const VISTAS_MAPA: { valor: VistaMapa; etiqueta: string }[] = [
   { valor: "peru", etiqueta: "Perú" },
+  { valor: "lima", etiqueta: "Lima" },
   { valor: "mundo", etiqueta: "Mundo" },
 ];
 
 /** Región tal como la da Google, o «Sin identificar» si no la sabe. */
 const nombreRegion = (region: string) => (!region || region === "(not set)" ? "Sin identificar" : region);
 
-/** Mapa de usuarios con selector Perú · Mundo y, debajo, las ciudades (fase 23d: sustituye a «Usuarios por ciudad»). */
+/** Mapa de usuarios con selector Perú · Lima · Mundo y, debajo, las ciudades (fase 23d: sustituye a «Usuarios por ciudad»). */
 function TarjetaMapa({ d }: { d: AnalyticsResumen }) {
   const [vista, setVista] = useState<VistaMapa>("peru");
   const filas = useMemo(
     () =>
-      vista === "peru"
-        ? (d.regiones ?? []).map((r) => ({ clave: r.region, usuarios: r.usuarios }))
-        : d.paises.map((p) => ({ clave: p.codigo, usuarios: p.usuarios })),
+      vista === "mundo"
+        ? d.paises.map((p) => ({ clave: p.codigo, usuarios: p.usuarios }))
+        : (d.regiones ?? []).map((r) => ({ clave: r.region, usuarios: r.usuarios })),
     [d, vista],
   );
 
@@ -316,14 +317,14 @@ function TarjetaMapa({ d }: { d: AnalyticsResumen }) {
     <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm flex flex-col min-w-0">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--line)]">
         <h2 className="font-semibold text-[16px]">Mapa de usuarios</h2>
-        <div className="flex gap-1.5" role="tablist" aria-label="Mapa">
+        <div className="flex gap-1 flex-none" role="tablist" aria-label="Mapa">
           {VISTAS_MAPA.map((o) => (
             <button
               key={o.valor}
               role="tab"
               aria-selected={vista === o.valor}
               onClick={() => setVista(o.valor)}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
                 vista === o.valor ? "bg-[var(--accent)] text-white" : "bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95"
               }`}
             >
@@ -338,22 +339,23 @@ function TarjetaMapa({ d }: { d: AnalyticsResumen }) {
       {d.ciudades.length === 0 ? (
         <div className="px-5 py-4 border-t border-dashed border-[var(--line)]"><SinDatos /></div>
       ) : (
-        <table className="w-full text-sm border-t border-dashed border-[var(--line)]">
+        // Columnas de cifras con ancho fijo y la ciudad recortada con «…»: la tabla nunca se sale de la tarjeta.
+        <table className="w-full table-fixed text-sm border-t border-dashed border-[var(--line)]">
           <thead className="text-left text-[var(--muted)] bg-[var(--bg)]">
             <tr>
-              <th className="px-5 py-2.5 font-medium">Ciudad</th>
-              <th className="px-3 py-2.5 font-medium text-right">Usuarios</th>
-              <th className="px-3 py-2.5 font-medium text-right">Vistas</th>
-              <th className="px-5 py-2.5 font-medium text-right">%</th>
+              <th className="pl-5 pr-2 py-2.5 font-medium">Ciudad</th>
+              <th className="w-[5rem] px-2 py-2.5 font-medium text-right">Usuarios</th>
+              <th className="w-[4.5rem] px-2 py-2.5 font-medium text-right">Vistas</th>
+              <th className="w-[4.75rem] pl-2 pr-5 py-2.5 font-medium text-right">%</th>
             </tr>
           </thead>
           <tbody>
             {d.ciudades.slice(0, 5).map((c, i) => (
               <tr key={`${c.ciudad}-${i}`} className="border-t border-[var(--line)]">
-                <td className="px-5 py-2 truncate max-w-[160px]" title={c.ciudad}>{c.ciudad}</td>
-                <td className="px-3 py-2 text-right whitespace-nowrap">{miles(c.usuarios)}</td>
-                <td className="px-3 py-2 text-right whitespace-nowrap">{miles(c.vistas)}</td>
-                <td className="px-5 py-2 text-right whitespace-nowrap text-[var(--muted)]">{c.porcentaje.toFixed(1)} %</td>
+                <td className="pl-5 pr-2 py-2 truncate" title={c.ciudad}>{c.ciudad}</td>
+                <td className="px-2 py-2 text-right whitespace-nowrap">{miles(c.usuarios)}</td>
+                <td className="px-2 py-2 text-right whitespace-nowrap">{miles(c.vistas)}</td>
+                <td className="pl-2 pr-5 py-2 text-right whitespace-nowrap text-[var(--muted)]">{c.porcentaje.toFixed(1)} %</td>
               </tr>
             ))}
           </tbody>
@@ -447,7 +449,7 @@ function Panel({ d, vivo }: { d: AnalyticsResumen; vivo: AnalyticsTiempoReal | n
   return (
     <>
       {/* Fila 1: aviso + indicadores · mapa con las ciudades debajo · países (fase 23d) */}
-      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-[1.5fr_1.1fr_0.9fr]">
+      <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-[1.4fr_1.25fr_0.9fr]">
         <div className="space-y-5 min-w-0">
           <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] shadow-sm overflow-hidden">
             <div className="flex items-start gap-2.5 px-5 py-3 bg-[var(--warn-soft)] text-[var(--warn)] text-sm">
