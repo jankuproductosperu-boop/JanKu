@@ -43,9 +43,13 @@ const nextConfig: NextConfig = {
   // ── Headers de seguridad HTTP ──────────────────────────────────────────
   async headers() {
     // Fase 26c (D-93): https://challenges.cloudflare.com (Turnstile) en script-src, frame-src y connect-src.
+    // Fase 28 (D-95): 'unsafe-inline' sigue en script-src porque Next.js y Google Analytics usan <script> en
+    // línea (quitarlo exige un nonce y que toda la tienda se genere en cada visita); script-src-attr 'none'
+    // prohíbe en cambio los manejadores en atributos (onerror="…", onclick="…"), que React nunca escribe.
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com",
+      "script-src-attr 'none'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://res.cloudinary.com https://img.jan-ku.com https://img.youtube.com",
       "font-src 'self' data:",
@@ -62,7 +66,7 @@ const nextConfig: NextConfig = {
         // Aplica a todas las rutas
         source: '/(.*)',
         headers: [
-          // CSP en modo "Report-Only" — solo avisa en consola, no bloquea nada todavía
+          // CSP que se aplica (bloquea): lo que no está en la lista no carga.
           {
             key: 'Content-Security-Policy',
             value: csp,

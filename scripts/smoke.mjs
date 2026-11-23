@@ -200,6 +200,15 @@ const CHECKS = [
       return falta.length ? `falta https://challenges.cloudflare.com en ${falta.join(", ")}` : true;
     },
   },
+  // Fase 28 (D-95): sin manejadores de eventos en atributos HTML.
+  {
+    nombre: "CSP prohíbe manejadores en atributos (script-src-attr 'none')", metodo: "GET", ruta: "/",
+    espera: (res) => {
+      const csp = res.headers.get("content-security-policy") || "";
+      const directiva = csp.split(";").map((x) => x.trim()).find((x) => x.startsWith("script-src-attr ")) || "";
+      return directiva === "script-src-attr 'none'" ? true : `esperado script-src-attr 'none', recibido «${directiva}»`;
+    },
+  },
   // turnstileToken es un campo opcional nuevo (N1-6): no rompe los cuerpos de siempre. Un correo inválido
   // responde el 200 genérico antes de los límites: no gasta intentos.
   {
